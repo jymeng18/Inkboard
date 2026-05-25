@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Inkboard.Domain/Inkboard.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
