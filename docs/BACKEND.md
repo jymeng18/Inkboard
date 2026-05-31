@@ -46,8 +46,8 @@ Implements all the interfaces defined in the application and domain layers. This
 The entry point of the backend. It receives external HTTP/WebSocket requests, maps them to DTOs, hands them over to the Application layer, and maps the results to HTTP responses. **Strictly no business logic.**
 
 *   **REST Controllers:** 
-    *   `AuthController`: Endpoints for login/register/refresh mechanisms.
-    *   `UserController`: Endpoints for fetching profiles or searching users.
+    *   `AuthEndpoint`: Endpoints for login/register/refresh mechanisms.
+    *   `UserEndpoint`: Endpoints for fetching profiles or searching users.
     *   `PartyController`: Endpoints for creating parties, invites, and kicks.
     *   `CanvasController`: Endpoints for fetching snapshots or metadata.
 *   **Real-time Hubs (SignalR):**

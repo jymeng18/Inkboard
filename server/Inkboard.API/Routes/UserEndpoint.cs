@@ -1,8 +1,8 @@
 namespace Inkboard.API;
 
-public static class UserController
+public static class UserEndpoint
 {
-    public static void MapUserController(this IEndpointRouteBuilder endpoint)
+    public static void MapUserEndpoint(this IEndpointRouteBuilder endpoint)
     {
         endpoint.MapGet("/health", () => Results.Ok()).RequireAuthorization();
     }

@@ -41,7 +41,7 @@ No `dotnet format` or analyzers enforced in the project files — lint is manual
 
 ## Current state (early development)
 
-- Both controllers (`AuthController.cs`, `UserController.cs`) and most service files are empty stubs.  
+- Both controllers (`AuthEndpoint.cs`, `UserEndpoint.cs`) and most service files are empty stubs.  
 - Only `User` domain model, `AppDbContext`, and `TokenGenerator` have real code.  
 - `Party.cs`, `CanvasService.cs`, `PartyService.cs`, `AuthService.cs` are empty stubs.  
 - No tests exist anywhere in the repo.  
