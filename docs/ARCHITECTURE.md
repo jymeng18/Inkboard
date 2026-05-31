@@ -69,10 +69,10 @@ src/
 
 Handles standard HTTP request/response for operations that do not need to be real time. Each controller maps to one feature domain.
 
-- **AuthController** — register, login, refresh token
+- **AuthEndpoint** — register, login, refresh token
 - **PartyController** — create party, invite user, remove user, block user, leave party
 - **CanvasController** — get canvas metadata, retrieve latest snapshot
-- **UserController** — get user profile, search users by username
+- **UserEndpoint** — get user profile, search users by username
 
 ### Real-Time Layer (SignalR Hubs)
 
@@ -211,7 +211,7 @@ Modelled after Fortnite's party system.
 
 ### Auth Flow
 
-1. User registers or logs in via the AuthController
+1. User registers or logs in via the AuthEndpoint
 2. AuthService returns an access token and a refresh token
 3. Frontend stores the access token in memory (not localStorage) and the refresh token in an httpOnly cookie
 4. Axios intercepts 401 responses, calls the refresh endpoint, and retries the original request
