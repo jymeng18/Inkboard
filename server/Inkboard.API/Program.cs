@@ -1,3 +1,4 @@
+using FluentValidation;
 using Inkboard.API;
 using Inkboard.Application;
 using Inkboard.Domain;
@@ -13,6 +14,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<TokenGenerator>();
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
 var app = builder.Build();
 
