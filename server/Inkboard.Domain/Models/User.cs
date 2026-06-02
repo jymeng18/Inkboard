@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Inkboard.Domain.Models;
+
 [Table("Users")]
 public class User
 {

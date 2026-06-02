@@ -1,12 +1,13 @@
 using System.Security.Claims;
 using System.Text;
+using Inkboard.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Inkboard.Application;
+namespace Inkboard.Infra.Auth;
 
-public class TokenGenerator
+public class TokenGenerator : ITokenGenerator
 {
     private readonly IConfiguration Configuration;
 

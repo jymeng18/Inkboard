@@ -1,8 +1,8 @@
-using System;
-using Inkboard.Domain;
+using Inkboard.Domain.Models;
+using Inkboard.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Inkboard.Infra;
+namespace Inkboard.Infra.Db;
 
 public class UserRepository : IUserRepository
 {

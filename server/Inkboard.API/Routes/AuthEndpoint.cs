@@ -1,12 +1,11 @@
-using System.ComponentModel.DataAnnotations;
 using FluentValidation;
-using Inkboard.Application;
-using Inkboard.Domain;
-using Inkboard.Infra;
+using Inkboard.Application.Interfaces;
+using Inkboard.Domain.Models;
+using Inkboard.Domain.Repositories;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace Inkboard.API;
+namespace Inkboard.API.Routes;
 
 public static class AuthEndpoint
 {
@@ -16,7 +15,7 @@ public static class AuthEndpoint
             "/login",
             async (
                 LoginRequest request,
-                TokenGenerator tokenGenerator,
+                ITokenGenerator tokenGenerator,
                 IUserRepository repository
             ) =>
             {

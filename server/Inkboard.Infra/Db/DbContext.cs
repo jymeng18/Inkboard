@@ -1,7 +1,7 @@
-using Inkboard.Domain;
+using Inkboard.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Inkboard.Infra;
+namespace Inkboard.Infra.Db;
 
 public class AppDbContext : DbContext
 {
