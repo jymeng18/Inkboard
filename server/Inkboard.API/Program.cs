@@ -7,6 +7,7 @@ using Inkboard.Application.Interfaces;
 using Inkboard.Infra.Auth;
 using Inkboard.Domain.Repositories;
 using Inkboard.Infra.Db;
+using Inkboard.Application.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
