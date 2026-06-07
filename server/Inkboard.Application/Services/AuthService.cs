@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FluentValidation;
 using Inkboard.Application.Auth.DTO;
 using Inkboard.Application.Interfaces;
@@ -8,42 +10,70 @@ namespace Inkboard.Application.Services;
 
 public class AuthService : IAuthService
 {
-  private readonly ITokenGenerator _tokenGenerator;
-  private readonly IUserRepository _repository;
-  private readonly IValidator<RegisterRequestModel> _validator;
+    private readonly ITokenGenerator _tokenGenerator;
+    private readonly IUserRepository _repository;
+    private readonly IValidator<RegisterRequestModel> _validator;
+    private readonly ITokenRepository _tokenRepository;
 
-  public AuthService(ITokenGenerator tokenGenerator, IUserRepository repository, IValidator<RegisterRequestModel> validator)
-  {
-    _tokenGenerator = tokenGenerator;
-    _repository = repository;
-    _validator = validator;
-  }
+    public AuthService(
+        ITokenGenerator tokenGenerator,
+        IUserRepository repository,
+        IValidator<RegisterRequestModel> validator,
+        ITokenRepository tokenRepository
+    )
+    {
+        _tokenGenerator = tokenGenerator;
+        _repository = repository;
+        _validator = validator;
+        _tokenRepository = tokenRepository;
+    }
 
-  public async Task<LoginResult> LoginAsync(LoginRequestModel request)
-  {
+    public async Task<LoginResult> LoginAsync(LoginRequestModel request)
+    {
         var user = await _repository.FindByEmailAsync(request.Email);
         if (user is null)
         {
             return new LoginResult { ErrorMessage = "Invalid email or password." };
         }
-        
+
         // compare hashpw <-> pw
         bool validPassword = BCrypt.Net.BCrypt.EnhancedVerify(request.Password, user.PasswordHash);
         if (!validPassword)
         {
-            return new LoginResult { ErrorMessage = "Invalid email or password."};
+            return new LoginResult { ErrorMessage = "Invalid email or password." };
         }
 
-        var token = _tokenGenerator.GenerateToken(user.Id, request.Email);
-        return new LoginResult { Success = true, AccessToken = token };
-  }
+        var token = _tokenGenerator.GenerateToken(user.Id, request.Email); // access token
 
-  public async Task<RegisterResult> RegisterAsync(RegisterRequestModel request)
-  {
+        var rawRefreshToken = _tokenGenerator.GenerateRefreshToken();
+        var tokenHash = Convert.ToBase64String(
+            SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken))
+        );
+
+        var refreshToken = new RefreshToken
+        {
+            TokenHash = tokenHash,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        await _tokenRepository.CreateAsync(refreshToken);
+
+        return new LoginResult
+        {
+            Success = true,
+            AccessToken = token,
+            RefreshToken = rawRefreshToken,
+        };
+    }
+
+    public async Task<RegisterResult> RegisterAsync(RegisterRequestModel request)
+    {
         bool emailExists = await _repository.EmailExistsAsync(request.Email);
         if (emailExists)
         {
-            return new RegisterResult { ErrorMessage = "Email is already registered."};
+            return new RegisterResult { ErrorMessage = "Email is already registered." };
         }
 
         // Authorize all fields in request
@@ -67,11 +97,75 @@ public class AuthService : IAuthService
         try
         {
             await _repository.CreateUserAsync(user);
-            return new RegisterResult { Success = true, UserId = user.Id }; 
+            return new RegisterResult { Success = true, UserId = user.Id };
         }
         catch (Exception)
         {
-            return new RegisterResult { ErrorMessage = "An unexpected error occured."};
+            return new RegisterResult { ErrorMessage = "An unexpected error occured." };
         }
     }
-  }
+
+    public async Task<LogoutResult> LogoutAsync(string rawRefreshToken)
+    {
+        var tokenHash = Convert.ToBase64String(
+            SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken))
+        );
+
+        var storedToken = await _tokenRepository.FindByTokenHashAsync(tokenHash);
+        if (storedToken is not null)
+        {
+            await _tokenRepository.RevokeAsync(storedToken);
+        }
+
+        return new LogoutResult { Success = true };
+    }
+
+    public async Task<LoginResult> RefreshAsync(string rawRefreshToken)
+    {
+        var tokenHash = Convert.ToBase64String(
+            SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken))
+        );
+
+        var storedToken = await _tokenRepository.FindByTokenHashAsync(tokenHash);
+        if (storedToken is null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTime.UtcNow)
+        {
+            return new LoginResult { ErrorMessage = "Invalid or expired refresh token." };
+        }
+
+        // Rotation: revoke this token and all other active tokens for the user
+        var activeTokens = await _tokenRepository.GetActiveByUserIdAsync(storedToken.UserId);
+        foreach (var t in activeTokens)
+        {
+            await _tokenRepository.RevokeAsync(t);
+        }
+
+        var user = await _repository.GetByIdAsync(storedToken.UserId);
+        if (user is null)
+        {
+            return new LoginResult { ErrorMessage = "User not found." };
+        }
+
+        var newAccessToken = _tokenGenerator.GenerateToken(user.Id, user.Email);
+
+        var newRawRefresh = _tokenGenerator.GenerateRefreshToken();
+        var newHash = Convert.ToBase64String(
+            SHA256.HashData(Encoding.UTF8.GetBytes(newRawRefresh))
+        );
+
+        var newRefreshToken = new RefreshToken
+        {
+            TokenHash = newHash,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+        };
+
+        await _tokenRepository.CreateAsync(newRefreshToken);
+
+        return new LoginResult
+        {
+            Success = true,
+            AccessToken = newAccessToken,
+            RefreshToken = newRawRefresh,
+        };
+    }
+}

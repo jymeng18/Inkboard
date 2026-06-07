@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Inkboard.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -51,5 +52,13 @@ public class TokenGenerator : ITokenGenerator
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return token;
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+        return Convert.ToBase64String(randomBytes);
     }
 }
