@@ -20,6 +20,8 @@ public class RefreshToken
   public Guid UserId { get; set; }
 
   [ForeignKey("UserId")]
-  public User User { get; set; } = null;
+  
+  // Navigation property, UserId (FK) refers to User.Id (PK of Users)
+  public User User { get; set; } = null!;
 
 }
