@@ -1,8 +1,8 @@
-# CanvasCollab — System Architecture
+# Inkboard — System Architecture
 
 ## Project Overview
 
-CanvasCollab is a real-time multi-user collaborative canvas platform, similar to MS Paint but with live multiplayer. Up to 5 users can draw on a shared canvas simultaneously and see each other's actions in real time. Users are organized into parties, similar to Fortnite's party system, where a leader controls membership.
+Inkboard is a real-time multi-user collaborative canvas platform, similar to MS Paint but with live multiplayer. Up to 5 users can draw on a shared canvas simultaneously and see each other's actions in real time. Users are organized into parties, similar to Fortnite's party system, where a leader controls membership.
 
 ---
 
@@ -14,64 +14,60 @@ CanvasCollab is a real-time multi-user collaborative canvas platform, similar to
 | Real-time | ASP.NET Core SignalR (WebSockets) |
 | Frontend | React + TypeScript (Vite) |
 | Canvas Rendering | Konva.js (react-konva) |
-| Database | SQL Server via Entity Framework Core |
-| Cache / Session | Redis |
+| Database | PostgreSQL via Entity Framework Core (Npgsql) |
 | State Management | Zustand |
 | HTTP Client | Axios + TanStack React Query |
 | Authentication | JWT (access token + refresh token) |
-| Blob Storage | Azure Blob Storage (canvas snapshots) |
-| Logging | Serilog |
 | Styling | Tailwind CSS |
 
 ---
 
 ## Project Structure
 
-### Backend — `CanvasCollab.API`
+### Backend — Clean Architecture (4 projects)
 
-A single ASP.NET Core Web API project. No layered architecture. Flat, beginner-friendly folder structure.
+The backend follows Clean Architecture with strict dependency inversion. Dependencies point inward: `API → Infra → Application → Domain`.
 
 ```
-CanvasCollab.API/
-├── Hubs/           Real-time SignalR hubs
-├── Controllers/    REST API endpoints
-├── Models/         EF Core database entities
-├── DTOs/           Request and response shapes per feature area
-├── Services/       Business logic
-├── Data/           EF Core DbContext
-├── Program.cs      App bootstrap and DI configuration
-└── appsettings.json
+server/
+├── Inkboard.Domain/       Core entities and repository interfaces
+│   ├── Models/            User, Party, RefreshToken
+│   └── Repositories/      IUserRepository, ITokenRepository
+├── Inkboard.Application/  Business logic and use cases
+│   ├── Services/          AuthService, PartyService, CanvasService
+│   ├── Interfaces/        IAuthService, ITokenGenerator
+│   └── Auth/              DTOs, handlers, validators
+├── Inkboard.Infra/        EF Core, external service implementations
+│   ├── Db/                AppDbContext, repository implementations
+│   ├── Auth/              TokenGenerator
+│   └── Migrations/        EF Core migrations
+└── Inkboard.API/          Entry point, minimal API endpoints
+    ├── Routes/            AuthEndpoint, UserEndpoint
+    └── Program.cs         App bootstrap and DI configuration
 ```
 
-### Frontend — `canvas-collab-client`
+### Frontend — `client/`
 
 Vite + React + TypeScript project.
 
 ```
-src/
-├── api/            Axios instance and per-feature API functions
-├── hubs/           SignalR connection setup and event handlers
-├── store/          Zustand stores (auth, canvas, party)
-├── components/     UI components organized by feature
-│   ├── canvas/
-│   └── party/
-├── pages/          Route-level page components
-├── hooks/          Custom React hooks
-├── types/          Shared TypeScript type definitions
-└── utils/          Helper functions
+client/
+└── src/
+    ├── App.tsx           Root component
+    ├── main.tsx          Entry point
+    ├── index.css         Global styles
+    └── assets/           Static assets
 ```
 
 ---
 
 ## Architecture Layers
 
-### REST API (Controllers)
+### REST API (Minimal API Endpoints)
 
-Handles standard HTTP request/response for operations that do not need to be real time. Each controller maps to one feature domain.
+Handles standard HTTP request/response for operations that do not need to be real time. Each endpoint maps to one feature domain.
 
-- **AuthEndpoint** — register, login, refresh token
-- **PartyController** — create party, invite user, remove user, block user, leave party
-- **CanvasController** — get canvas metadata, retrieve latest snapshot
+- **AuthEndpoint** — register, login, refresh token, logout
 - **UserEndpoint** — get user profile, search users by username
 
 ### Real-Time Layer (SignalR Hubs)
@@ -86,12 +82,12 @@ Handles all live communication between clients. Two hubs run alongside the REST 
 Contain all business logic. Controllers and Hubs call services, never the database directly.
 
 - **AuthService** — password hashing, JWT access token generation, refresh token rotation
-- **PartyService** — party creation rules, invite validation, membership cap enforcement (max 5), block list enforcement
-- **CanvasService** — operation validation, snapshot persistence to blob storage, operation history management
+- **PartyService** — party creation rules, invite validation, membership cap enforcement, block list enforcement
+- **CanvasService** — operation validation, snapshot persistence, operation history management
 
 ### Data Layer
 
-Entity Framework Core with SQL Server. The `AppDbContext` is the single point of database access.
+Entity Framework Core with PostgreSQL (via Npgsql). The `AppDbContext` is the single point of database access.
 
 ---
 
@@ -99,41 +95,46 @@ Entity Framework Core with SQL Server. The `AppDbContext` is the single point of
 
 ### Tables
 
-**Users**
+**Users** *(implemented)*
 Stores registered user accounts.
-Fields: Id, Username, Email, PasswordHash, AvatarUrl, CreatedAt
+Fields: Id (Guid), UserName, Email, PasswordHash, CreatedAt
 
-**Parties**
+**RefreshTokens** *(implemented)*
+Stores refresh tokens for JWT auth rotation.
+Fields: Id (Guid), TokenHash, ExpiresAt, CreatedAt, IsRevoked, UserId (FK → Users)
+
+**Parties** *(planned)*
 Represents a collaboration session group.
 Fields: Id, LeaderId (FK → Users), CanvasId (FK → Canvases), CreatedAt, Status
 
-**PartyMembers**
+**PartyMembers** *(planned)*
 Junction table linking users to parties with roles.
 Fields: PartyId (FK), UserId (FK), Role (Leader | Member), JoinedAt
 
-**PartyInvites**
+**PartyInvites** *(planned)*
 Tracks pending, accepted, and declined invitations.
 Fields: Id, PartyId (FK), InvitedByUserId (FK), InvitedUserId (FK), Status (Pending | Accepted | Declined), ExpiresAt
 
-**BlockList**
+**BlockList** *(planned)*
 Tracks users blocked by a party leader.
 Fields: UserId (FK), BlockedUserId (FK), CreatedAt
 
-**Canvases**
+**Canvases** *(planned)*
 Represents a shared drawing canvas.
 Fields: Id, PartyId (FK), Width, Height, SnapshotUrl, CreatedAt, LastModifiedAt
 
-**CanvasOperations**
+**CanvasOperations** *(planned)*
 Append-only log of every drawing operation during a session.
 Fields: Id, CanvasId (FK), UserId (FK), Type, Data (JSON), Timestamp
 
 ### Relationships
 
-- A Party has one Canvas
-- A Party has one Leader (User) and up to 4 additional Members
-- A Canvas has many CanvasOperations
-- A User can have many PartyInvites (sent and received)
-- A User can block other Users via BlockList
+- A User has many RefreshTokens
+- A Party has one Canvas (planned)
+- A Party has one Leader (User) and up to 4 additional Members (planned)
+- A Canvas has many CanvasOperations (planned)
+- A User can have many PartyInvites (sent and received) (planned)
+- A User can block other Users via BlockList (planned)
 
 ---
 
@@ -156,10 +157,10 @@ Fields: Id, CanvasId (FK), UserId (FK), Type, Data (JSON), Timestamp
 4. Other clients render a labelled cursor for that user
 5. Cursor events are never persisted to the database
 
-### Canvas Snapshot
+### Canvas Snapshot *(planned)*
 
 1. At session end, or on a scheduled interval, CanvasService consolidates all operations into a single image
-2. The image is uploaded to Azure Blob Storage
+2. The image is persisted (to blob storage or database)
 3. The SnapshotUrl on the Canvas record is updated
 4. When a new user joins an existing session, they receive the latest snapshot immediately so they see the current state
 
@@ -219,7 +220,7 @@ Modelled after Fortnite's party system.
 
 ---
 
-## Redis Usage
+## Redis Usage *(planned)*
 
 Redis serves two purposes.
 
@@ -227,7 +228,7 @@ Redis serves two purposes.
 If the backend runs on more than one server instance, SignalR uses Redis to fan out messages across all instances so every client receives broadcasts regardless of which server they are connected to.
 
 **Session and Party State Cache**
-Frequently read data is cached in Redis to avoid hitting SQL Server on every real-time event. This includes current party membership, canvas metadata, and active user connection IDs.
+Frequently read data is cached in Redis to avoid hitting PostgreSQL on every real-time event. This includes current party membership, canvas metadata, and active user connection IDs.
 
 ---
 
@@ -240,7 +241,7 @@ The following design decisions exist specifically to minimize the delay users ex
 - Only the delta (the new stroke or cursor position) is sent over the wire, never the full canvas state.
 - Database persistence of operations is done asynchronously and does not block the broadcast to other clients.
 - Cursor events are throttled on the frontend before being sent, and are never acknowledged by the server.
-- Redis caches session state so the server does not query SQL Server during real-time hub calls.
+- (Planned) Redis caches session state so the server does not query PostgreSQL during real-time hub calls.
 
 ---
 
