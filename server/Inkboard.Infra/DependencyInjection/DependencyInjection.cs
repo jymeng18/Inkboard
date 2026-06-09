@@ -19,10 +19,10 @@ public static class DependencyInjection
     {
         if (env.IsDevelopment())
         {
-        //     services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("InkboardDb"));
-        // }
-        // else
-        // {
+            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("InkboardDb"));
+        }
+        else
+        {
             var connectionString = config.GetConnectionString("WebApiDatabase");
             if (string.IsNullOrWhiteSpace(connectionString))
             {
