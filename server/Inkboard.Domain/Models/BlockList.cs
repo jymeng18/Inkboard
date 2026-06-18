@@ -5,7 +5,7 @@ namespace Inkboard.Domain.Models;
 [Table("Block_List")]
 public class BlockList
 {
-  public Guid Id { get; set; }
+  public Guid UserId { get; set; }
   
   public Guid BlockedUserId { get; set; }
 
