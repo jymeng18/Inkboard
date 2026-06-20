@@ -12,6 +12,5 @@ namespace Inkboard.Domain.Repositories
         Task<PartyInvite?> GetPendingInviteAsync(Guid partyId, Guid invitedUserId);
         Task CreateInviteAsync(PartyInvite invite);
         Task UpdateInviteAsync(PartyInvite invite);
-        Task SaveChangesAsync();
     }
 }
