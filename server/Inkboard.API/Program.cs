@@ -22,6 +22,10 @@ builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
+builder.Services.AddScoped<IPartyRepository, PartyRepository>();
+builder.Services.AddScoped<IPartyInviteRepository, PartyInviteRepository>();
+builder.Services.AddScoped<IBlockListRepository, BlockListRepository>();
+
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
 var app = builder.Build();
@@ -32,5 +36,6 @@ app.UseAuthorization();
 // Routers
 app.MapAuthEndpoint();
 app.MapUserEndpoint();
+app.MapPartyEndpoint();
 
 app.Run();

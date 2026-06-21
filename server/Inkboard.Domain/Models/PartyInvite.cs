@@ -22,10 +22,6 @@ public class PartyInvite
 
   public DateTime ExpiresAt { get; set; }
 
-
-  // TODO: Two FK's pointing at User table, --> EF Core issue,
-  // need to use fluent api to explcitly map it out
-
   // FK: InvitedByUserId -> Users.Id 
   public User InvitedBy { get; set; } = null!;
 
