@@ -11,4 +11,22 @@ namespace Inkboard.Application.Interfaces
         Task LeavePartyAsync(Guid partyId, Guid userId);
         Task BlockUserAsync(Guid leaderId, Guid targetUserId);
     }
+
+    public class PartyNotFoundException : Exception
+    {
+        public PartyNotFoundException(string message)
+            : base(message) { }
+    }
+
+    public class PartyForbiddenException : Exception
+    {
+        public PartyForbiddenException(string message)
+            : base(message) { }
+    }
+
+    public class PartyValidationException : Exception
+    {
+        public PartyValidationException(string message)
+            : base(message) { }
+    }
 }

@@ -25,6 +25,7 @@ builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 builder.Services.AddScoped<IPartyInviteRepository, PartyInviteRepository>();
 builder.Services.AddScoped<IBlockListRepository, BlockListRepository>();
+builder.Services.AddScoped<IPartyService, PartyService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
