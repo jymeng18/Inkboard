@@ -48,7 +48,7 @@ public static class AuthEndpoint
                 var result = await authService.LogoutAsync(request.RefreshToken);
                 return Results.Ok(result);
             }
-        );
+        ).RequireAuthorization();
 
         endpoint.MapPost(
             "/api/auth/refresh",

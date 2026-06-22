@@ -25,7 +25,7 @@ namespace Inkboard.API.Routes
 
                     return Results.Created($"/api/parties/{party.Id}", party);
                 }
-            );
+            ).RequireAuthorization();
 
             // Leaving a party
             endpoint.MapDelete(
@@ -57,7 +57,7 @@ namespace Inkboard.API.Routes
                         return Results.BadRequest(ex.Message);
                     }
                 }
-            );
+            ).RequireAuthorization();
 
             // Invite a User (must be a leader)
             endpoint.MapPost(
@@ -103,7 +103,7 @@ namespace Inkboard.API.Routes
                         return Results.BadRequest(ex.Message);
                     }
                 }
-            );
+            ).RequireAuthorization();
 
             // Respond to a invite
             endpoint.MapPost(
@@ -145,7 +145,7 @@ namespace Inkboard.API.Routes
                         return Results.BadRequest(ex.Message);
                     }
                 }
-            );
+            ).RequireAuthorization();
 
             // Kicking out a member ( only allwoed to be done by leader)
             endpoint.MapDelete(
@@ -181,7 +181,7 @@ namespace Inkboard.API.Routes
                         return Results.BadRequest(ex.Message);
                     }
                 }
-            );
+            ).RequireAuthorization();
 
             endpoint.MapPost(
                 "/api/users/{targetUserId}/block",
@@ -203,7 +203,7 @@ namespace Inkboard.API.Routes
                         return Results.BadRequest(ex.Message);
                     }
                 }
-            );
+            ).RequireAuthorization();
         }
     }
 }
