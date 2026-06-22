@@ -17,7 +17,7 @@ public static class AuthEndpoint
                 {
                     return Results.Problem(detail: result.ErrorMessage, statusCode: 401); // 401 unauthorized
                 }
-                return Results.Ok(new { access_token = result.AccessToken });
+                return Results.Ok(new { access_token = result.AccessToken, refresh_token = result.RefreshToken });
             }
         );
 

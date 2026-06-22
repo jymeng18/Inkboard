@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="MSTest" Version="4.0.1" />
@@ -21,6 +22,7 @@
     <ProjectReference Include="..\Inkboard.Application\Inkboard.Application.csproj" />
     <ProjectReference Include="..\Inkboard.Domain\Inkboard.Domain.csproj" />
     <ProjectReference Include="..\Inkboard.Infra\Inkboard.Infra.csproj" />
+    <ProjectReference Include="..\Inkboard.API\Inkboard.API.csproj" />
   </ItemGroup>
 
 </Project>
