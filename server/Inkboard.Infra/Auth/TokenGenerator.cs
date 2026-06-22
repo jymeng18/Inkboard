@@ -1,12 +1,14 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Inkboard.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Inkboard.Application;
+namespace Inkboard.Infra.Auth;
 
-public class TokenGenerator
+public class TokenGenerator : ITokenGenerator
 {
     private readonly IConfiguration Configuration;
 
@@ -50,5 +52,13 @@ public class TokenGenerator
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return token;
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+        return Convert.ToBase64String(randomBytes);
     }
 }

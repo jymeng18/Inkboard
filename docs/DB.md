@@ -1,19 +1,21 @@
-# Initial commit for our DB schema
+# Database Migrations
+
+## Adding a new migration
 
 ```bash
-cd Inkboard.Infra/
-dotnet ef migrations add InitialCreate -s ../Inkboard.API
+cd server/Inkboard.Infra/
+dotnet ef migrations add <MigrationName> -s ../Inkboard.API --environment Production
 ```
--s tells EF that Inkboard.API is the entry point where you can grab the 
-connection string and compile the project. 
 
--InitialCreate is the commit mesasge
+`-s` points EF to the startup project (Inkboard.API) so it can resolve the connection string and compile.
 
-
-# Run this after any changes are made to the schema
+## Applying migrations to the database
 
 ```bash
-cd Inkboard.Infra/
+cd server/Inkboard.Infra/
 dotnet ef database update -s ../Inkboard.API
 ```
 
+## Connection string
+
+Configured via `ConnectionStrings:WebApiDatabase` in `appsettings.json` or user-secrets.

@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-public class RegisterRequest
+namespace Inkboard.Application.Auth.DTO;
+
+public class RegisterRequestModel
 {
     [Required(ErrorMessage = "Username is required.")]
     [MinLength(3, ErrorMessage = "Username must be at least 3 characters.")]

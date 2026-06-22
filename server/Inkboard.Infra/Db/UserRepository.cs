@@ -1,18 +1,17 @@
-using System;
-using Inkboard.Domain;
+using Inkboard.Domain.Models;
+using Inkboard.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Inkboard.Infra;
+namespace Inkboard.Infra.Db;
 
 public class UserRepository : IUserRepository
 {
     private readonly AppDbContext _context;
 
     public UserRepository(AppDbContext context)
-    {   
+    {
         _context = context;
     }
-
 
     public async Task<User?> FindByEmailAsync(string email)
     {
@@ -30,7 +29,7 @@ public class UserRepository : IUserRepository
         // Note: this may look like it needs to be asynchronous, but it operatoes directly on RAM instead  of DB
         _context.Users.Add(user);
 
-        // Commit changes to DB 
+        // Commit changes to DB
         await _context.SaveChangesAsync();
     }
 
@@ -38,4 +37,5 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users.FirstOrDefaultAsync(user => user.Id == id);
     }
+
 }

@@ -1,6 +1,8 @@
 #nullable enable
 
-namespace Inkboard.Domain;
+using Inkboard.Domain.Models;
+
+namespace Inkboard.Domain.Repositories;
 
 public interface IUserRepository
 {

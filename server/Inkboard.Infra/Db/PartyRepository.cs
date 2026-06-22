@@ -1,0 +1,83 @@
+using Inkboard.Domain.Models;
+using Inkboard.Domain.Repositories;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+
+namespace Inkboard.Infra.Db
+{
+    public class PartyRepository : IPartyRepository
+    {
+        private readonly AppDbContext _context;
+
+        public PartyRepository(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task AddMemberAsync(PartyMember member)
+        {
+            _context.PartyMembers.Add(member);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task CreatePartyAsync(Party party)
+        {
+            _context.Parties.Add(party);
+            await _context.SaveChangesAsync(); 
+        }
+
+        public async Task DeletePartyAsync(Party party)
+        {
+            _context.Parties.Remove(party);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<Party?> GetByIdAsync(Guid partyId)
+        {
+            return await _context.Parties.FirstOrDefaultAsync(p => p.Id == partyId);
+        }
+
+        public async Task<Party?> GetByLeaderIdAsync(Guid leaderId)
+        {
+            return await _context.Parties.FirstOrDefaultAsync(p => p.LeaderId == leaderId);
+        }
+
+        public async Task<PartyMember?> GetMemberAsync(Guid partyId, Guid userId)
+        {
+            // note: PK of PartyMember = partyId + userId
+            return await _context.PartyMembers.FirstOrDefaultAsync(pm => pm.PartyId == partyId && pm.UserId == userId);
+        }
+
+        public async Task<int> GetMemberCountAsync(Guid partyId)
+        {
+            return await _context.PartyMembers.CountAsync(pm => pm.PartyId == partyId);
+        }
+
+        public async Task<PartyMember> GetOldestMemberAsync(Guid partyId)
+        {
+            return await _context
+                .PartyMembers.Where(pm => pm.PartyId == partyId && pm.Role == UserRole.Member)
+                .OrderBy(pm => pm.JoinedAt)
+                .FirstAsync();
+        }
+
+        public async Task<bool> IsUserInPartyAsync(Guid partyId, Guid userId)
+        {
+            return await _context.PartyMembers.AnyAsync(pm =>
+                pm.UserId == userId && pm.PartyId == partyId
+            );
+        }
+
+        public async Task RemoveMemberAsync(PartyMember member)
+        {
+           _context.PartyMembers.Remove(member);
+           await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdatePartyAsync(Party party)
+        {
+            _context.Parties.Update(party);
+            await _context.SaveChangesAsync();
+        }
+    }
+}
