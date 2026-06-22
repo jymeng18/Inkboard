@@ -5,4 +5,5 @@
   <Project Path="Inkboard.Application/Inkboard.Application.csproj" />
   <Project Path="Inkboard.Domain/Inkboard.Domain.csproj" />
   <Project Path="Inkboard.Infra/Inkboard.Infra.csproj" />
+  <Project Path="Inkboard.API.Tests/Inkboard.API.Tests.csproj" />
 </Solution>
