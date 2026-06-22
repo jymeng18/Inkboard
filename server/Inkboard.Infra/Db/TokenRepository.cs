@@ -33,7 +33,7 @@ public class TokenRepository : ITokenRepository
     {
         return await _context
             .RefreshTokens.Where(t =>
-                t.UserId == userId && !t.IsRevoked && t.ExpiresAt < DateTime.UtcNow
+                t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow
             )
             .ToListAsync();
     }
