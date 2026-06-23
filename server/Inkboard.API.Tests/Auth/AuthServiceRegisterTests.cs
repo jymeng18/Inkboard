@@ -108,7 +108,7 @@ public sealed class RegisterTests : TestBase
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
         Assert.IsTrue(result.ValidationErrors.ContainsKey("UserName"));
-        StringAssert.Contains(result.ValidationErrors["UserName"][0], "at least 3 characters");
+        Assert.Contains("at least 3 characters", result.ValidationErrors["UserName"][0]);
     }
 
     [TestMethod]
@@ -163,7 +163,7 @@ public sealed class RegisterTests : TestBase
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
         Assert.IsTrue(result.ValidationErrors.ContainsKey("Password"));
-        StringAssert.Contains(result.ValidationErrors["Password"][0], "at least 6 characters");
+        Assert.Contains("at least 6 characters", result.ValidationErrors["Password"][0]);
     }
 
     [TestMethod]

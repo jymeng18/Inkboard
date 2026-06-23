@@ -13,14 +13,14 @@ namespace Inkboard.Infra.Db
             _context = context;
         }
 
-        public async Task<PartyInvite?> GetByIdAsync(Guid inviteId)
+        public Task<PartyInvite?> GetByIdAsync(Guid inviteId)
         {
-            return await _context.PartyInvites.FirstOrDefaultAsync(pi => pi.Id == inviteId);
+            return _context.PartyInvites.FirstOrDefaultAsync(pi => pi.Id == inviteId);
         }
 
-        public async Task<PartyInvite?> GetPendingInviteAsync(Guid partyId, Guid invitedUserId)
+        public Task<PartyInvite?> GetPendingInviteAsync(Guid partyId, Guid invitedUserId)
         {
-            return await _context.PartyInvites.FirstOrDefaultAsync(pi =>
+            return _context.PartyInvites.FirstOrDefaultAsync(pi =>
                 pi.PartyId == partyId
                 && pi.InvitedUserId == invitedUserId
                 && pi.InviteStatus == InviteStatus.Pending

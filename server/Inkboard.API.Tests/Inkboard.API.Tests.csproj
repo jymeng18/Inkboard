@@ -5,6 +5,8 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);IDE0290</NoWarn>
+    <NoWarn>$(NoWarn);MSTEST0049</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

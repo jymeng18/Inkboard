@@ -59,7 +59,7 @@ public sealed class LoginTests : TestBase
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(regResult.UserId);
-        StringAssert.Contains(result.AccessToken!, regResult.UserId.ToString()!);
+        Assert.Contains(regResult.UserId.ToString()!, result.AccessToken!);
     }
 
     [TestMethod]

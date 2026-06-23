@@ -19,19 +19,19 @@ public class TokenRepository : ITokenRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteExpiredAsync()
+    public Task DeleteExpiredAsync()
     {
-        await _context.RefreshTokens.Where(t => t.ExpiresAt < DateTime.UtcNow).ExecuteDeleteAsync();
+        return _context.RefreshTokens.Where(t => t.ExpiresAt < DateTime.UtcNow).ExecuteDeleteAsync();
     }
 
-    public async Task<RefreshToken?> FindByTokenHashAsync(string tokenHash)
+    public Task<RefreshToken?> FindByTokenHashAsync(string tokenHash)
     {
-        return await _context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
+        return _context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
     }
 
-    public async Task<List<RefreshToken>> GetActiveByUserIdAsync(Guid userId)
+    public Task<List<RefreshToken>> GetActiveByUserIdAsync(Guid userId)
     {
-        return await _context
+        return _context
             .RefreshTokens.Where(t =>
                 t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow
             )
