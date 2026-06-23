@@ -95,46 +95,46 @@ Entity Framework Core with PostgreSQL (via Npgsql). The `AppDbContext` is the si
 
 ### Tables
 
-**Users** *(implemented)*
+**Users**
 Stores registered user accounts.
 Fields: Id (Guid), UserName, Email, PasswordHash, CreatedAt
 
-**RefreshTokens** *(implemented)*
+**RefreshTokens**
 Stores refresh tokens for JWT auth rotation.
 Fields: Id (Guid), TokenHash, ExpiresAt, CreatedAt, IsRevoked, UserId (FK → Users)
 
-**Parties** *(planned)*
+**Parties** 
 Represents a collaboration session group.
 Fields: Id, LeaderId (FK → Users), CanvasId (FK → Canvases), CreatedAt, Status
 
-**PartyMembers** *(planned)*
+**PartyMembers** 
 Junction table linking users to parties with roles.
 Fields: PartyId (FK), UserId (FK), Role (Leader | Member), JoinedAt
 
-**PartyInvites** *(planned)*
+**PartyInvites** 
 Tracks pending, accepted, and declined invitations.
 Fields: Id, PartyId (FK), InvitedByUserId (FK), InvitedUserId (FK), Status (Pending | Accepted | Declined), ExpiresAt
 
-**BlockList** *(planned)*
+**BlockList** 
 Tracks users blocked by a party leader.
 Fields: UserId (FK), BlockedUserId (FK), CreatedAt
 
-**Canvases** *(planned)*
+**Canvases** 
 Represents a shared drawing canvas.
 Fields: Id, PartyId (FK), Width, Height, SnapshotUrl, CreatedAt, LastModifiedAt
 
-**CanvasOperations** *(planned)*
+**CanvasOperations** 
 Append-only log of every drawing operation during a session.
 Fields: Id, CanvasId (FK), UserId (FK), Type, Data (JSON), Timestamp
 
 ### Relationships
 
 - A User has many RefreshTokens
-- A Party has one Canvas (planned)
-- A Party has one Leader (User) and up to 4 additional Members (planned)
-- A Canvas has many CanvasOperations (planned)
-- A User can have many PartyInvites (sent and received) (planned)
-- A User can block other Users via BlockList (planned)
+- A Party has one Canvas
+- A Party has one Leader (User) and up to 4 additional Members
+- A Canvas has many CanvasOperations
+- A User can have many PartyInvites (sent and received) 
+- A User can block other Users via BlockList 
 
 ---
 
@@ -157,7 +157,7 @@ Fields: Id, CanvasId (FK), UserId (FK), Type, Data (JSON), Timestamp
 4. Other clients render a labelled cursor for that user
 5. Cursor events are never persisted to the database
 
-### Canvas Snapshot *(planned)*
+### Canvas Snapshot 
 
 1. At session end, or on a scheduled interval, CanvasService consolidates all operations into a single image
 2. The image is persisted (to blob storage or database)
@@ -220,7 +220,7 @@ Modelled after Fortnite's party system.
 
 ---
 
-## Redis Usage *(planned)*
+## Redis Usage
 
 Redis serves two purposes.
 
