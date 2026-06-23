@@ -13,9 +13,9 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> FindByEmailAsync(string email)
+    public Task<User?> FindByEmailAsync(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(user => user.Email == email);
+        return _context.Users.FirstOrDefaultAsync(user => user.Email == email);
     }
 
     public async Task<bool> EmailExistsAsync(string email)
@@ -33,9 +33,9 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<User?> GetByIdAsync(Guid id)
+    public Task<User?> GetByIdAsync(Guid id)
     {
-        return await _context.Users.FirstOrDefaultAsync(user => user.Id == id);
+        return _context.Users.FirstOrDefaultAsync(user => user.Id == id);
     }
 
 }

@@ -17,7 +17,7 @@ public static class AuthEndpoint
                 {
                     return Results.Problem(detail: result.ErrorMessage, statusCode: 401); // 401 unauthorized
                 }
-                return Results.Ok(new { access_token = result.AccessToken });
+                return Results.Ok(new { access_token = result.AccessToken, refresh_token = result.RefreshToken });
             }
         );
 
@@ -48,7 +48,7 @@ public static class AuthEndpoint
                 var result = await authService.LogoutAsync(request.RefreshToken);
                 return Results.Ok(result);
             }
-        );
+        ).RequireAuthorization();
 
         endpoint.MapPost(
             "/api/auth/refresh",

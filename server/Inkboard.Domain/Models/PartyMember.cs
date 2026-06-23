@@ -7,25 +7,23 @@ namespace Inkboard.Domain.Models;
 [Table("Party_Members")]
 public class PartyMember
 {
-  public Guid PartyId { get; set; }
+    public Guid PartyId { get; set; }
 
-  public Guid UserId { get; set; }
+    public Guid UserId { get; set; }
 
-  public UserRole Role { get; set; }
+    public UserRole Role { get; set; }
 
-  public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
 
-  // nav props
-  public Party Party { get; set; }
+    // nav props
+    public Party Party { get; set; }
 
-  // FK(UserID) --> User.id
-  public User User { get; set; }
+    // FK(UserID) --> User.id
+    public User User { get; set; }
 }
 
 public enum UserRole
 {
-  Leader, 
-  Member
+    Leader,
+    Member,
 }
-
-

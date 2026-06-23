@@ -2,6 +2,7 @@
   <Folder Name="/Inkboard.API/">
     <Project Path="Inkboard.API/Inkboard.API.csproj" />
   </Folder>
+  <Project Path="Inkboard.Tests/Inkboard.Tests.csproj" />
   <Project Path="Inkboard.Application/Inkboard.Application.csproj" />
   <Project Path="Inkboard.Domain/Inkboard.Domain.csproj" />
   <Project Path="Inkboard.Infra/Inkboard.Infra.csproj" />

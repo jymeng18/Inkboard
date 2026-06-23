@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <NoWarn>$(NoWarn);IDE0290</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

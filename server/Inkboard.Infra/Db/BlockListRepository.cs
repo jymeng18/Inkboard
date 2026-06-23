@@ -13,16 +13,16 @@ public class BlockListRepository : IBlockListRepository
         _context = context;
     }
 
-    public async Task<bool> IsBlockedAsync(Guid userId, Guid blockedUserId)
+    public Task<bool> IsBlockedAsync(Guid userId, Guid blockedUserId)
     {
-        return await _context.BlockLists.AnyAsync(bl =>
+        return _context.BlockLists.AnyAsync(bl =>
             bl.UserId == userId && bl.BlockedUserId == blockedUserId
         );
     }
 
-    public async Task<BlockList?> GetBlockAsync(Guid userId, Guid blockedUserId)
+    public Task<BlockList?> GetBlockAsync(Guid userId, Guid blockedUserId)
     {
-        return await _context.BlockLists.FirstOrDefaultAsync(bl =>
+        return _context.BlockLists.FirstOrDefaultAsync(bl =>
             bl.UserId == userId && bl.BlockedUserId == blockedUserId
         );
     }

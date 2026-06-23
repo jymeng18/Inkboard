@@ -37,7 +37,7 @@ namespace Inkboard.Application.Services
 
         public async Task<Party> CreatePartyAsync(Guid leaderId)
         {
-            Party newParty = new Party
+            Party newParty = new()
             {
                 LeaderId = leaderId,
                 CanvasId = null,
@@ -46,7 +46,7 @@ namespace Inkboard.Application.Services
             await partyRepository.CreatePartyAsync(newParty);
 
             // add leader as a member
-            PartyMember partyMember = new PartyMember
+            PartyMember partyMember = new()
             {
                 PartyId = newParty.Id,
                 UserId = leaderId,
@@ -63,12 +63,8 @@ namespace Inkboard.Application.Services
             Guid invitedUserId
         )
         {
-            var party = await partyRepository.GetByIdAsync(partyId);
-
-            if (party is null)
-                throw new PartyNotFoundException("Party not found.");
-
-            if (party.LeaderId != invitedUserId)
+            var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
+            if (party.LeaderId != leaderId)
                 throw new PartyForbiddenException("Only leader can invite people.");
 
             if (party.LeaderId == invitedUserId)
@@ -95,7 +91,7 @@ namespace Inkboard.Application.Services
                 throw new PartyValidationException("An invite is already pending for this user.");
             }
 
-            PartyInvite partyInvite = new PartyInvite
+            PartyInvite partyInvite = new()
             {
                 PartyId = partyId,
                 InvitedByUserId = leaderId,
@@ -110,14 +106,8 @@ namespace Inkboard.Application.Services
 
         public async Task LeavePartyAsync(Guid partyId, Guid userId)
         {
-            var party = await partyRepository.GetByIdAsync(partyId);
-            if (party is null)
-                throw new PartyNotFoundException("Party not found.");
-
-            var member = await partyRepository.GetMemberAsync(partyId, userId);
-            if (member is null)
-                throw new PartyValidationException("You are not in a party.");
-
+            var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
+            var member = await partyRepository.GetMemberAsync(partyId, userId) ?? throw new PartyValidationException("You are not in a party.");
             var isLeader = party.LeaderId == userId;
 
             if (!isLeader)
@@ -146,10 +136,7 @@ namespace Inkboard.Application.Services
 
         public async Task RemoveMemberAsync(Guid partyId, Guid leaderId, Guid targetUserId)
         {
-            var party = await partyRepository.GetByIdAsync(partyId);
-            if (party is null)
-                throw new PartyNotFoundException("Party not found.");
-
+            var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
             if (party.LeaderId != leaderId)
                 throw new PartyForbiddenException("Only leader can kick members.");
 
@@ -160,10 +147,7 @@ namespace Inkboard.Application.Services
             if (!isMember)
                 throw new PartyValidationException("Member not in party.");
 
-            var memberToBeRemoved = await partyRepository.GetMemberAsync(partyId, targetUserId);
-            if (memberToBeRemoved is null)
-                throw new PartyValidationException("Member not found.");
-
+            var memberToBeRemoved = await partyRepository.GetMemberAsync(partyId, targetUserId) ?? throw new PartyValidationException("Member not found.");
             await partyRepository.RemoveMemberAsync(memberToBeRemoved);
             return;
         }
@@ -174,10 +158,7 @@ namespace Inkboard.Application.Services
             bool accepted
         )
         {
-            var invite = await partyInviteRepository.GetByIdAsync(inviteId);
-            if (invite is null)
-                throw new PartyNotFoundException("Invite not found.");
-
+            var invite = await partyInviteRepository.GetByIdAsync(inviteId) ?? throw new PartyNotFoundException("Invite not found.");
             if (invite.InvitedUserId != userId)
                 throw new PartyForbiddenException("This invite does not belong to you.");
 

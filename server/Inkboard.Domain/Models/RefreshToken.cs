@@ -6,22 +6,20 @@ namespace Inkboard.Domain.Models;
 [Table("RefreshTokens")]
 public class RefreshToken
 {
-  [Key]
-  public Guid Id { get; set; } = Guid.NewGuid();
-  
-  public string TokenHash { get; set; }= "";
+    [Key]
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-  public DateTime ExpiresAt { get; set; }
+    public string TokenHash { get; set; } = "";
 
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime ExpiresAt { get; set; }
 
-  public bool IsRevoked { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-  public Guid UserId { get; set; }
+    public bool IsRevoked { get; set; }
 
-  [ForeignKey("UserId")]
-  
-  // Navigation property, UserId (FK) refers to User.Id (PK of Users)
-  public User User { get; set; } = null!;
+    public Guid UserId { get; set; }
 
+    [ForeignKey("UserId")]
+    // Navigation property, UserId (FK) refers to User.Id (PK of Users)
+    public User User { get; set; } = null!;
 }
