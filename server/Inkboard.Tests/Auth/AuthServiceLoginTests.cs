@@ -4,7 +4,7 @@ using Inkboard.Infra.Db;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
-namespace Inkboard.API.Tests.Auth;
+namespace Inkboard.Tests.Auth;
 
 [TestClass]
 public sealed class LoginTests : TestBase

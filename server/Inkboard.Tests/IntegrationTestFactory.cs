@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
-namespace Inkboard.API.Tests;
+namespace Inkboard.Tests;
 
 public class IntegrationTestFactory : WebApplicationFactory<Program>
 {

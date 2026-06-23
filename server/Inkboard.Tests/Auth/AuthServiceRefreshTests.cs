@@ -3,7 +3,7 @@ using System.Text;
 using Inkboard.Application.Auth.DTO;
 using Microsoft.EntityFrameworkCore;
 
-namespace Inkboard.API.Tests.Auth;
+namespace Inkboard.Tests.Auth;
 
 [TestClass]
 public sealed class RefreshTests : TestBase

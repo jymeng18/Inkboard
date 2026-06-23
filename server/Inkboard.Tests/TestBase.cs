@@ -8,7 +8,7 @@ using Inkboard.Application;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
-namespace Inkboard.API.Tests;
+namespace Inkboard.Tests;
 
 public abstract class TestBase
 {
