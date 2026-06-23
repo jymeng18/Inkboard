@@ -64,7 +64,7 @@ namespace Inkboard.Application.Services
         )
         {
             var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
-            if (party.LeaderId != invitedUserId)
+            if (party.LeaderId != leaderId)
                 throw new PartyForbiddenException("Only leader can invite people.");
 
             if (party.LeaderId == invitedUserId)
