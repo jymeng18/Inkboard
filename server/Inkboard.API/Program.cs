@@ -1,13 +1,15 @@
 using FluentValidation;
 using Inkboard.API;
-using Inkboard.Application;
-using Inkboard.Infra.DependencyInjection;
+using Inkboard.API.Hubs;
+using Inkboard.API.Realtime;
 using Inkboard.API.Routes;
+using Inkboard.Application;
 using Inkboard.Application.Interfaces;
-using Inkboard.Infra.Auth;
-using Inkboard.Domain.Repositories;
-using Inkboard.Infra.Db;
 using Inkboard.Application.Services;
+using Inkboard.Domain.Repositories;
+using Inkboard.Infra.Auth;
+using Inkboard.Infra.Db;
+using Inkboard.Infra.DependencyInjection;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +19,7 @@ builder.Services.AddApiServices(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 
 builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -26,6 +29,7 @@ builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 builder.Services.AddScoped<IPartyInviteRepository, PartyInviteRepository>();
 builder.Services.AddScoped<IBlockListRepository, BlockListRepository>();
 builder.Services.AddScoped<IPartyService, PartyService>();
+builder.Services.AddScoped<IPartyNotifier, PartyNotifier>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
@@ -38,5 +42,7 @@ app.UseAuthorization();
 app.MapAuthEndpoint();
 app.MapUserEndpoint();
 app.MapPartyEndpoint();
+
+app.MapHub<PartyHub>("hubs/party");
 
 app.Run();

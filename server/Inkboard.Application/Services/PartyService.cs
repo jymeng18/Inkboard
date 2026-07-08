@@ -9,16 +9,19 @@ namespace Inkboard.Application.Services
         private readonly IPartyRepository partyRepository;
         private readonly IPartyInviteRepository partyInviteRepository;
         private readonly IBlockListRepository blockListRepository;
+        private readonly IPartyNotifier partyNotifier;
 
         public PartyService(
             IPartyRepository partyRepository,
             IPartyInviteRepository partyInviteRepository,
-            IBlockListRepository blockListRepository
+            IBlockListRepository blockListRepository,
+            IPartyNotifier partyNotifier
         )
         {
             this.partyRepository = partyRepository;
             this.partyInviteRepository = partyInviteRepository;
             this.blockListRepository = blockListRepository;
+            this.partyNotifier = partyNotifier;
         }
 
         public async Task BlockUserAsync(Guid leaderId, Guid targetUserId)
@@ -63,7 +66,9 @@ namespace Inkboard.Application.Services
             Guid invitedUserId
         )
         {
-            var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
+            var party =
+                await partyRepository.GetByIdAsync(partyId)
+                ?? throw new PartyNotFoundException("Party not found.");
             if (party.LeaderId != leaderId)
                 throw new PartyForbiddenException("Only leader can invite people.");
 
@@ -101,13 +106,19 @@ namespace Inkboard.Application.Services
             };
 
             await partyInviteRepository.CreateInviteAsync(partyInvite);
+            await partyNotifier.NotifyInvite(invitedUserId, partyInvite);
+
             return partyInvite;
         }
 
         public async Task LeavePartyAsync(Guid partyId, Guid userId)
         {
-            var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
-            var member = await partyRepository.GetMemberAsync(partyId, userId) ?? throw new PartyValidationException("You are not in a party.");
+            var party =
+                await partyRepository.GetByIdAsync(partyId)
+                ?? throw new PartyNotFoundException("Party not found.");
+            var member =
+                await partyRepository.GetMemberAsync(partyId, userId)
+                ?? throw new PartyValidationException("You are not in a party.");
             var isLeader = party.LeaderId == userId;
 
             if (!isLeader)
@@ -132,11 +143,15 @@ namespace Inkboard.Application.Services
 
             await partyRepository.UpdatePartyAsync(party);
             await partyRepository.RemoveMemberAsync(member);
+
+            await partyNotifier.NotifyLeadershipTransferred(newLeader.UserId, partyId);
         }
 
         public async Task RemoveMemberAsync(Guid partyId, Guid leaderId, Guid targetUserId)
         {
-            var party = await partyRepository.GetByIdAsync(partyId) ?? throw new PartyNotFoundException("Party not found.");
+            var party =
+                await partyRepository.GetByIdAsync(partyId)
+                ?? throw new PartyNotFoundException("Party not found.");
             if (party.LeaderId != leaderId)
                 throw new PartyForbiddenException("Only leader can kick members.");
 
@@ -147,8 +162,12 @@ namespace Inkboard.Application.Services
             if (!isMember)
                 throw new PartyValidationException("Member not in party.");
 
-            var memberToBeRemoved = await partyRepository.GetMemberAsync(partyId, targetUserId) ?? throw new PartyValidationException("Member not found.");
+            var memberToBeRemoved =
+                await partyRepository.GetMemberAsync(partyId, targetUserId)
+                ?? throw new PartyValidationException("Member not found.");
+
             await partyRepository.RemoveMemberAsync(memberToBeRemoved);
+            await partyNotifier.NotifyKick(memberToBeRemoved.UserId, partyId);
             return;
         }
 
@@ -158,7 +177,9 @@ namespace Inkboard.Application.Services
             bool accepted
         )
         {
-            var invite = await partyInviteRepository.GetByIdAsync(inviteId) ?? throw new PartyNotFoundException("Invite not found.");
+            var invite =
+                await partyInviteRepository.GetByIdAsync(inviteId)
+                ?? throw new PartyNotFoundException("Invite not found.");
             if (invite.InvitedUserId != userId)
                 throw new PartyForbiddenException("This invite does not belong to you.");
 
@@ -175,7 +196,7 @@ namespace Inkboard.Application.Services
                 return invite;
             }
 
-            // re-check block list — leader may have blocked this user since the invite was sent
+            // * re-check block list leader may have blocked this user since the invite was sent
             var isBlocked = await blockListRepository.IsBlockedAsync(
                 invite.InvitedByUserId,
                 userId
@@ -183,7 +204,7 @@ namespace Inkboard.Application.Services
             if (isBlocked)
                 throw new PartyValidationException("You are no longer able to join this party.");
 
-            // re-check membership cap — party may have filled up since the invite was sent
+            // * re-check membership cap party may have filled up since the invite was sent
             var memberCount = await partyRepository.GetMemberCountAsync(invite.PartyId);
             if (memberCount >= 5)
                 throw new PartyValidationException("Party is full.");
@@ -200,6 +221,7 @@ namespace Inkboard.Application.Services
             invite.InviteStatus = InviteStatus.Accepted;
             await partyInviteRepository.UpdateInviteAsync(invite);
 
+            await partyNotifier.NotifyMemberJoined(invite.PartyId, newMember);
             return invite;
         }
     }
