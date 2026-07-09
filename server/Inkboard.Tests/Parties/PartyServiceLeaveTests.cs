@@ -10,33 +10,29 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_NonLeaderLeaves_RemovedFromParty_PartyRemains()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var member = await SeedUserAsync(context, "member");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var invite = await service.InviteUserAsync(party.Id, leader.Id, member.Id);
-        await service.RespondToUserInviteAsync(invite.Id, member.Id, true);
+        var leader = await SeedUserAsync(Context, "leader");
+        var member = await SeedUserAsync(Context, "member");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
+        await Service.RespondToUserInviteAsync(invite.Id, member.Id, true);
 
-        await service.LeavePartyAsync(party.Id, member.Id);
+        await Service.LeavePartyAsync(party.Id, member.Id);
 
-        var isMember = await context.PartyMembers
+        var isMember = await Context.PartyMembers
             .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == member.Id);
         Assert.IsFalse(isMember);
 
-        var partyExists = await context.Parties.AnyAsync(p => p.Id == party.Id);
+        var partyExists = await Context.Parties.AnyAsync(p => p.Id == party.Id);
         Assert.IsTrue(partyExists);
     }
 
     [TestMethod]
     public async Task LeaveParty_PartyNotFound_ThrowsPartyNotFoundException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var user = await SeedUserAsync(context, "user");
+        var user = await SeedUserAsync(Context, "user");
 
         var ex = await AssertThrowsAsync<PartyNotFoundException>(() =>
-            service.LeavePartyAsync(Guid.NewGuid(), user.Id));
+            Service.LeavePartyAsync(Guid.NewGuid(), user.Id));
 
         Assert.AreEqual("Party not found.", ex.Message);
     }
@@ -44,14 +40,12 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_NotAMember_ThrowsPartyValidationException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var nonMember = await SeedUserAsync(context, "nonMember");
-        var party = await service.CreatePartyAsync(leader.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var nonMember = await SeedUserAsync(Context, "nonMember");
+        var party = await Service.CreatePartyAsync(leader.Id);
 
         var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            service.LeavePartyAsync(party.Id, nonMember.Id));
+            Service.LeavePartyAsync(party.Id, nonMember.Id));
 
         Assert.AreEqual("You are not in a party.", ex.Message);
     }
@@ -59,17 +53,15 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_SoleMemberLeaves_PartyDissolved()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var party = await service.CreatePartyAsync(leader.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var party = await Service.CreatePartyAsync(leader.Id);
 
-        await service.LeavePartyAsync(party.Id, leader.Id);
+        await Service.LeavePartyAsync(party.Id, leader.Id);
 
-        var deletedParty = await context.Parties.FindAsync(party.Id);
+        var deletedParty = await Context.Parties.FindAsync(party.Id);
         Assert.IsNull(deletedParty);
 
-        var members = await context.PartyMembers
+        var members = await Context.PartyMembers
             .Where(pm => pm.PartyId == party.Id).ToListAsync();
         Assert.IsEmpty(members);
     }
@@ -77,29 +69,27 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_LeaderLeavesWithMembers_TransfersLeadershipToOldestMember()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var member1 = await SeedUserAsync(context, "member1");
-        var member2 = await SeedUserAsync(context, "member2");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var inv1 = await service.InviteUserAsync(party.Id, leader.Id, member1.Id);
-        await service.RespondToUserInviteAsync(inv1.Id, member1.Id, true);
-        var inv2 = await service.InviteUserAsync(party.Id, leader.Id, member2.Id);
-        await service.RespondToUserInviteAsync(inv2.Id, member2.Id, true);
+        var leader = await SeedUserAsync(Context, "leader");
+        var member1 = await SeedUserAsync(Context, "member1");
+        var member2 = await SeedUserAsync(Context, "member2");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var inv1 = await Service.InviteUserAsync(party.Id, leader.Id, member1.Id);
+        await Service.RespondToUserInviteAsync(inv1.Id, member1.Id, true);
+        var inv2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(inv2.Id, member2.Id, true);
 
-        await service.LeavePartyAsync(party.Id, leader.Id);
+        await Service.LeavePartyAsync(party.Id, leader.Id);
 
-        var updatedParty = await context.Parties.FindAsync(party.Id);
+        var updatedParty = await Context.Parties.FindAsync(party.Id);
         Assert.IsNotNull(updatedParty);
         Assert.AreEqual(member1.Id, updatedParty.LeaderId);
 
-        var newLeaderMember = await context.PartyMembers
+        var newLeaderMember = await Context.PartyMembers
             .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == member1.Id);
         Assert.IsNotNull(newLeaderMember);
         Assert.AreEqual(UserRole.Leader, newLeaderMember.Role);
 
-        var oldLeaderGone = await context.PartyMembers
+        var oldLeaderGone = await Context.PartyMembers
             .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
         Assert.IsFalse(oldLeaderGone);
     }

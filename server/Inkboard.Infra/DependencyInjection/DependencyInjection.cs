@@ -59,7 +59,7 @@ public static class DependencyInjection
                     ValidIssuer = config["JwtConfig:Issuer"],
                     ValidAudience = config["JwtConfig:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(config["JwtConfig:Jwt:Key"])
+                        Encoding.UTF8.GetBytes(config["JwtConfig:Jwt:Key"]!)
                     ),
                     ValidateIssuer = true,
                     ValidateAudience = true,

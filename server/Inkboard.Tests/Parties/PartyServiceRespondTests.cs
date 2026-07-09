@@ -10,18 +10,16 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_Accept_AddsMemberAndMarksInviteAccepted()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var invited = await SeedUserAsync(context, "invited");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var invite = await service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var invite = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
 
-        var result = await service.RespondToUserInviteAsync(invite.Id, invited.Id, true);
+        var result = await Service.RespondToUserInviteAsync(invite.Id, invited.Id, true);
 
         Assert.AreEqual(InviteStatus.Accepted, result.InviteStatus);
 
-        var member = await context.PartyMembers
+        var member = await Context.PartyMembers
             .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
         Assert.IsNotNull(member);
         Assert.AreEqual(UserRole.Member, member.Role);
@@ -30,18 +28,16 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_Decline_MarksInviteDeclined_UserNotAdded()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var invited = await SeedUserAsync(context, "invited");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var invite = await service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var invite = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
 
-        var result = await service.RespondToUserInviteAsync(invite.Id, invited.Id, false);
+        var result = await Service.RespondToUserInviteAsync(invite.Id, invited.Id, false);
 
         Assert.AreEqual(InviteStatus.Declined, result.InviteStatus);
 
-        var member = await context.PartyMembers
+        var member = await Context.PartyMembers
             .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
         Assert.IsNull(member);
     }
@@ -49,12 +45,10 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_InviteNotFound_ThrowsPartyNotFoundException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var user = await SeedUserAsync(context, "user");
+        var user = await SeedUserAsync(Context, "user");
 
         var ex = await AssertThrowsAsync<PartyNotFoundException>(() =>
-            service.RespondToUserInviteAsync(Guid.NewGuid(), user.Id, true));
+            Service.RespondToUserInviteAsync(Guid.NewGuid(), user.Id, true));
 
         Assert.AreEqual("Invite not found.", ex.Message);
     }
@@ -62,16 +56,14 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_NotTheInvitedUser_ThrowsPartyForbiddenException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var invited = await SeedUserAsync(context, "invited");
-        var other = await SeedUserAsync(context, "other");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var invite = await service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var other = await SeedUserAsync(Context, "other");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var invite = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
 
         var ex = await AssertThrowsAsync<PartyForbiddenException>(() =>
-            service.RespondToUserInviteAsync(invite.Id, other.Id, true));
+            Service.RespondToUserInviteAsync(invite.Id, other.Id, true));
 
         Assert.AreEqual("This invite does not belong to you.", ex.Message);
     }
@@ -79,16 +71,14 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_AlreadyResponded_ThrowsPartyValidationException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var invited = await SeedUserAsync(context, "invited");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var invite = await service.InviteUserAsync(party.Id, leader.Id, invited.Id);
-        await service.RespondToUserInviteAsync(invite.Id, invited.Id, true);
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var invite = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        await Service.RespondToUserInviteAsync(invite.Id, invited.Id, true);
 
         var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            service.RespondToUserInviteAsync(invite.Id, invited.Id, true));
+            Service.RespondToUserInviteAsync(invite.Id, invited.Id, true));
 
         Assert.AreEqual("This invite has already been responded to.", ex.Message);
     }
@@ -96,11 +86,9 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_ExpiredInvite_ThrowsPartyValidationException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var invited = await SeedUserAsync(context, "invited");
-        var party = await service.CreatePartyAsync(leader.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var party = await Service.CreatePartyAsync(leader.Id);
 
         var invite = new PartyInvite
         {
@@ -110,11 +98,11 @@ public sealed class PartyServiceRespondTests : PartyTestBase
             InviteStatus = InviteStatus.Pending,
             ExpiresAt = DateTime.UtcNow.AddMinutes(-1),
         };
-        context.PartyInvites.Add(invite);
-        await context.SaveChangesAsync();
+        Context.PartyInvites.Add(invite);
+        await Context.SaveChangesAsync();
 
         var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            service.RespondToUserInviteAsync(invite.Id, invited.Id, true));
+            Service.RespondToUserInviteAsync(invite.Id, invited.Id, true));
 
         Assert.AreEqual("This invite has expired.", ex.Message);
     }
@@ -122,17 +110,15 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_InviterBlockedInviteeAfterSending_ThrowsPartyValidationException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var invited = await SeedUserAsync(context, "invited");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var invite = await service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var invite = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
 
-        await service.BlockUserAsync(leader.Id, invited.Id);
+        await Service.BlockUserAsync(leader.Id, invited.Id);
 
         var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            service.RespondToUserInviteAsync(invite.Id, invited.Id, true));
+            Service.RespondToUserInviteAsync(invite.Id, invited.Id, true));
 
         Assert.AreEqual("You are no longer able to join this party.", ex.Message);
     }
@@ -140,22 +126,20 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     [TestMethod]
     public async Task RespondToInvite_PartyFilledWhileInvitePending_ThrowsPartyValidationException()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
-        var delayed = await SeedUserAsync(context, "delayed");
-        var party = await service.CreatePartyAsync(leader.Id);
-        var delayedInvite = await service.InviteUserAsync(party.Id, leader.Id, delayed.Id);
+        var leader = await SeedUserAsync(Context, "leader");
+        var delayed = await SeedUserAsync(Context, "delayed");
+        var party = await Service.CreatePartyAsync(leader.Id);
+        var delayedInvite = await Service.InviteUserAsync(party.Id, leader.Id, delayed.Id);
 
         for (int i = 0; i < 4; i++)
         {
-            var m = await SeedUserAsync(context, $"member{i}");
-            var inv = await service.InviteUserAsync(party.Id, leader.Id, m.Id);
-            await service.RespondToUserInviteAsync(inv.Id, m.Id, true);
+            var m = await SeedUserAsync(Context, $"member{i}");
+            var inv = await Service.InviteUserAsync(party.Id, leader.Id, m.Id);
+            await Service.RespondToUserInviteAsync(inv.Id, m.Id, true);
         }
 
         var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            service.RespondToUserInviteAsync(delayedInvite.Id, delayed.Id, true));
+            Service.RespondToUserInviteAsync(delayedInvite.Id, delayed.Id, true));
 
         Assert.AreEqual("Party is full.", ex.Message);
     }
