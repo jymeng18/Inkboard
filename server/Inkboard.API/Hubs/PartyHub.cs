@@ -1,5 +1,6 @@
 using Inkboard.Domain.Repositories;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Inkboard.API.Hubs;
 
@@ -14,7 +15,7 @@ public sealed class PartyHub : Hub<IPartyHubClient>
 
     public override async Task OnConnectedAsync()
     {
-        var userIdStr = Context.User?.FindFirst("sub")?.Value;
+        var userIdStr = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (!Guid.TryParse(userIdStr, out var userId))
         {
             Context.Abort();
@@ -38,7 +39,7 @@ public sealed class PartyHub : Hub<IPartyHubClient>
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userIdStr = Context.User?.FindFirst("sub")?.Value;
+        var userIdStr = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         if (!Guid.TryParse(userIdStr, out var userId))
         {
             Context.Abort();
