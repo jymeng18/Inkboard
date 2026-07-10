@@ -1,3 +1,5 @@
+#nullable enable
+
 using Inkboard.Domain.Models;
 
 namespace Inkboard.Domain.Repositories

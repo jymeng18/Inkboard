@@ -14,6 +14,6 @@
 - [ ] Polish — reconnection, cursors, undo/redo, offline state
 
 # Codebase Fixes/Improvements
-- [ ] Change custom ClaimsTypes mapping to standard default NameIdentifier
+- [x] Change custom ClaimsTypes mapping to standard default NameIdentifier
 - [ ] Currently PartyHub does not authroize user before allowing data to be pushed -> will need to configure auth for socket connection, as it reads bearer tokens differently then the rest api endpoints 
 - [ ] Refactor PartyEndpoint.cs, excessive try catch exceptions
