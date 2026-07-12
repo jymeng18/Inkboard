@@ -21,6 +21,8 @@ builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
 
+// builder.Services.AddSingleton<IuserIdPr>();
+
 builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -43,6 +45,6 @@ app.MapAuthEndpoint();
 app.MapUserEndpoint();
 app.MapPartyEndpoint();
 
-app.MapHub<PartyHub>("hubs/party");
+app.MapHub<PartyHub>("/hubs/party");
 
 app.Run();

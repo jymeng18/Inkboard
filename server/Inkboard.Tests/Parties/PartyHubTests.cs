@@ -1,11 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.WebSockets;
 using System.Text.Json;
 using Inkboard.Domain.Models;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Inkboard.Tests.Parties;
@@ -99,6 +103,21 @@ public sealed class PartyHubTests
                 {
                     options.AccessTokenProvider = () => Task.FromResult<string?>(accessToken);
                     options.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
+                    options.WebSocketFactory = (context, ct) =>
+                    {
+                        var uriWithToken = QueryHelpers.AddQueryString(
+                            context.Uri.ToString(),
+                            "access_token",
+                            accessToken
+                        );
+
+                        return new ValueTask<WebSocket>(
+                            _factory
+                                .Server.CreateWebSocketClient()
+                                .ConnectAsync(new Uri(uriWithToken), ct)
+                        );
+                    };
+                    options.Transports = HttpTransportType.WebSockets;
                 }
             )
             .Build();
