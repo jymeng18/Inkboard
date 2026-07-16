@@ -6,5 +6,5 @@ More detailed Documentation can be found in docs/
 
 ## Database Entity-Relationship Diagram ( May change dpending on my mood)
 <p align="center">
-  <img src="./docs/er_diagram.png" alt="Project Screenshot" width="1100">
+  <img src="./assets/er_diagram.png" alt="Project Screenshot" width="1100">
 </p>

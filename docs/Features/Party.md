@@ -1,6 +1,6 @@
 # Party System
 
-Inkboard organises users into **parties** (up to 5 people) for collaborative canvas sessions. Modelled after Fortnite's party system — a leader controls membership, invites expire, and leadership transfers automatically when the leader leaves.
+Inkboard organises users into Parties (up to 5 people) for collaborative canvas sessions. Modelled after Fortnite's and most co-op games' party system — a leader controls membership, invites expire, and leadership transfers automatically when the leader leaves.
 
 ---
 
@@ -11,7 +11,7 @@ Inkboard organises users into **parties** (up to 5 people) for collaborative can
 │       Party         │     │      PartyMember         │
 ├─────────────────────┤     ├──────────────────────────┤
 │ Id (Guid) [PK]      │     │ PartyId (Guid) [PK, FK]  │
-│ LeaderId (Guid) [FK]│────>│ UserId (Guid) [PK, FK]   │
+│ LeaderId (Guid) [FK]│     │ UserId (Guid) [PK, FK]   │
 │ CanvasId (Guid?)    │     │ Role (Leader | Member)   │
 │ CreatedAt (DateTime)│     │ JoinedAt (DateTime)      │
 └─────────────────────┘     └──────────────────────────┘
@@ -20,13 +20,24 @@ Inkboard organises users into **parties** (up to 5 people) for collaborative can
 │     PartyInvite      │    │        BlockList         │
 ├──────────────────────┤    ├──────────────────────────┤
 │ Id (Guid) [PK]       │    │ UserId (Guid) [PK, FK]   │
-│ PartyId (Guid) [FK]  │    │ BlockedUserId (Guid)[PK] │
+│ PartyId (Guid) [FK]  │    │ BlockedUserId (Guid)[FK] │
 │ InvitedByUserId (FK) │    │ CreatedAt (DateTime)     │
 │ InvitedUserId (FK)   │    └──────────────────────────┘
 │ InviteStatus (enum)  │
 │ CreatedAt (DateTime) │
 │ ExpiresAt (DateTime) │
 └──────────────────────┘
+
+Party.LeaderId Ref. PartyMember.UserId
+Party.CanvasId Ref. Canvas.Id
+
+PartyInvite.InvitedUserId Ref. User.Id
+PartyInvite.InvitedByUserId Ref. User.Id
+PartyInvite.PartyId Ref. Party.id
+
+BlockList.UserId Ref. User.Id
+BlockList.BlockedUserId Ref. User.Id
+
 ```
 
 ### Party
@@ -37,20 +48,15 @@ Each party has exactly one leader.
 
 Junction table with a composite primary key `(PartyId, UserId)`. Two roles:
 
-| Role | Description |
-|------|-------------|
-| `Leader` | Created the party. Full control over membership. |
-| `Member` | Accepted an invite. Can draw and leave. |
+Leader: User who created party
+Member: User who was invited to join the party
 
 ### PartyInvite 
 
 Tracks the lifecycle of an invitation. Three statuses:
-
-| Status | Meaning |
-|--------|---------|
-| `Pending` | Awaiting a response from the invited user. |
-| `Accepted` | Invited user joined the party. |
-| `Declined` | Invited user declined. |
+- Pending
+- Accepted
+- Declined
 
 Invites **expire 5 minutes** after creation
 
