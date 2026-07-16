@@ -80,5 +80,13 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(bl => bl.BlockedUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Party.    
+        modelBuilder
+            .Entity<Party>()
+            .HasOne(p => p.Canvas)
+            .WithMany()
+            .HasForeignKey(p => p.CanvasId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

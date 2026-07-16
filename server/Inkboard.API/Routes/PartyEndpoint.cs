@@ -25,7 +25,8 @@ namespace Inkboard.API.Routes
                     {
                         // pulling out a userId,
                         var leaderId = user.GetUserId();
-                        if(leaderId == Guid.Empty) return Results.Unauthorized();
+                        if (leaderId == Guid.Empty)
+                            return Results.Unauthorized();
 
                         var party = await partyService.CreatePartyAsync(leaderId);
 
@@ -42,7 +43,8 @@ namespace Inkboard.API.Routes
                     {
                         // pulling out a userId,
                         var userId = user.GetUserId();
-                        if(userId == Guid.Empty) return Results.Unauthorized();
+                        if (userId == Guid.Empty)
+                            return Results.Unauthorized();
 
                         try
                         {
