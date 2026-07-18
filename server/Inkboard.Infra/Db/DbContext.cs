@@ -81,12 +81,31 @@ public class AppDbContext : DbContext
             .HasForeignKey(bl => bl.BlockedUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Party.    
+        // Party.
         modelBuilder
             .Entity<Party>()
             .HasOne(p => p.Canvas)
             .WithMany()
             .HasForeignKey(p => p.CanvasId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<CanvasOperation>()
+            .Property(co => co.OperationData)
+            .HasColumnType("jsonb");
+
+        modelBuilder
+            .Entity<CanvasOperation>()
+            .HasOne(co => co.Canvas)
+            .WithMany()
+            .HasForeignKey(co => co.CanvasId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<CanvasOperation>()
+            .HasOne(co => co.User)
+            .WithMany()
+            .HasForeignKey(co => co.UserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
