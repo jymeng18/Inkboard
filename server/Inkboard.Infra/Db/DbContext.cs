@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<PartyMember> PartyMembers { get; set; }
     public DbSet<PartyInvite> PartyInvites { get; set; }
     public DbSet<BlockList> BlockLists { get; set; }
+    public DbSet<Canvas> Canvas { get; set; }
+    public DbSet<CanvasOperation> CanvasOperations { get; set; }
 
     // area for db constraints/restrictions, etc..
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -107,5 +109,12 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(co => co.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Canvas>()
+            .HasOne(c => c.Owner)
+            .WithMany()
+            .HasForeignKey(c => c.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

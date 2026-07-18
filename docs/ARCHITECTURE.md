@@ -121,7 +121,7 @@ Fields: UserId (FK), BlockedUserId (FK), CreatedAt
 
 **Canvases** 
 Represents a shared drawing canvas.
-Fields: Id, Width, Height, SnapshotUrl, CreatedAt, LastModifiedAt
+Fields: Id, OwnerId Width, Height, SnapshotUrl, CreatedAt, LastModifiedAt
 
 **CanvasOperations** 
 Append-only log of every drawing operation during a session.

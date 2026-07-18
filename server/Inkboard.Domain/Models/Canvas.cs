@@ -9,6 +9,8 @@ public class Canvas
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    public Guid OwnerId { get; set; }
+
     public int Width { get; set; }
 
     public int Height { get; set; }
@@ -20,11 +22,5 @@ public class Canvas
     public DateTime LastModifiedAt { get; set; }
 
     // nav props
-
-    /// <summary>
-    /// Each active Party has an active Canvas mapped to it
-    /// 1-to-1 relationship, upon Party being dissolved, Canvas closes, Canvas.PartyId should be set to null
-    /// and when a user opens it back up, Canvas.PartyId should be set to the new PartyId
-    /// </summary>
-    // public Party Party { get; set; } = null!;
+    public User Owner { get; set; } = null!;
 }
