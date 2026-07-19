@@ -13,19 +13,21 @@ public class CanvasRepository : ICanvasRepository
         _context = context;
     }
 
-    public Task CreateCanvasAsync(Canvas canvas)
+    public async Task CreateCanvasAsync(Canvas canvas)
     {
-        throw new NotImplementedException();
+        _context.Canvas.Add(canvas);
+        await _context.SaveChangesAsync();
     }
 
-    public Task DeleteCanvasAsync(Canvas canvas)
+    public async Task DeleteCanvasAsync(Canvas canvas)
     {
-        throw new NotImplementedException();
+        _context.Canvas.Remove(canvas);
+        await _context.SaveChangesAsync();
     }
 
     public Task<Canvas?> GetCanvasByIdAsync(Guid canvasId)
     {
-        throw new NotImplementedException();
+        return _context.Canvas.FirstOrDefaultAsync(c => c.Id == canvasId);
     }
 
     // ! Keep for now, prolly wont need it
@@ -34,14 +36,14 @@ public class CanvasRepository : ICanvasRepository
         throw new NotImplementedException();
     }
 
-    public async Task<List<Canvas>> GetCanvasesByUserIdAsync(Guid userId)
+    public Task<List<Canvas>> GetCanvasesByUserIdAsync(Guid userId)
     {
-        var userCanvases = await _context.Canvas.Where(c => c.OwnerId == userId).ToListAsync();
-        return userCanvases;
+        return _context.Canvas.Where(c => c.OwnerId == userId).ToListAsync();
     }
 
-    public Task UpdateCanvasAsync(Canvas canvas)
+    public async Task UpdateCanvasAsync(Canvas canvas)
     {
-        throw new NotImplementedException();
+        _context.Canvas.Update(canvas);
+        await _context.SaveChangesAsync();
     }
 }

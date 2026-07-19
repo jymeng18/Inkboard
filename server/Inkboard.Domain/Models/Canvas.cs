@@ -11,10 +11,6 @@ public class Canvas
 
     public Guid OwnerId { get; set; }
 
-    public int Width { get; set; }
-
-    public int Height { get; set; }
-
     public string SnapshotURL { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
