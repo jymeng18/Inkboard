@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfraServices(builder.Configuration, builder.Environment);
 builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddAzureServices(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();

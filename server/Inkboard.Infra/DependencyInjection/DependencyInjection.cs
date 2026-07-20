@@ -1,7 +1,9 @@
 using System.Text;
+using Azure.Identity;
 using Inkboard.Infra.Db;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,14 +21,18 @@ public static class DependencyInjection
     {
         if (env.IsDevelopment())
         {
-            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("InkboardDb"));
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase("InkboardDb")
+            );
         }
         else
         {
             var connectionString = config.GetConnectionString("WebApiDatabase");
             if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new InvalidOperationException("Connection string 'WebApiDatabase' not found.");
+                throw new InvalidOperationException(
+                    "Connection string 'WebApiDatabase' not found."
+                );
             }
 
             services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
@@ -34,7 +40,6 @@ public static class DependencyInjection
 
         return services;
     }
-
 
     public static IServiceCollection AddApiServices(
         this IServiceCollection services,
@@ -75,8 +80,7 @@ public static class DependencyInjection
 
                         var path = context.HttpContext.Request.Path;
                         if (
-                            !string.IsNullOrEmpty(accessToken)
-                            && (path.StartsWithSegments("/hubs"))
+                            !string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs"))
                         )
                         {
                             context.Token = accessToken;
@@ -88,5 +92,30 @@ public static class DependencyInjection
 
         // dont ask questions, just know this is always needed
         return services;
+    }
+
+    public static IServiceCollection AddAzureServices(
+        this IServiceCollection services,
+        IConfiguration config
+    )
+    {
+        string blobUriString =
+            config["AzureStorage:BlobUri"]
+            ?? throw new InvalidOperationException("BlobUri configuration is missing.");
+
+        services.AddAzureClients(async clientBuilder =>
+        {
+            clientBuilder.AddBlobServiceClient(new Uri(blobUriString));
+            DefaultAzureCredential credential = new();
+            clientBuilder.UseCredential(credential);
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddRedisServices(this IServiceCollection services)
+    {
+        // TODO: Add Redis service/setup here
+        return null!;
     }
 }
