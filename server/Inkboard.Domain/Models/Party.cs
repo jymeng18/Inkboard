@@ -19,4 +19,10 @@ public class Party
 
     // Navigation props
     public User Leader { get; set; } = null!;
+
+    /// <summary>
+    /// Each active party has its Canvas, if a user closes and opens multiple parties all 
+    /// on the same Canvas, this forms an N-to-1 relationship
+    /// </summary>
+    public Canvas Canvas { get; set; } = null!;
 }

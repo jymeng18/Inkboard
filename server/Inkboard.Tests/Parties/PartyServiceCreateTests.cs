@@ -1,3 +1,4 @@
+using Inkboard.Application.Common;
 using Inkboard.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,17 +10,16 @@ public sealed class PartyServiceCreateTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_CreatesParty_LeaderIsMemberWithLeaderRole()
     {
-        var context = CreateDbContext();
-        var service = CreatePartyService(context);
-        var leader = await SeedUserAsync(context, "leader");
+        var leader = await SeedUserAsync(Context, "leader");
 
-        var party = await service.CreatePartyAsync(leader.Id);
+        var result = await Service.CreatePartyAsync(leader.Id);
+        Assert.IsTrue(result.IsSuccess);
+        var party = result.Data!;
 
-        Assert.IsNotNull(party);
         Assert.AreEqual(leader.Id, party.LeaderId);
         Assert.AreNotEqual(Guid.Empty, party.Id);
 
-        var member = await context.PartyMembers
+        var member = await Context.PartyMembers
             .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
         Assert.IsNotNull(member);
         Assert.AreEqual(UserRole.Leader, member.Role);

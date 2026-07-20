@@ -1,3 +1,4 @@
+#nullable enable
 
 using Inkboard.Domain.Models;
 

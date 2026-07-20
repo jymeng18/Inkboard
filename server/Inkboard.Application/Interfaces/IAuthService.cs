@@ -1,3 +1,5 @@
+#nullable enable
+
 using Inkboard.Application.Auth.DTO;
 namespace Inkboard.Application.Interfaces;
 

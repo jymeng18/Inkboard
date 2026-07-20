@@ -1,3 +1,5 @@
+#nullable enable
+
 using Inkboard.Domain.Models;
 
 namespace Inkboard.Domain.Repositories
@@ -10,6 +12,7 @@ namespace Inkboard.Domain.Repositories
         Task<bool> IsUserInPartyAsync(Guid partyId, Guid userId);
         Task<int> GetMemberCountAsync(Guid partyId);
         Task<PartyMember?> GetMemberAsync(Guid partyId, Guid userId);
+        Task<Party?> GetActivePartyForUserAsync(Guid userId);
 
         // Note: might remove this, initial plan is to track this in case party leader leaves, 
         // where leader position transfers to oldest memeber in the party

@@ -34,7 +34,7 @@ public class PartyInvite
 
 public enum InviteStatus
 {
-  Pending, 
+  Pending,
   Accepted,
   Declined
 }

@@ -32,6 +32,11 @@ namespace Inkboard.Infra.Db
             await _context.SaveChangesAsync();
         }
 
+        public Task<Party?> GetActivePartyForUserAsync(Guid userId)
+        {
+            return _context.PartyMembers.Where(pm => pm.UserId == userId).Select(pm => pm.Party).FirstOrDefaultAsync();
+        }
+
         public Task<Party?> GetByIdAsync(Guid partyId)
         {
             return _context.Parties.FirstOrDefaultAsync(p => p.Id == partyId);
