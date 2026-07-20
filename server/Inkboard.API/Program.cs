@@ -32,6 +32,8 @@ builder.Services.AddScoped<IPartyInviteRepository, PartyInviteRepository>();
 builder.Services.AddScoped<IBlockListRepository, BlockListRepository>();
 builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPartyNotifier, PartyNotifier>();
+builder.Services.AddScoped<ICanvasRepository, CanvasRepository>();
+builder.Services.AddScoped<ICanvasService, CanvasService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
@@ -44,6 +46,7 @@ app.UseAuthorization();
 app.MapAuthEndpoint();
 app.MapUserEndpoint();
 app.MapPartyEndpoint();
+app.MapCanvasEndpoint();
 
 app.MapHub<PartyHub>("/hubs/party");
 
