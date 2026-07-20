@@ -1,3 +1,4 @@
+using Inkboard.Application.Common;
 using Inkboard.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,9 +12,10 @@ public sealed class PartyServiceCreateTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
 
-        var party = await Service.CreatePartyAsync(leader.Id);
+        var result = await Service.CreatePartyAsync(leader.Id);
+        Assert.IsTrue(result.IsSuccess);
+        var party = result.Data!;
 
-        Assert.IsNotNull(party);
         Assert.AreEqual(leader.Id, party.LeaderId);
         Assert.AreNotEqual(Guid.Empty, party.Id);
 

@@ -1,8 +1,7 @@
 using System.Security.Claims;
+using Inkboard.Application.Common;
 using Inkboard.Application.Interfaces;
 using Inkboard.Application.Parties.DTO;
-using Inkboard.Domain.Models;
-using Inkboard.Infra.Db;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Inkboard.API.Routes
@@ -16,6 +15,16 @@ namespace Inkboard.API.Routes
             return Guid.TryParse(userIdStr, out var userId) ? userId : Guid.Empty;
         }
 
+        private static IResult ToErrorResult(string? error, ErrorType errorType) =>
+            errorType switch
+            {
+                ErrorType.NotFound => Results.NotFound(error),
+                ErrorType.Forbidden => Results.Json(new { error }, statusCode: 403),
+                ErrorType.Validation => Results.BadRequest(error),
+                ErrorType.Conflict => Results.Conflict(error),
+                _ => Results.Problem(error),
+            };
+
         public static void MapPartyEndpoint(this IEndpointRouteBuilder endpoint)
         {
             endpoint
@@ -23,51 +32,37 @@ namespace Inkboard.API.Routes
                     "/api/parties",
                     async (IPartyService partyService, ClaimsPrincipal user) =>
                     {
-                        // pulling out a userId,
                         var leaderId = user.GetUserId();
                         if (leaderId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        var party = await partyService.CreatePartyAsync(leaderId);
+                        var result = await partyService.CreatePartyAsync(leaderId);
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
 
-                        return Results.Created($"/api/parties/{party.Id}", party);
+                        return Results.Created($"/api/parties/{result.Data!.Id}", result.Data);
                     }
                 )
                 .RequireAuthorization();
 
-            // Leaving a party
             endpoint
                 .MapDelete(
                     "/api/parties/{partyId}",
                     async (IPartyService partyService, ClaimsPrincipal user, Guid partyId) =>
                     {
-                        // pulling out a userId,
                         var userId = user.GetUserId();
                         if (userId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        try
-                        {
-                            await partyService.LeavePartyAsync(partyId, userId);
-                            return Results.NoContent();
-                        }
-                        catch (PartyNotFoundException ex)
-                        {
-                            return Results.NotFound(ex.Message);
-                        }
-                        catch (PartyForbiddenException ex)
-                        {
-                            return Results.Json(new { error = ex.Message }, statusCode: 403);
-                        }
-                        catch (PartyValidationException ex)
-                        {
-                            return Results.BadRequest(ex.Message);
-                        }
+                        var result = await partyService.LeavePartyAsync(partyId, userId);
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.NoContent();
                     }
                 )
                 .RequireAuthorization();
 
-            // Invite a User (must be a leader)
             endpoint
                 .MapPost(
                     "/api/parties/{partyId}/invites",
@@ -82,38 +77,22 @@ namespace Inkboard.API.Routes
                         if (leaderId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        var invitedUserId = userRequest.InvitedUserId;
+                        var result = await partyService.InviteUserAsync(
+                            partyId,
+                            leaderId,
+                            userRequest.InvitedUserId
+                        );
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
 
-                        try
-                        {
-                            var invite = await partyService.InviteUserAsync(
-                                partyId,
-                                leaderId,
-                                invitedUserId
-                            );
-
-                            return Results.Created(
-                                $"/api/parties/{partyId}/invites/{invite.Id}",
-                                invite
-                            );
-                        }
-                        catch (PartyNotFoundException ex)
-                        {
-                            return Results.NotFound(ex.Message);
-                        }
-                        catch (PartyForbiddenException ex)
-                        {
-                            return Results.Json(new { error = ex.Message }, statusCode: 403);
-                        }
-                        catch (PartyValidationException ex)
-                        {
-                            return Results.BadRequest(ex.Message);
-                        }
+                        return Results.Created(
+                            $"/api/parties/{partyId}/invites/{result.Data!.Id}",
+                            result.Data
+                        );
                     }
                 )
                 .RequireAuthorization();
 
-            // Respond to a invite
             endpoint
                 .MapPost(
                     "/api/invites/{inviteId}/respond",
@@ -124,38 +103,23 @@ namespace Inkboard.API.Routes
                         InviteRespondRequest respondRequest
                     ) =>
                     {
-                        bool accpeted = respondRequest.accepted;
-
                         var userId = user.GetUserId();
                         if (userId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        try
-                        {
-                            var inviteResponse = await partyService.RespondToUserInviteAsync(
-                                inviteId,
-                                userId,
-                                accpeted
-                            );
-                            return Results.Ok(inviteResponse);
-                        }
-                        catch (PartyNotFoundException ex)
-                        {
-                            return Results.NotFound(ex.Message);
-                        }
-                        catch (PartyForbiddenException ex)
-                        {
-                            return Results.Json(new { error = ex.Message }, statusCode: 403);
-                        }
-                        catch (PartyValidationException ex)
-                        {
-                            return Results.BadRequest(ex.Message);
-                        }
+                        var result = await partyService.RespondToUserInviteAsync(
+                            inviteId,
+                            userId,
+                            respondRequest.accepted
+                        );
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.Ok(result.Data);
                     }
                 )
                 .RequireAuthorization();
 
-            // Kicking out a member ( only allwoed to be done by leader)
             endpoint
                 .MapDelete(
                     "/api/parties/{partyId}/members/{targetUserId}",
@@ -170,23 +134,15 @@ namespace Inkboard.API.Routes
                         if (leaderId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        try
-                        {
-                            await partyService.RemoveMemberAsync(partyId, leaderId, targetUserId);
-                            return Results.NoContent();
-                        }
-                        catch (PartyNotFoundException ex)
-                        {
-                            return Results.NotFound(ex.Message);
-                        }
-                        catch (PartyForbiddenException ex)
-                        {
-                            return Results.Json(new { error = ex.Message }, statusCode: 403);
-                        }
-                        catch (PartyValidationException ex)
-                        {
-                            return Results.BadRequest(ex.Message);
-                        }
+                        var result = await partyService.RemoveMemberAsync(
+                            partyId,
+                            leaderId,
+                            targetUserId
+                        );
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.NoContent();
                     }
                 )
                 .RequireAuthorization();
@@ -200,15 +156,11 @@ namespace Inkboard.API.Routes
                         if (userId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        try
-                        {
-                            await partyService.BlockUserAsync(userId, targetUserId);
-                            return Results.NoContent();
-                        }
-                        catch (PartyValidationException ex)
-                        {
-                            return Results.BadRequest(ex.Message);
-                        }
+                        var result = await partyService.BlockUserAsync(userId, targetUserId);
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.NoContent();
                     }
                 )
                 .RequireAuthorization();

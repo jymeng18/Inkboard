@@ -39,19 +39,6 @@ public abstract class PartyTestBase : TestBase
         );
     }
 
-    protected static async Task<T> AssertThrowsAsync<T>(Func<Task> action) where T : Exception
-    {
-        try
-        {
-            await action();
-        }
-        catch (T ex)
-        {
-            return ex;
-        }
-        throw new AssertFailedException($"Expected {typeof(T).Name} but no exception was thrown.");
-    }
-
     protected static async Task<User> SeedUserAsync(AppDbContext context, string userName)
     {
         var user = new User

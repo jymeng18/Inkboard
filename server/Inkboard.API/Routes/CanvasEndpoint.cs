@@ -14,6 +14,7 @@ public static class CanvasEndpoint
         return Guid.TryParse(userIdStr, out var userId) ? userId : Guid.Empty;
     }
 
+
     public static void MapCanvasEndpoint(this IEndpointRouteBuilder endpoint)
     {
         endpoint

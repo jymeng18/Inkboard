@@ -1,4 +1,4 @@
-using Inkboard.Application.Interfaces;
+using Inkboard.Application.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Tests.Parties;
@@ -12,7 +12,8 @@ public sealed class PartyServiceBlockTests : PartyTestBase
         var user = await SeedUserAsync(Context, "user");
         var target = await SeedUserAsync(Context, "target");
 
-        await Service.BlockUserAsync(user.Id, target.Id);
+        var result = await Service.BlockUserAsync(user.Id, target.Id);
+        Assert.IsTrue(result.IsSuccess);
 
         var isBlocked = await Context.BlockLists
             .AnyAsync(bl => bl.UserId == user.Id && bl.BlockedUserId == target.Id);
@@ -20,27 +21,30 @@ public sealed class PartyServiceBlockTests : PartyTestBase
     }
 
     [TestMethod]
-    public async Task BlockUser_CannotBlockSelf_ThrowsPartyValidationException()
+    public async Task BlockUser_CannotBlockSelf_ReturnsValidationError()
     {
         var user = await SeedUserAsync(Context, "user");
 
-        var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            Service.BlockUserAsync(user.Id, user.Id));
+        var result = await Service.BlockUserAsync(user.Id, user.Id);
 
-        Assert.AreEqual("You cannot block yourself.", ex.Message);
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(ErrorType.Validation, result.ErrorType);
+        Assert.AreEqual("You cannot block yourself.", result.Error);
     }
 
     [TestMethod]
-    public async Task BlockUser_CannotBlockAlreadyBlockedUser_ThrowsPartyValidationException()
+    public async Task BlockUser_CannotBlockAlreadyBlockedUser_ReturnsConflict()
     {
         var user = await SeedUserAsync(Context, "user");
         var target = await SeedUserAsync(Context, "target");
 
-        await Service.BlockUserAsync(user.Id, target.Id);
+        var firstResult = await Service.BlockUserAsync(user.Id, target.Id);
+        Assert.IsTrue(firstResult.IsSuccess);
 
-        var ex = await AssertThrowsAsync<PartyValidationException>(() =>
-            Service.BlockUserAsync(user.Id, target.Id));
+        var result = await Service.BlockUserAsync(user.Id, target.Id);
 
-        Assert.AreEqual("This user is already blocked.", ex.Message);
+        Assert.IsFalse(result.IsSuccess);
+        Assert.AreEqual(ErrorType.Conflict, result.ErrorType);
+        Assert.AreEqual("This user is already blocked.", result.Error);
     }
 }
