@@ -103,7 +103,7 @@ public static class DependencyInjection
             config["AzureStorage:BlobUri"]
             ?? throw new InvalidOperationException("BlobUri configuration is missing.");
 
-        services.AddAzureClients(async clientBuilder =>
+        services.AddAzureClients(clientBuilder =>
         {
             clientBuilder.AddBlobServiceClient(new Uri(blobUriString));
             DefaultAzureCredential credential = new();

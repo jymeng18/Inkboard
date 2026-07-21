@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.SignalR;
 using FluentValidation;
 using Inkboard.API;
 using Inkboard.API.Hubs;
@@ -14,15 +15,27 @@ using Inkboard.Infra.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddInfraServices(builder.Configuration, builder.Environment);
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddAzureServices(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
 builder.Services.AddSignalR();
 
-// builder.Services.AddSingleton<IuserIdPr>();
 
 builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -40,6 +53,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>()
 
 var app = builder.Build();
 
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
