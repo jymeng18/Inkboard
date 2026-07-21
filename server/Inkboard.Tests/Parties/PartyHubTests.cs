@@ -125,7 +125,7 @@ public sealed class PartyHubTests
 
     private static HttpRequestMessage WithAuth(string method, string url, string accessToken)
     {
-        var msg = new HttpRequestMessage(HttpMethod.Post, url);
+        var msg = new HttpRequestMessage(new HttpMethod(method), url);
         msg.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
             "Bearer",
             accessToken
@@ -135,7 +135,19 @@ public sealed class PartyHubTests
 
     private static async Task<Guid> CreatePartyAsync(string accessToken)
     {
+        var canvasId = await CreateCanvasAsync(accessToken, "Party Canvas");
         var req = WithAuth("POST", "/api/parties", accessToken);
+        req.Content = JsonContent.Create(new { canvasId });
+        var res = await _client.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        var body = await res.Content.ReadFromJsonAsync<JsonElement>();
+        return Guid.Parse(body.GetProperty("id").GetString()!);
+    }
+
+    private static async Task<Guid> CreateCanvasAsync(string accessToken, string name)
+    {
+        var req = WithAuth("POST", "/api/canvas", accessToken);
+        req.Content = JsonContent.Create(new { name });
         var res = await _client.SendAsync(req);
         res.EnsureSuccessStatusCode();
         var body = await res.Content.ReadFromJsonAsync<JsonElement>();

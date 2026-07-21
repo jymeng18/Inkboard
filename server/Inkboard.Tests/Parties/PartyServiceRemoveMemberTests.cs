@@ -11,7 +11,8 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
@@ -47,7 +48,8 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
         var leader = await SeedUserAsync(Context, "leader");
         var nonLeader = await SeedUserAsync(Context, "nonLeader");
         var target = await SeedUserAsync(Context, "target");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inv1Result = await Service.InviteUserAsync(party.Id, leader.Id, nonLeader.Id);
@@ -72,7 +74,8 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     public async Task RemoveMember_LeaderCannotKickSelf_ReturnsValidationError()
     {
         var leader = await SeedUserAsync(Context, "leader");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
 
@@ -88,7 +91,8 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var nonMember = await SeedUserAsync(Context, "nonMember");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
 
