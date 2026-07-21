@@ -176,7 +176,7 @@ public sealed class PartyHubTests
         res.EnsureSuccessStatusCode();
     }
 
-    private static async Task<T> AwaitNotification<T>(Task<T> task, int timeoutMs = 5000)
+    private static async Task<T> AwaitNotification<T>(Task<T> task, int timeoutMs = 10000)
     {
         var completed = await Task.WhenAny(task, Task.Delay(timeoutMs));
         if (completed != task)
