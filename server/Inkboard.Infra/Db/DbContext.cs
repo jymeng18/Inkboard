@@ -89,7 +89,7 @@ public class AppDbContext : DbContext
             .HasOne(p => p.Canvas)
             .WithMany()
             .HasForeignKey(p => p.CanvasId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder
             .Entity<CanvasOperation>()

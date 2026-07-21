@@ -18,8 +18,12 @@
 - [x] Currently PartyHub does not authroize user before allowing data to be pushed -> will need to configure auth for socket connection, as it reads bearer tokens differently then the rest api endpoints 
 - [x] Improve docs
 - [x] Refactor PartyEndpoint.cs, excessive try catch exceptions
+- [x] Delete canvas needs ownership check
 - [ ] Improve/refactor test suite for future use
 - [ ] Dissolve parties if no user action for more then 15 minutes(IMPORTANT)
 - [ ] Canvas should display on dashboard for other canvas collaborators too, they can access it again too
 - [ ] Search bar for inviting by email
 - [ ] Globalexceptionhandler
+- [ ] Unblock user endpoint + fix bad business logic with blocking users
+
+

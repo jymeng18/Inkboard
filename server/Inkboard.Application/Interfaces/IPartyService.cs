@@ -5,7 +5,7 @@ namespace Inkboard.Application.Interfaces
 {
     public interface IPartyService
     {
-        Task<Result<Party>> CreatePartyAsync(Guid leaderId);
+        Task<Result<Party>> CreatePartyAsync(Guid leaderId, Guid canvasId);
         Task<Result<PartyInvite>> InviteUserAsync(Guid partyId, Guid leaderId, Guid invitedUserId);
         Task<Result<PartyInvite>> RespondToUserInviteAsync(Guid id, Guid userId, bool accepted);
         Task<Result> RemoveMemberAsync(Guid partyId, Guid leaderId, Guid targetUserId);

@@ -8,18 +8,18 @@ Inkboard is a real-time multi-user collaborative canvas platform, similar to MS 
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | ASP.NET Core Web API |
-| Real-time | ASP.NET Core SignalR (WebSockets) |
-| Frontend | React + TypeScript (Vite) |
-| Canvas Rendering | Konva.js (react-konva) |
-| Database | PostgreSQL via Entity Framework Core (Npgsql) |
-| Blob Storage | Azure Blob Storage |
-| State Management | Zustand |
-| HTTP Client | Axios + TanStack React Query |
-| Authentication | JWT (access token + refresh token) |
-| Styling | Tailwind CSS |
+| Layer            | Technology                                    |
+| ---------------- | --------------------------------------------- |
+| Backend          | ASP.NET Core Web API                          |
+| Real-time        | ASP.NET Core SignalR (WebSockets)             |
+| Frontend         | React + TypeScript (Vite)                     |
+| Canvas Rendering | Konva.js (react-konva)                        |
+| Database         | PostgreSQL via Entity Framework Core (Npgsql) |
+| Blob Storage     | Azure Blob Storage                            |
+| State Management | Zustand                                       |
+| HTTP Client      | Axios + TanStack React Query                  |
+| Authentication   | JWT (access token + refresh token)            |
+| Styling          | Tailwind CSS                                  |
 
 ---
 
@@ -166,7 +166,7 @@ Fields: Id, CanvasId (FK), UserId (FK), Type, Data (JSON), Timestamp
 
 These rules are fixed and enforced by `CanvasService` on every relevant operation.
 
-- **Canvas ownership is assigned at creation.** `Canvas.OwnerId` is set to the party leader's ID at the time the canvas is created and never changes under any circumstance.
+- **Canvas ownership is assigned at creation.** `Canvas.OwnerId` is set to creators userId. Inside each canvas, there is a start collab or 'invite' button, only when this is clicked will we initiate a Party, upon creation, Party.CanvasId -> Canvas.Id
 - **Canvas ownership cannot be transferred.** There is no operation that changes `Canvas.OwnerId`.
 - **Only the canvas owner can end the session.** Any end session request from a non-owner is rejected with `ErrorType.Forbidden`.
 - **Only the canvas owner can upload the authoritative snapshot.** Periodic snapshots and the final end-session snapshot both require the requester to be the canvas owner.
@@ -178,17 +178,20 @@ These rules are fixed and enforced by `CanvasService` on every relevant operatio
 ## Canvas Session Lifecycle
 
 ### Starting a Session
+
 1. Party leader creates a canvas via `POST /api/canvases`.
 2. `CanvasService` creates a `Canvas` record with `OwnerId = leaderId` and `SnapshotUrl = null`.
 3. `Party.CanvasId` is updated to the new canvas ID.
 4. All party members can now connect to the `CanvasHub` group for this canvas.
 
 ### During a Session
+
 - Members draw, and operations are broadcast via `CanvasHub` and persisted asynchronously.
 - The frontend runs a 15-minute interval timer. On each tick, the canvas owner's client calls `stage.toBlob()` and POSTs the result to `POST /api/canvases/{canvasId}/snapshot`. This is a safety net against unexpected session termination.
 - Non-owner clients do not send periodic snapshots.
 
 ### Ending a Session (Normal — Owner clicks "End Session")
+
 1. Frontend calls `stage.toBlob()` to render the current canvas state as a PNG.
 2. Frontend POSTs the blob to `POST /api/canvases/{canvasId}/snapshot` as `multipart/form-data`.
 3. Backend uploads the image to Azure Blob Storage and updates `Canvas.SnapshotUrl`.
@@ -197,6 +200,7 @@ These rules are fixed and enforced by `CanvasService` on every relevant operatio
 6. `Party.CanvasId` is set to null. The party remains alive.
 
 ### Ending a Session (Leadership Transfer Mid-Session)
+
 1. Canvas owner transfers party leadership via the existing party leadership transfer flow.
 2. `PartyService` detects an active canvas on the party (`Party.CanvasId` is not null).
 3. `PartyService` calls `CanvasService.ForceEndSessionAsync(canvasId)`.
@@ -204,6 +208,7 @@ These rules are fixed and enforced by `CanvasService` on every relevant operatio
 5. `Party.CanvasId` is set to null. Party leadership is transferred as normal.
 
 ### Ending a Session (Unexpected Owner Disconnect)
+
 1. `CanvasHub.OnDisconnectedAsync` fires for the disconnecting user.
 2. Hub checks if the disconnecting user is the canvas owner.
 3. If yes, hub calls `CanvasService.ForceEndSessionAsync(canvasId)`.
@@ -265,7 +270,7 @@ Modelled after Fortnite's party system.
 
 - Maximum 5 users per party (1 leader + 4 members)
 - A user cannot be invited if they are on the leader's block list
-- An invite expires after 10 minutes if not accepted
+- An invite expires after 5 minutes if not accepted
 - When the leader leaves, leadership transfers to the longest-standing member
 - If a canvas session is active when leadership transfers, the session is force-ended and all members are ejected from the canvas (party membership is unaffected)
 - When a member leaves, their cursor is removed from all other clients in real time via the PartyHub

@@ -30,13 +30,13 @@ namespace Inkboard.API.Routes
             endpoint
                 .MapPost(
                     "/api/parties",
-                    async (IPartyService partyService, ClaimsPrincipal user) =>
+                    async (IPartyService partyService, ClaimsPrincipal user, CreatePartyRequest request) =>
                     {
                         var leaderId = user.GetUserId();
                         if (leaderId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        var result = await partyService.CreatePartyAsync(leaderId);
+                        var result = await partyService.CreatePartyAsync(leaderId, request.CanvasId);
                         if (!result.IsSuccess)
                             return ToErrorResult(result.Error, result.ErrorType);
 

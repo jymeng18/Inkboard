@@ -11,18 +11,24 @@ namespace Inkboard.Application.Services
         private readonly IPartyInviteRepository partyInviteRepository;
         private readonly IBlockListRepository blockListRepository;
         private readonly IPartyNotifier partyNotifier;
+        private readonly ICanvasService canvasService;
+        private readonly ICanvasRepository canvasRepository;
 
         public PartyService(
             IPartyRepository partyRepository,
             IPartyInviteRepository partyInviteRepository,
             IBlockListRepository blockListRepository,
-            IPartyNotifier partyNotifier
+            IPartyNotifier partyNotifier,
+            ICanvasService canvasService,
+            ICanvasRepository canvasRepository
         )
         {
             this.partyRepository = partyRepository;
             this.partyInviteRepository = partyInviteRepository;
             this.blockListRepository = blockListRepository;
             this.partyNotifier = partyNotifier;
+            this.canvasService = canvasService;
+            this.canvasRepository = canvasRepository;
         }
 
         public async Task<Result> BlockUserAsync(Guid leaderId, Guid targetUserId)
@@ -40,14 +46,19 @@ namespace Inkboard.Application.Services
             return Result.Ok();
         }
 
-        public async Task<Result<Party>> CreatePartyAsync(Guid leaderId)
+        public async Task<Result<Party>> CreatePartyAsync(Guid leaderId, Guid canvasId)
         {
             Party newParty = new()
             {
                 LeaderId = leaderId,
-                CanvasId = null,
+                CanvasId = canvasId,
                 CreatedAt = DateTime.UtcNow,
             };
+
+            var existingParty = await partyRepository.GetActivePartyForUserAsync(leaderId);
+            if (existingParty is not null)
+                return Result<Party>.Fail(ErrorType.Conflict, "An active party already exists.");
+
             await partyRepository.CreatePartyAsync(newParty);
 
             PartyMember partyMember = new()
@@ -169,6 +180,13 @@ namespace Inkboard.Application.Services
 
             // Transfer leadership to longest-standing member
             var newLeader = await partyRepository.GetOldestMemberAsync(partyId);
+
+            // Completely shut Canvas and its users out, keep party alive
+            var canvas = await canvasRepository.GetCanvasByPartyIdAsync(partyId);
+            if (canvas is not null)
+                await canvasService.ForceEndSessionAsync(canvas.Id, userId);
+
+            // Shift party roles after force end
             party.LeaderId = newLeader.UserId;
             newLeader.Role = UserRole.Leader;
 
