@@ -205,19 +205,18 @@ public sealed class PartyHubTests
             "Pass1!",
             $"mconn_{suffix}"
         );
+        await using var leaderConn = CreateHubConnection(leaderToken);
+        await leaderConn.StartAsync();
+
+        await using var memberConn = CreateHubConnection(memberToken);
+        await memberConn.StartAsync();
+
+        var notifiedTcs = new TaskCompletionSource<Guid>();
+        leaderConn.On<Guid>("NotifyOnMemberJoined", uid => notifiedTcs.TrySetResult(uid));
 
         var partyId = await CreatePartyAsync(leaderToken);
         var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
         await RespondToInviteAsync(memberToken, inviteId, true);
-
-        await using var leaderConn = CreateHubConnection(leaderToken);
-        await leaderConn.StartAsync();
-
-        var notifiedTcs = new TaskCompletionSource<Guid>();
-        leaderConn.On<Guid>("NotifyOnConnection", uid => notifiedTcs.TrySetResult(uid));
-
-        await using var memberConn = CreateHubConnection(memberToken);
-        await memberConn.StartAsync();
 
         var notifiedId = await AwaitNotification(notifiedTcs.Task);
         Assert.AreEqual(memberId, notifiedId);
@@ -259,11 +258,6 @@ public sealed class PartyHubTests
             "Pass1!",
             $"mdisc_{suffix}"
         );
-
-        var partyId = await CreatePartyAsync(leaderToken);
-        var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
-        await RespondToInviteAsync(memberToken, inviteId, true);
-
         await using var leaderConn = CreateHubConnection(leaderToken);
         await leaderConn.StartAsync();
 
@@ -272,6 +266,10 @@ public sealed class PartyHubTests
 
         var disconnectTcs = new TaskCompletionSource<Guid>();
         leaderConn.On<Guid>("NotifyOnDisconnect", uid => disconnectTcs.TrySetResult(uid));
+
+        var partyId = await CreatePartyAsync(leaderToken);
+        var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
+        await RespondToInviteAsync(memberToken, inviteId, true);
 
         await memberConn.StopAsync();
 
@@ -357,14 +355,16 @@ public sealed class PartyHubTests
             "Pass1!",
             $"mjoin_{suffix}"
         );
-
-        var partyId = await CreatePartyAsync(leaderToken);
-
         await using var leaderConn = CreateHubConnection(leaderToken);
         await leaderConn.StartAsync();
 
+        await using var memberConn = CreateHubConnection(memberToken);
+        await memberConn.StartAsync();
+
         var joinedTcs = new TaskCompletionSource<Guid>();
         leaderConn.On<Guid>("NotifyOnMemberJoined", uid => joinedTcs.TrySetResult(uid));
+
+        var partyId = await CreatePartyAsync(leaderToken);
 
         var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
         await RespondToInviteAsync(memberToken, inviteId, true);
@@ -387,10 +387,8 @@ public sealed class PartyHubTests
             "Pass1!",
             $"mtrans_{suffix}"
         );
-
-        var partyId = await CreatePartyAsync(leaderToken);
-        var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
-        await RespondToInviteAsync(memberToken, inviteId, true);
+        await using var leaderConn = CreateHubConnection(leaderToken);
+        await leaderConn.StartAsync();
 
         await using var memberConn = CreateHubConnection(memberToken);
         await memberConn.StartAsync();
@@ -400,6 +398,10 @@ public sealed class PartyHubTests
             "LeadershipTransferred",
             newLeaderId => transferTcs.TrySetResult(newLeaderId)
         );
+
+        var partyId = await CreatePartyAsync(leaderToken);
+        var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
+        await RespondToInviteAsync(memberToken, inviteId, true);
 
         var req = new HttpRequestMessage(HttpMethod.Delete, $"/api/parties/{partyId}");
         req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
@@ -434,15 +436,6 @@ public sealed class PartyHubTests
             "Pass1!",
             $"m2sync_{suffix}"
         );
-
-        var partyId = await CreatePartyAsync(leaderToken);
-
-        var inv1 = await InviteUserAsync(leaderToken, partyId, member1Id);
-        await RespondToInviteAsync(member1Token, inv1, true);
-
-        var inv2 = await InviteUserAsync(leaderToken, partyId, member2Id);
-        await RespondToInviteAsync(member2Token, inv2, true);
-
         await using var leaderConn = CreateHubConnection(leaderToken);
         await leaderConn.StartAsync();
 
@@ -457,6 +450,14 @@ public sealed class PartyHubTests
 
         var m2TransferTcs = new TaskCompletionSource<Guid>();
         member2Conn.On<Guid>("LeadershipTransferred", id => m2TransferTcs.TrySetResult(id));
+
+        var partyId = await CreatePartyAsync(leaderToken);
+
+        var inv1 = await InviteUserAsync(leaderToken, partyId, member1Id);
+        await RespondToInviteAsync(member1Token, inv1, true);
+
+        var inv2 = await InviteUserAsync(leaderToken, partyId, member2Id);
+        await RespondToInviteAsync(member2Token, inv2, true);
 
         var req = new HttpRequestMessage(HttpMethod.Delete, $"/api/parties/{partyId}");
         req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(

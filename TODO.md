@@ -19,11 +19,11 @@
 - [x] Improve docs
 - [x] Refactor PartyEndpoint.cs, excessive try catch exceptions
 - [x] Delete canvas needs ownership check
-- [ ] Improve/refactor test suite for future use
+- [x] Improve/refactor test suite for future use
 - [ ] Dissolve parties if no user action for more then 15 minutes(IMPORTANT)
 - [ ] Canvas should display on dashboard for other canvas collaborators too, they can access it again too
 - [ ] Search bar for inviting by email
 - [ ] Globalexceptionhandler
 - [ ] Unblock user endpoint + fix bad business logic with blocking users
-
+- [x] Currently when a party dissovles, clients webscokets are not removed from the group
 
