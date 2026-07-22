@@ -28,15 +28,40 @@ namespace Inkboard.API.Routes
         public static void MapPartyEndpoint(this IEndpointRouteBuilder endpoint)
         {
             endpoint
+                .MapGet(
+                    "/api/parties/{partyId}",
+                    async (IPartyService partyService, Guid partyId, ClaimsPrincipal user) =>
+                    {
+                        var userId = user.GetUserId();
+                        if (userId == Guid.Empty)
+                            return Results.Unauthorized();
+
+                        var result = await partyService.GetPartyByIdAsync(partyId);
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.Ok(result.Data);
+                    }
+                )
+                .RequireAuthorization();
+
+            endpoint
                 .MapPost(
                     "/api/parties",
-                    async (IPartyService partyService, ClaimsPrincipal user, CreatePartyRequest request) =>
+                    async (
+                        IPartyService partyService,
+                        ClaimsPrincipal user,
+                        CreatePartyRequest request
+                    ) =>
                     {
                         var leaderId = user.GetUserId();
                         if (leaderId == Guid.Empty)
                             return Results.Unauthorized();
 
-                        var result = await partyService.CreatePartyAsync(leaderId, request.CanvasId);
+                        var result = await partyService.CreatePartyAsync(
+                            leaderId,
+                            request.CanvasId
+                        );
                         if (!result.IsSuccess)
                             return ToErrorResult(result.Error, result.ErrorType);
 

@@ -1,5 +1,6 @@
 using Inkboard.Application.Common;
 using Inkboard.Application.Interfaces;
+using Inkboard.Application.Parties.DTO;
 using Inkboard.Domain.Models;
 using Inkboard.Domain.Repositories;
 
@@ -71,6 +72,24 @@ namespace Inkboard.Application.Services
             await partyNotifier.NotifyMemberJoined(newParty.Id, partyMember);
 
             return Result<Party>.Ok(newParty);
+        }
+
+        public async Task<Result<PartyDetailDto>> GetPartyByIdAsync(Guid partyId)
+        {
+            var party = await partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result<PartyDetailDto>.Fail(ErrorType.NotFound, "Party not found.");
+
+            var members = await partyRepository.GetMembersAsync(partyId);
+
+            var dto = new PartyDetailDto(
+                party.Id,
+                party.LeaderId,
+                party.CanvasId,
+                members.ConvertAll(m => new PartyMemberDto(m.UserId, m.Role.ToString(), m.JoinedAt))
+            );
+
+            return Result<PartyDetailDto>.Ok(dto);
         }
 
         public async Task<Result<PartyInvite>> InviteUserAsync(

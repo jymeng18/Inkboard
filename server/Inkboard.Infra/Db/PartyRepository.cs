@@ -53,6 +53,11 @@ namespace Inkboard.Infra.Db
             return _context.PartyMembers.FirstOrDefaultAsync(pm => pm.PartyId == partyId && pm.UserId == userId);
         }
 
+        public Task<List<PartyMember>> GetMembersAsync(Guid partyId)
+        {
+            return _context.PartyMembers.Where(pm => pm.PartyId == partyId).ToListAsync();
+        }
+
         public Task<int> GetMemberCountAsync(Guid partyId)
         {
             return _context.PartyMembers.CountAsync(pm => pm.PartyId == partyId);
