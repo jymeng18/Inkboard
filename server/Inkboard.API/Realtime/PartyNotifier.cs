@@ -29,12 +29,14 @@ public class PartyNotifier : IPartyNotifier
     public async Task NotifyKick(Guid targetUserId, Guid partyId)
     {
         var connId = _connectionStore.Get(targetUserId);
+        var groupName = PartyHub.GroupName(partyId);
         if (connId is not null)
         {
-            await _hub.Groups.RemoveFromGroupAsync(connId, PartyHub.GroupName(partyId));
+            await _hub.Groups.RemoveFromGroupAsync(connId, groupName);
         }
 
-        await _hub.Clients.User(targetUserId.ToString()).NotifyOnKick(partyId);
+        await _hub.Clients.User(targetUserId.ToString()).NotifyOnKick(targetUserId);
+        await _hub.Clients.Group(groupName).NotifyOnKick(targetUserId);
     }
 
     public Task NotifyLeadershipTransferred(Guid newLeaderId, Guid partyId)
