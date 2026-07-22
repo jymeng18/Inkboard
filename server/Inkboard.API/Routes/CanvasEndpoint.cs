@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Inkboard.Application.Canvases.DTO;
+using Inkboard.Application.Common;
 using Inkboard.Application.Interfaces;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -14,6 +15,15 @@ public static class CanvasEndpoint
         return Guid.TryParse(userIdStr, out var userId) ? userId : Guid.Empty;
     }
 
+    private static IResult ToErrorResult(string? error, ErrorType errorType) =>
+        errorType switch
+        {
+            ErrorType.NotFound => Results.NotFound(error),
+            ErrorType.Forbidden => Results.Json(new { error }, statusCode: 403),
+            ErrorType.Validation => Results.BadRequest(error),
+            ErrorType.Conflict => Results.Conflict(error),
+            _ => Results.Problem(error),
+        };
 
     public static void MapCanvasEndpoint(this IEndpointRouteBuilder endpoint)
     {
@@ -32,7 +42,7 @@ public static class CanvasEndpoint
 
                     var result = await canvasService.CreateCanvasAsync(userId, canvasRequest.Name);
                     if (!result.IsSuccess)
-                        return Results.BadRequest(new { error = result.Error });
+                        return ToErrorResult(result.Error, result.ErrorType);
 
                     return Results.Created($"/api/canvas/{result.Data!.Id}", result.Data);
                 }
@@ -50,11 +60,7 @@ public static class CanvasEndpoint
 
                     var result = await canvasService.DeleteCanvasAsync(canvasId, userId);
                     if (!result.IsSuccess)
-                    {
-                        return result.Error == "Canvas not found."
-                            ? Results.NotFound(new { error = result.Error })
-                            : Results.Json(new { error = result.Error }, statusCode: 403); // * tried deleting a canvas not belong to you
-                    }
+                        return ToErrorResult(result.Error, result.ErrorType); // * tried deleting a canvas not belong to you
 
                     return Results.NoContent();
                 }
@@ -64,11 +70,24 @@ public static class CanvasEndpoint
         endpoint
             .MapPut(
                 "/api/canvas/{canvasId}",
-                async (Guid canvasId, CanvasRequest canvasRequest, ICanvasService canvasService) =>
+                async (
+                    ClaimsPrincipal user,
+                    Guid canvasId,
+                    CanvasRequest canvasRequest,
+                    ICanvasService canvasService
+                ) =>
                 {
-                    var result = await canvasService.RenameCanvas(canvasRequest.Name, canvasId);
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await canvasService.RenameCanvas(
+                        canvasRequest.Name,
+                        canvasId,
+                        userId
+                    );
                     if (!result.IsSuccess)
-                        return Results.NotFound(new { error = result.Error });
+                        return ToErrorResult(result.Error, result.ErrorType);
 
                     return Results.NoContent();
                 }

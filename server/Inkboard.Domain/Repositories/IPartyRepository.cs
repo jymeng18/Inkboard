@@ -14,9 +14,10 @@ namespace Inkboard.Domain.Repositories
         Task<PartyMember?> GetMemberAsync(Guid partyId, Guid userId);
         Task<Party?> GetActivePartyForUserAsync(Guid userId);
 
-        // Note: might remove this, initial plan is to track this in case party leader leaves, 
+        // Note: might remove this, initial plan is to track this in case party leader leaves,
         // where leader position transfers to oldest memeber in the party
         Task<PartyMember> GetOldestMemberAsync(Guid partyId);
+        Task<List<PartyMember>> GetMembersAsync(Guid partyId);
         Task CreatePartyAsync(Party party);
         Task AddMemberAsync(PartyMember member);
         Task RemoveMemberAsync(PartyMember member);

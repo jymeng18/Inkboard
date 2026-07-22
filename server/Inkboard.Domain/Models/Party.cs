@@ -12,7 +12,6 @@ public class Party
     // Each party has only one leader (1-to-1)
     public Guid LeaderId { get; set; }
 
-    // keep as nullable for now, since no CanvasHub layer yet
     public Guid? CanvasId { get; set; }
 
     public DateTime CreatedAt { get; set; }

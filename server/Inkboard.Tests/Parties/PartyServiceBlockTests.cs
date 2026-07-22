@@ -47,4 +47,23 @@ public sealed class PartyServiceBlockTests : PartyTestBase
         Assert.AreEqual(ErrorType.Conflict, result.ErrorType);
         Assert.AreEqual("This user is already blocked.", result.Error);
     }
+
+    [TestMethod]
+    public async Task BlockUser_BlockedUserCanUnblockThenBeInvited()
+    {
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
+        Assert.IsTrue(partyResult.IsSuccess);
+        var party = partyResult.Data!;
+
+        var blockResult = await Service.BlockUserAsync(leader.Id, invited.Id);
+        Assert.IsTrue(blockResult.IsSuccess);
+
+        var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        Assert.IsFalse(inviteResult.IsSuccess);
+        Assert.AreEqual(ErrorType.Validation, inviteResult.ErrorType);
+        Assert.AreEqual("You have blocked this user.", inviteResult.Error);
+    }
 }

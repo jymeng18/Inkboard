@@ -13,10 +13,12 @@ public class PartyNotifier : IPartyNotifier
     */
 
     private readonly IHubContext<PartyHub, IPartyHubClient> _hub;
+    private readonly IConnectionStore _connectionStore;
 
-    public PartyNotifier(IHubContext<PartyHub, IPartyHubClient> hub)
+    public PartyNotifier(IHubContext<PartyHub, IPartyHubClient> hub, IConnectionStore connectionStore)
     {
         _hub = hub;
+        _connectionStore = connectionStore;
     }
 
     public Task NotifyInvite(Guid userId, PartyInvite partyInvite)
@@ -24,9 +26,17 @@ public class PartyNotifier : IPartyNotifier
         return _hub.Clients.User(userId.ToString()).ReceiveInvite(partyInvite);
     }
 
-    public Task NotifyKick(Guid targetUserId, Guid partyId)
+    public async Task NotifyKick(Guid targetUserId, Guid partyId)
     {
-        return _hub.Clients.User(targetUserId.ToString()).NotifyOnKick(partyId);
+        var connId = _connectionStore.Get(targetUserId);
+        var groupName = PartyHub.GroupName(partyId);
+        if (connId is not null)
+        {
+            await _hub.Groups.RemoveFromGroupAsync(connId, groupName);
+        }
+
+        await _hub.Clients.User(targetUserId.ToString()).NotifyOnKick(targetUserId);
+        await _hub.Clients.Group(groupName).NotifyOnKick(targetUserId);
     }
 
     public Task NotifyLeadershipTransferred(Guid newLeaderId, Guid partyId)
@@ -34,8 +44,26 @@ public class PartyNotifier : IPartyNotifier
         return _hub.Clients.Group(PartyHub.GroupName(partyId)).LeadershipTransferred(newLeaderId);
     }
 
-    public Task NotifyMemberJoined(Guid partyId, PartyMember newMember)
+    public async Task NotifyMemberJoined(Guid partyId, PartyMember newMember)
     {
-        return _hub.Clients.Group(PartyHub.GroupName(partyId)).NotifyOnMemberJoined(newMember.UserId);
+        var connId = _connectionStore.Get(newMember.UserId);
+        var groupName = PartyHub.GroupName(partyId);
+        if (connId is not null)
+        {
+            await _hub.Groups.AddToGroupAsync(connId, groupName);
+            await _hub.Clients.GroupExcept(groupName, connId).NotifyOnMemberJoined(newMember.UserId);
+        }
+    }
+
+    public async Task NotifyMemberLeft(Guid partyId, Guid userId)
+    {
+        var connId = _connectionStore.Get(userId);
+        var groupName = PartyHub.GroupName(partyId);
+
+        if (connId is not null)
+        {
+            await _hub.Groups.RemoveFromGroupAsync(connId, groupName);
+            await _hub.Clients.Group(groupName).NotifyOnMemberLeft(userId);
+        }
     }
 }

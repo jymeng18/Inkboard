@@ -1,5 +1,6 @@
 using Inkboard.Application.Common;
 using Inkboard.Application.Interfaces;
+using Inkboard.Application.Parties.DTO;
 using Inkboard.Domain.Models;
 using Inkboard.Domain.Repositories;
 
@@ -11,18 +12,24 @@ namespace Inkboard.Application.Services
         private readonly IPartyInviteRepository partyInviteRepository;
         private readonly IBlockListRepository blockListRepository;
         private readonly IPartyNotifier partyNotifier;
+        private readonly ICanvasService canvasService;
+        private readonly ICanvasRepository canvasRepository;
 
         public PartyService(
             IPartyRepository partyRepository,
             IPartyInviteRepository partyInviteRepository,
             IBlockListRepository blockListRepository,
-            IPartyNotifier partyNotifier
+            IPartyNotifier partyNotifier,
+            ICanvasService canvasService,
+            ICanvasRepository canvasRepository
         )
         {
             this.partyRepository = partyRepository;
             this.partyInviteRepository = partyInviteRepository;
             this.blockListRepository = blockListRepository;
             this.partyNotifier = partyNotifier;
+            this.canvasService = canvasService;
+            this.canvasRepository = canvasRepository;
         }
 
         public async Task<Result> BlockUserAsync(Guid leaderId, Guid targetUserId)
@@ -40,14 +47,19 @@ namespace Inkboard.Application.Services
             return Result.Ok();
         }
 
-        public async Task<Result<Party>> CreatePartyAsync(Guid leaderId)
+        public async Task<Result<Party>> CreatePartyAsync(Guid leaderId, Guid canvasId)
         {
             Party newParty = new()
             {
                 LeaderId = leaderId,
-                CanvasId = null,
+                CanvasId = canvasId,
                 CreatedAt = DateTime.UtcNow,
             };
+
+            var existingParty = await partyRepository.GetActivePartyForUserAsync(leaderId);
+            if (existingParty is not null)
+                return Result<Party>.Fail(ErrorType.Conflict, "An active party already exists.");
+
             await partyRepository.CreatePartyAsync(newParty);
 
             PartyMember partyMember = new()
@@ -57,8 +69,27 @@ namespace Inkboard.Application.Services
                 Role = UserRole.Leader,
             };
             await partyRepository.AddMemberAsync(partyMember);
+            await partyNotifier.NotifyMemberJoined(newParty.Id, partyMember);
 
             return Result<Party>.Ok(newParty);
+        }
+
+        public async Task<Result<PartyDetailDto>> GetPartyByIdAsync(Guid partyId)
+        {
+            var party = await partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result<PartyDetailDto>.Fail(ErrorType.NotFound, "Party not found.");
+
+            var members = await partyRepository.GetMembersAsync(partyId);
+
+            var dto = new PartyDetailDto(
+                party.Id,
+                party.LeaderId,
+                party.CanvasId,
+                members.ConvertAll(m => new PartyMemberDto(m.UserId, m.Role.ToString(), m.JoinedAt))
+            );
+
+            return Result<PartyDetailDto>.Ok(dto);
         }
 
         public async Task<Result<PartyInvite>> InviteUserAsync(
@@ -156,6 +187,7 @@ namespace Inkboard.Application.Services
             if (!isLeader)
             {
                 await partyRepository.RemoveMemberAsync(member);
+                await partyNotifier.NotifyMemberLeft(partyId, member.UserId);
                 return Result.Ok();
             }
 
@@ -163,18 +195,27 @@ namespace Inkboard.Application.Services
             if (memberCount == 1)
             {
                 await partyRepository.RemoveMemberAsync(member);
+                await partyNotifier.NotifyMemberLeft(partyId, member.UserId);
                 await partyRepository.DeletePartyAsync(party);
                 return Result.Ok();
             }
 
             // Transfer leadership to longest-standing member
             var newLeader = await partyRepository.GetOldestMemberAsync(partyId);
+
+            // Completely shut Canvas and its users out, keep party alive
+            var canvas = await canvasRepository.GetCanvasByPartyIdAsync(partyId);
+            if (canvas is not null)
+                await canvasService.ForceEndSessionAsync(canvas.Id, userId);
+
+            // Shift party roles after force end
             party.LeaderId = newLeader.UserId;
             newLeader.Role = UserRole.Leader;
 
             await partyRepository.UpdatePartyAsync(party);
             await partyRepository.RemoveMemberAsync(member);
 
+            await partyNotifier.NotifyMemberLeft(partyId, member.UserId);
             await partyNotifier.NotifyLeadershipTransferred(newLeader.UserId, partyId);
 
             return Result.Ok();

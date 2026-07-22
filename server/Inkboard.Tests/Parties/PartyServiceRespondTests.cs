@@ -12,7 +12,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var invited = await SeedUserAsync(Context, "invited");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
@@ -36,7 +37,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var invited = await SeedUserAsync(Context, "invited");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
@@ -72,7 +74,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
         var leader = await SeedUserAsync(Context, "leader");
         var invited = await SeedUserAsync(Context, "invited");
         var other = await SeedUserAsync(Context, "other");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
@@ -91,7 +94,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var invited = await SeedUserAsync(Context, "invited");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
@@ -113,7 +117,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var invited = await SeedUserAsync(Context, "invited");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
 
@@ -140,7 +145,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var invited = await SeedUserAsync(Context, "invited");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
@@ -162,7 +168,8 @@ public sealed class PartyServiceRespondTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var delayed = await SeedUserAsync(Context, "delayed");
-        var partyResult = await Service.CreatePartyAsync(leader.Id);
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var delayedInviteResult = await Service.InviteUserAsync(party.Id, leader.Id, delayed.Id);

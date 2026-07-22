@@ -30,10 +30,12 @@ public class CanvasRepository : ICanvasRepository
         return _context.Canvas.FirstOrDefaultAsync(c => c.Id == canvasId);
     }
 
-    // ! Keep for now, prolly wont need it
     public Task<Canvas?> GetCanvasByPartyIdAsync(Guid partyId)
     {
-        throw new NotImplementedException();
+        return _context
+            .Parties.Where(p => p.Id == partyId)
+            .Select(p => p.Canvas)
+            .FirstOrDefaultAsync();
     }
 
     public Task<List<Canvas>> GetCanvasesByUserIdAsync(Guid userId)

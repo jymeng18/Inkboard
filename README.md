@@ -2,17 +2,18 @@
 
 # Inkboard
 
-[About](#about) · [Preview](#preview) · [Schema](#schema) · [Setup](#setup) · [Docs](#docs)
-
 Simple real-time canvas for shared drawing.
 
-[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=FFFFFF)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=FFFFFF)](https://www.typescriptlang.org/)
-[![.NET 10](https://img.shields.io/badge/.NET-512BD4?style=flat&logo=dotnet&logoColor=FFFFFF)](https://dotnet.microsoft.com/)
-[![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-512BD4?style=flat&logo=dotnet&logoColor=FFFFFF)](https://learn.microsoft.com/aspnet/core/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat&logo=postgresql&logoColor=FFFFFF)](https://www.postgresql.org/)
-[![SignalR](https://img.shields.io/badge/SignalR-1E88E5?style=flat&logo=microsoft&logoColor=FFFFFF)](https://learn.microsoft.com/aspnet/core/signalr/introduction)
+[![React](https://img.shields.io/badge/React-FF6B6B?style=for-the-badge&logo=react&logoColor=FFFFFF)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-FFD23F?style=for-the-badge&logo=vite&logoColor=1F1F1F)](https://vitejs.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4F8DF7?style=for-the-badge&logo=typescript&logoColor=FFFFFF)](https://www.typescriptlang.org/)
+[![.NET 10](https://img.shields.io/badge/.NET-8B5CF6?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://dotnet.microsoft.com/)
+[![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-25C2A0?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://learn.microsoft.com/aspnet/core/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-3E7BC0?style=for-the-badge&logo=postgresql&logoColor=FFFFFF)](https://www.postgresql.org/)
+[![SignalR](https://img.shields.io/badge/SignalR-FF4D9D?style=for-the-badge&logo=microsoft&logoColor=FFFFFF)](https://learn.microsoft.com/aspnet/core/signalr/introduction)
+
+
+[About](#about) · [Preview](#preview) · [Schema](#schema) · [Setup](#setup) · [Docs](#docs)
 
 </div>
 

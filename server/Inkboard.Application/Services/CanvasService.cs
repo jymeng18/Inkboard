@@ -8,10 +8,12 @@ namespace Inkboard.Application.Services;
 public class CanvasService : ICanvasService
 {
     private readonly ICanvasRepository _canvasRepository;
+    private readonly IPartyRepository _partyRepository;
 
-    public CanvasService(ICanvasRepository canvasRepository)
+    public CanvasService(ICanvasRepository canvasRepository, IPartyRepository partyRepository)
     {
         _canvasRepository = canvasRepository;
+        _partyRepository = partyRepository;
     }
 
     public async Task<Result<Canvas>> CreateCanvasAsync(Guid userId, string canvasName)
@@ -20,12 +22,12 @@ public class CanvasService : ICanvasService
         {
             OwnerId = userId,
             Name = canvasName,
-            SnapshotURL = null, // TODO: Setup Azure blob storage service, keep as empty for now
+            SnapshotURL = null,
             LastModifiedAt = DateTime.UtcNow,
         };
 
         await _canvasRepository.CreateCanvasAsync(canvas);
-        return new Result<Canvas> { Data = canvas, IsSuccess = true };
+        return Result<Canvas>.Ok(data: canvas);
     }
 
     public async Task<Result> DeleteCanvasAsync(Guid canvasId, Guid userId)
@@ -33,21 +35,37 @@ public class CanvasService : ICanvasService
         var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
         if (canvas is null)
         {
-            return new Result { Error = "Canvas not found.", IsSuccess = false };
+            return Result.Fail(ErrorType.NotFound, "Canvas not found.");
         }
 
         // Verify user owns Canvas before deleting
         if (canvas.OwnerId != userId)
         {
-            return new Result
-            {
-                Error = "Unauthorized deletion on this canvas.",
-                IsSuccess = false,
-            };
+            return Result.Fail(ErrorType.Forbidden, error: "Unauthorized deletion on this canvas.");
         }
 
         await _canvasRepository.DeleteCanvasAsync(canvas);
-        return new Result { IsSuccess = true };
+        return Result.Ok();
+    }
+
+    public async Task<Result> ForceEndSessionAsync(Guid canvasId, Guid userId)
+    {
+        var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
+        if (canvas is null)
+            return Result.Fail(ErrorType.NotFound, "Canvas not found.");
+
+        // When canvas session ends, destroy the link from party to active Canvas
+        var party = await _partyRepository.GetActivePartyForUserAsync(userId);
+        if (party is null)
+            return Result.Fail(ErrorType.NotFound, "Party not found.");
+
+        if (party.CanvasId != canvasId)
+            return Result.Fail(ErrorType.Forbidden, "Canvas does not belong to Party.");
+
+        party.CanvasId = null;
+        await _partyRepository.UpdatePartyAsync(party);
+
+        return Result.Ok();
     }
 
     public async Task<Result<List<Canvas>>> GetAllCanvasesAsync(Guid userId)
@@ -55,20 +73,26 @@ public class CanvasService : ICanvasService
         var canvases = await _canvasRepository.GetCanvasesByUserIdAsync(userId);
 
         // * This is always a success, an empty list is still a success, can never be null
-        return new Result<List<Canvas>> { Data = canvases, IsSuccess = true };
+        return Result<List<Canvas>>.Ok(data: canvases);
     }
 
-    public async Task<Result> RenameCanvas(string newCanvasName, Guid canvasId)
+    public async Task<Result> RenameCanvas(string newCanvasName, Guid canvasId, Guid userId)
     {
         var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
         if (canvas is null)
         {
-            return new Result { Error = "Canvas not found.", IsSuccess = false };
+            return Result.Fail(ErrorType.NotFound, "Canvas not found.");
         }
+
+        if (userId != canvas.OwnerId)
+        {
+            return Result.Fail(ErrorType.Forbidden, "Canvas does not belong to you.");
+        }
+
         canvas.Name = newCanvasName;
         canvas.LastModifiedAt = DateTime.UtcNow;
         await _canvasRepository.UpdateCanvasAsync(canvas);
 
-        return new Result { IsSuccess = true };
+        return Result.Ok();
     }
 }
