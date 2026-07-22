@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.SignalR;
 using FluentValidation;
 using Inkboard.API;
 using Inkboard.API.Hubs;
@@ -11,6 +10,7 @@ using Inkboard.Domain.Repositories;
 using Inkboard.Infra.Auth;
 using Inkboard.Infra.Db;
 using Inkboard.Infra.DependencyInjection;
+using Microsoft.AspNetCore.SignalR;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +48,8 @@ builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPartyNotifier, PartyNotifier>();
 builder.Services.AddScoped<ICanvasRepository, CanvasRepository>();
 builder.Services.AddScoped<ICanvasService, CanvasService>();
+
+builder.Services.AddSingleton<IConnectionStore, ConnectionStore>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 

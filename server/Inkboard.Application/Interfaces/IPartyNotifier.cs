@@ -8,4 +8,5 @@ public interface IPartyNotifier
     Task NotifyKick(Guid targetUserId, Guid partyId);
     Task NotifyLeadershipTransferred(Guid newLeaderId, Guid partyId);
     Task NotifyMemberJoined(Guid partyId, PartyMember newPartyMember);
+    Task NotifyMemberLeft(Guid partyId, Guid userId);
 }

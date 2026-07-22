@@ -10,6 +10,7 @@ public interface IPartyHubClient
     Task NotifyOnConnection(Guid userId);
     Task NotifyOnDisconnect(Guid userId);
     Task NotifyOnMemberJoined(Guid userId);
+    Task NotifyOnMemberLeft(Guid userId);
     Task NotifyOnKick(Guid userId);
     Task ReceiveInvite(PartyInvite partyInvite);
     Task LeadershipTransferred(Guid newLeaderId);

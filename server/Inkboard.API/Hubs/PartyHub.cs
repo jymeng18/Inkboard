@@ -1,3 +1,5 @@
+using Inkboard.API.Realtime;
+using Inkboard.Application.Interfaces;
 using Inkboard.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -9,10 +11,12 @@ namespace Inkboard.API.Hubs;
 public sealed class PartyHub : Hub<IPartyHubClient>
 {
     private readonly IPartyRepository _partyRepository;
+    private readonly IConnectionStore _connectionStore;
 
-    public PartyHub(IPartyRepository partyRepository)
+    public PartyHub(IPartyRepository partyRepository, IConnectionStore connectionStore)
     {
         _partyRepository = partyRepository;
+        _connectionStore = connectionStore;
     }
 
     public override async Task OnConnectedAsync()
@@ -24,15 +28,17 @@ public sealed class PartyHub : Hub<IPartyHubClient>
             return;
         }
 
-        var party = await _partyRepository.GetActivePartyForUserAsync(userId);
-        if (party is not null)
-        {
-            var groupName = PartyHub.GroupName(party.Id);
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            
-            // Note: NotifyOnConnection(..) is a method that will be exposed to receive data from socket
-            await Clients.OthersInGroup(groupName).NotifyOnConnection(userId);
-        }
+        _connectionStore.Add(Context.ConnectionId, userId);
+
+        // var party = await _partyRepository.GetActivePartyForUserAsync(userId);
+        // if (party is not null)
+        // {
+        //     var groupName = PartyHub.GroupName(party.Id);
+        //     await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+
+        //     // Note: NotifyOnConnection(..) is a method that will be exposed to receive data from socket
+        //     await Clients.OthersInGroup(groupName).NotifyOnConnection(userId);
+        // }
         await base.OnConnectedAsync();
     }
 
@@ -44,6 +50,7 @@ public sealed class PartyHub : Hub<IPartyHubClient>
             Context.Abort();
             return;
         }
+        _connectionStore.Remove(userId);
 
         var party = await _partyRepository.GetActivePartyForUserAsync(userId);
         if (party is null)

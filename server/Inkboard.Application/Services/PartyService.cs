@@ -68,6 +68,7 @@ namespace Inkboard.Application.Services
                 Role = UserRole.Leader,
             };
             await partyRepository.AddMemberAsync(partyMember);
+            await partyNotifier.NotifyMemberJoined(newParty.Id, partyMember);
 
             return Result<Party>.Ok(newParty);
         }
@@ -167,6 +168,7 @@ namespace Inkboard.Application.Services
             if (!isLeader)
             {
                 await partyRepository.RemoveMemberAsync(member);
+                await partyNotifier.NotifyMemberLeft(partyId, member.UserId);
                 return Result.Ok();
             }
 
@@ -174,6 +176,7 @@ namespace Inkboard.Application.Services
             if (memberCount == 1)
             {
                 await partyRepository.RemoveMemberAsync(member);
+                await partyNotifier.NotifyMemberLeft(partyId, member.UserId);
                 await partyRepository.DeletePartyAsync(party);
                 return Result.Ok();
             }
@@ -193,6 +196,7 @@ namespace Inkboard.Application.Services
             await partyRepository.UpdatePartyAsync(party);
             await partyRepository.RemoveMemberAsync(member);
 
+            await partyNotifier.NotifyMemberLeft(partyId, member.UserId);
             await partyNotifier.NotifyLeadershipTransferred(newLeader.UserId, partyId);
 
             return Result.Ok();
