@@ -88,7 +88,7 @@ namespace Inkboard.API.Routes
                 )
                 .RequireAuthorization();
 
-            endpoint
+            _ = endpoint
                 .MapPost(
                     "/api/parties/{partyId}/invites",
                     async (
@@ -102,10 +102,20 @@ namespace Inkboard.API.Routes
                         if (leaderId == Guid.Empty)
                             return Results.Unauthorized();
 
+                        if (string.IsNullOrWhiteSpace(userRequest.InvitedUserId))
+                        {
+                            return Results.BadRequest();
+                        }
+
+                        if (!Guid.TryParse(userRequest.InvitedUserId, out var invitedUserId))
+                        {
+                            return Results.BadRequest();
+                        }
+
                         var result = await partyService.InviteUserAsync(
                             partyId,
                             leaderId,
-                            userRequest.InvitedUserId
+                            invitedUserId
                         );
                         if (!result.IsSuccess)
                             return ToErrorResult(result.Error, result.ErrorType);
