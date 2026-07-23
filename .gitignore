@@ -97,6 +97,7 @@ AppPackages/
 
 # Others
 [Bb]in
+.claude/
 [Oo]bj
 sql
 [Tt]est[Rr]esult*
@@ -117,3 +118,4 @@ src/.vs/config/applicationhost.config
 # JetBrains Rider's auto generated files
 .idea/
 .opencode/
+designs/
