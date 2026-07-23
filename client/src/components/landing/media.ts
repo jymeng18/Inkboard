@@ -1,0 +1,14 @@
+const HOST = 'https://lh3.googleusercontent.com/aida-public'
+
+export const AVATAR_IMAGES = [
+  "/avatars/avatar-boy.svg",
+  "/avatars/avatar-girl.svg",
+  "/avatars/avatar-girl2.svg",
+];
+
+export const DOODLE_IMAGES = [
+  `${HOST}/AB6AXuDo5v0rSvaOlXHKAFGEQYlI71ApwCAdfpfR8-rm1We3YCIjFZMBtdvUG305ODKk7cgq5dFcTWYxkDObAw6n4-1FeJ2eBss8ddzlMGCnOrxKxaEu-uVAS59qaOu9kE0bAXyTTU4sEM7V_8r8LXUfyOqmisc2I1_pRzVxFLJd8nnUGioTc0FKKdhegGciAIvZlurgwXK4se4x_4iZGrjoWyRWAPVbkskOvKdDE9Hr_1deY0dIpE7iTKJSGsTgFSbhHWYK7WF4fxMCuigX`,
+  `${HOST}/AB6AXuAqmG_XgdJkga_fxDl2O9xAeqfT02g2NxxkI-2v7NUMsgV2u2nmK44ZCLH8WTAivcCSCerRw77G7WlnqxXa4Rd8MTJVy_E-A7WKVFXNUf6qLKwmk5-FWIt5586SzpS-GSlLZAsntSqETJunDK1J_U1SHjO-_n7ZA7OJwfd0lHfIu5q0-VeGe8xrH2IEGX5IBhN0KddSdqN3MQHFZMmAB_wRS2DvfJmy2pUq4SJW0IR1vxvjCsLtacvT9edqJ7_iwoyFcfpLFK8wNOCq`,
+  `${HOST}/AB6AXuB1Nw0eg_oYmUsvWY5II4qqt23Q25wMRL7YnC2EDLADC-iBHZ56Y_N3KSaGw9DMTiHSJ2FIQDL75_tjk942lVM4f2bTxnGFpj-4liMRwMDZgz2qqRsDOnqOCW1bUWOZYRzou47sA7yXkM-TUJ0Y3ZIvTR-CIgOx-fCoBQUoXmvHDJzSd_sAc2n-WOKU_MCb5Bbtd_8qYZ15vaf_BnVJ1JNfPa0MopkmgrvV0ptNMrCilBp81-vR6uN-mwpgFpwn5ICKmrUHmnuorhFl`,
+  `${HOST}/AB6AXuBoCto_TzxMbcl73R60s-FYi6Grqmf-_bR7wPJIy9Nps7jcYsazD2CkBH5QdiYVCCbaU2f8YoG5_lPsaZdWUpCFriUFtnhvEGZjtywEbVV0AQiGPhl2eaKruclrtFxrOhoniXSxtSLrCje1c-ez2CQ8I4HyeXSpt-ukKchF7512-6CLrlRqb5TJLoQcURw8YVSZ_jeOKqFptuXU_taV8z5RE3Yx2ZKsK78lkqDGFDJ9UXYKVN2MWoxmKsVM8vpmeqkWqH8C7uCbP0AU`,
+]
