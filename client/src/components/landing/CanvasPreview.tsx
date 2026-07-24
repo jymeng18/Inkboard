@@ -1,9 +1,16 @@
+import { useRef } from 'react'
 import { MousePointer2, Pencil } from 'lucide-react'
+import {
+  motion,
+  useAnimationFrame,
+  useMotionValue,
+  useMotionValueEvent,
+  useReducedMotion,
+  useTransform,
+  type MotionValue,
+} from 'motion/react'
 
-/*
- * A mock collaborative session: the browser chrome, a dashed sketch area with
- * strokes that draw themselves on a loop, and two other people's cursors.
- */
+
 export default function CanvasPreview() {
   return (
     <section id="canvas" className="relative mb-24 w-full max-w-4xl scroll-mt-24">
@@ -71,79 +78,117 @@ function CursorTag({ className, icon, label }: CursorTagProps) {
   )
 }
 
+/*
+ * The figure, in the order a person would actually draw it. Each stroke is
+ * timed independently so the sketch builds up limb by limb rather than fading
+ * in all at once.
+ */
+const PEN_LIFT = 0.12
+const HOLD = 1.6
+
+const STROKES = [
+  { d: 'M 200 42 C 226 42 244 60 244 84 C 244 108 224 124 200 124 C 176 124 156 106 156 84 C 156 60 174 42 202 43', color: '#2d2926', width: 4.5, dur: 1.1 },
+  { d: 'M 185 79 q 3.5 -9 7 0', color: '#2d2926', width: 3.5, dur: 0.22 },
+  { d: 'M 211 79 q 3.5 -9 7 0', color: '#2d2926', width: 3.5, dur: 0.22 },
+  { d: 'M 184 99 Q 200 113 217 97', color: '#2d2926', width: 3.5, dur: 0.38 },
+  { d: 'M 161 68 Q 172 32 196 47 Q 214 28 237 63', color: '#ff7070', width: 4, dur: 0.6 },
+  { d: 'M 200 124 L 200 212', color: '#2d2926', width: 4.5, dur: 0.45 },
+  { d: 'M 200 152 C 180 158 164 175 154 199', color: '#2d2926', width: 4.5, dur: 0.5 },
+  { d: 'M 200 152 C 221 158 239 172 251 196', color: '#2d2926', width: 4.5, dur: 0.5 },
+  { d: 'M 200 212 C 194 235 186 249 176 269', color: '#2d2926', width: 4.5, dur: 0.5 },
+  { d: 'M 200 212 C 206 235 214 249 225 269', color: '#2d2926', width: 4.5, dur: 0.5 },
+  { d: 'M 122 279 Q 200 289 279 275', color: '#00c1fd', width: 4, dur: 0.55 },
+].map((stroke, i, all) => ({
+  ...stroke,
+  begin: all.slice(0, i).reduce((t, s) => t + s.dur + PEN_LIFT, 0),
+}))
+
+const LAST = STROKES[STROKES.length - 1]
+const DRAW_END = LAST.begin + LAST.dur
+const CYCLE = DRAW_END + HOLD
+
+/**
+ * useAnimationFrame is from motion, no React rerenders on animation
+ */
 function SelfDrawingSketch() {
+  const reducedMotion = useReducedMotion()
+  const clock = useMotionValue(0)
+  const penX = useMotionValue(200)
+  const penY = useMotionValue(42)
+
+  useAnimationFrame((elapsed) => {
+    if (reducedMotion) return
+    clock.set((elapsed / 1000) % CYCLE)
+  })
+
+  // Pen rides along only while ink is being laid down, then lifts off the page.
+  const penOpacity = useTransform(clock, [DRAW_END - 0.3, DRAW_END], [1, 0])
+
   return (
     <svg
       viewBox="0 0 400 300"
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-10 size-full p-8 opacity-80"
+      className="pointer-events-none absolute inset-0 z-10 size-full p-6 opacity-90"
     >
-      <path
-        d="M 50 150 Q 100 50 150 150 T 250 250"
-        fill="none"
-        stroke="#ffb347"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray="600"
-        strokeDashoffset="600"
-      >
-        <animate
-          attributeName="stroke-dashoffset"
-          from="600"
-          to="0"
-          begin="0s"
-          dur="3s"
-          repeatCount="indefinite"
-        />
-      </path>
+      {STROKES.map((stroke) =>
+        reducedMotion ? (
+          <path
+            key={stroke.d}
+            d={stroke.d}
+            fill="none"
+            stroke={stroke.color}
+            strokeWidth={stroke.width}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : (
+          <Stroke key={stroke.d} stroke={stroke} clock={clock} penX={penX} penY={penY} />
+        ),
+      )}
 
-      <path
-        d="M 280 80 A 40 40 0 1 1 279.9 80"
-        fill="none"
-        stroke="#7b61ff"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray="300"
-        strokeDashoffset="300"
-      >
-        <animate
-          attributeName="stroke-dashoffset"
-          from="300"
-          to="0"
-          begin="1s"
-          dur="2s"
-          repeatCount="indefinite"
-        />
-      </path>
-
-      <path
-        d="M 320 200 l 10 20 l 20 5 l -15 15 l 5 20 l -20 -10 l -20 10 l 5 -20 l -15 -15 l 20 -5 z"
-        fill="none"
-        stroke="#ff6b6b"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray="200"
-        strokeDashoffset="200"
-      >
-        <animate
-          attributeName="stroke-dashoffset"
-          from="200"
-          to="0"
-          begin="0.5s"
-          dur="3s"
-          repeatCount="indefinite"
-        />
-      </path>
-
-      <g>
-        <path d="M 0 0 L 10 25 L 18 18 L 28 28 L 32 24 L 22 14 L 30 10 Z" fill="#2d2926" />
-        <animateMotion
-          path="M 50 150 Q 100 50 150 150 T 250 250"
-          begin="0s"
-          dur="3s"
-          repeatCount="indefinite"
-        />
-      </g>
+      {!reducedMotion && (
+        <motion.g style={{ x: penX, y: penY, opacity: penOpacity }}>
+          <path d="M 0 0 L 10 25 L 18 18 L 28 28 L 32 24 L 22 14 L 30 10 Z" fill="#2d2926" />
+        </motion.g>
+      )}
     </svg>
+  )
+}
+
+interface StrokeProps {
+  stroke: (typeof STROKES)[number]
+  clock: MotionValue<number>
+  penX: MotionValue<number>
+  penY: MotionValue<number>
+}
+
+function Stroke({ stroke, clock, penX, penY }: StrokeProps) {
+  const ref = useRef<SVGPathElement>(null)
+  const length = useRef(0)
+
+  const progress = useTransform(clock, [stroke.begin, stroke.begin + stroke.dur], [0, 1])
+
+  const opacity = useTransform(progress, (value) => (value > 0 ? 1 : 0))
+
+  useMotionValueEvent(progress, 'change', (value) => {
+    const path = ref.current
+    if (!path || value <= 0 || value >= 1) return
+    if (!length.current) length.current = path.getTotalLength()
+    const point = path.getPointAtLength(value * length.current)
+    penX.set(point.x)
+    penY.set(point.y)
+  })
+
+  return (
+    <motion.path
+      ref={ref}
+      d={stroke.d}
+      fill="none"
+      stroke={stroke.color}
+      strokeWidth={stroke.width}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ pathLength: progress, opacity }}
+    />
   )
 }
