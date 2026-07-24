@@ -6,6 +6,10 @@
   ],
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "allowSyntheticDefaultImports": true,
+
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

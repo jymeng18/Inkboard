@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Lock, Mail, User } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { useAuth } from '../../hooks/useAuth'
+import { useAuthStore } from '../../stores/authStore'
 import AuthField from './AuthField'
 import { GithubIcon, GoogleIcon } from './SocialIcons'
 
@@ -12,17 +15,40 @@ const COPY = {
     title: 'Welcome Back',
     subtitle: 'Ready to start drawing again?',
     submit: 'Log In',
+    pending: 'Logging in...',
   },
   signup: {
     title: 'Create Account',
     subtitle: 'Join the creative community today.',
     submit: 'Sign Up',
+    pending: 'Creating account...',
   },
 }
 
 export default function AuthForm() {
+  const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { login, register, loading, error } = useAuth()
+
   const [mode, setMode] = useState<Mode>('login')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
   const copy = COPY[mode]
+
+  useEffect(() => {
+    if (isAuthenticated) navigate('/app', { replace: true })
+  }, [isAuthenticated, navigate])
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    if (mode === 'login') {
+      await login(email, password)
+    } else {
+      await register(name, email, password)
+    }
+  }
 
   return (
     <div className="w-full max-w-lg">
@@ -40,7 +66,7 @@ export default function AuthForm() {
         </ModeTab>
       </div>
 
-      <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {mode === 'signup' && (
           <AuthField
             id="name"
@@ -48,6 +74,10 @@ export default function AuthForm() {
             type="text"
             placeholder="Artist name"
             icon={User}
+            value={name}
+            onChange={setName}
+            autoComplete="nickname"
+            required
           />
         )}
 
@@ -55,8 +85,12 @@ export default function AuthForm() {
           id="email"
           label="Email Address"
           type="email"
-          placeholder="rin@rin.com"
+          placeholder="you@example.com"
           icon={Mail}
+          value={email}
+          onChange={setEmail}
+          autoComplete="email"
+          required
         />
 
         <AuthField
@@ -65,6 +99,10 @@ export default function AuthForm() {
           type="password"
           placeholder="••••••••"
           icon={Lock}
+          value={password}
+          onChange={setPassword}
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          required
         />
 
         {mode === 'login' && (
@@ -75,8 +113,17 @@ export default function AuthForm() {
           </div>
         )}
 
-        <Button type="submit" size="lg" className="w-full">
-          {copy.submit}
+        {error && (
+          <p
+            role="alert"
+            className="rounded-2xl border-[3px] border-outline bg-primary/15 px-4 py-2.5 font-body text-sm font-medium text-on-background"
+          >
+            {error}
+          </p>
+        )}
+
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          {loading ? copy.pending : copy.submit}
         </Button>
       </form>
 

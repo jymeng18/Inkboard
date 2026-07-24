@@ -1,0 +1,174 @@
+import { useRef, useEffect, useCallback } from "react";
+import * as signalR from "@microsoft/signalr";
+import { toast } from "sonner";
+import { useAuthStore } from "../stores/authStore";
+import { useInviteStore } from "../stores/inviteStore";
+import { useConnectionStore } from "../stores/connectionStore";
+import { usePartyStore } from "../stores/partyStore";
+
+export function usePartyHub() {
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
+  const addInvite = useInviteStore((s) => s.addInvite);
+  const setConnected = useConnectionStore((s) => s.setConnected);
+  const setLastEvent = useConnectionStore((s) => s.setLastEvent);
+  const triggerNavToDashboard = useConnectionStore(
+    (s) => s.triggerNavToDashboard,
+  );
+  const addMember = usePartyStore((s) => s.addMember);
+  const removeMember = usePartyStore((s) => s.removeMember);
+  const setLeader = usePartyStore((s) => s.setLeader);
+  const clearParty = usePartyStore((s) => s.clearParty);
+
+  const connect = useCallback(async () => {
+    if (connectionRef.current?.state === signalR.HubConnectionState.Connected)
+      return;
+    if (!accessToken) return;
+
+    if (connectionRef.current) {
+      try {
+        await connectionRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+      connectionRef.current = null;
+    }
+
+    const conn = new signalR.HubConnectionBuilder()
+      .withUrl("/hubs/party", {
+        accessTokenFactory: () => accessToken,
+        transport: signalR.HttpTransportType.WebSockets,
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
+
+    conn.on("NotifyOnConnection", (uid: string) => {
+      setLastEvent({ event: "connected", userId: uid });
+    });
+
+    conn.on("NotifyOnDisconnect", (uid: string) => {
+      setLastEvent({ event: "disconnected", userId: uid });
+    });
+
+    conn.on("NotifyOnMemberJoined", (uid: string) => {
+      addMember(uid);
+      toast.success(`Member joined: ${uid.slice(0, 8)}...`);
+      setLastEvent({ event: "joined", userId: uid });
+    });
+
+    conn.on("NotifyOnMemberLeft", (uid: string) => {
+      removeMember(uid);
+      toast.info(`Member left: ${uid.slice(0, 8)}...`);
+      setLastEvent({ event: "left", userId: uid });
+    });
+
+    conn.on("NotifyOnKick", (uid: string) => {
+      removeMember(uid);
+      if (uid === userId) {
+        clearParty();
+        triggerNavToDashboard();
+      }
+      toast.error(`Kicked: ${uid.slice(0, 8)}...`);
+      setLastEvent({ event: "kicked", userId: uid });
+    });
+
+    conn.on("ReceiveInvite", (invite: unknown) => {
+      const i = invite as {
+        id: string;
+        partyId: string;
+        invitedByUserId: string;
+        expiresAt: string;
+        inviteStatus: number;
+      };
+      addInvite({
+        id: i.id,
+        partyId: i.partyId,
+        invitedByUserId: i.invitedByUserId,
+        invitedUserId: "",
+        inviteStatus:
+          i.inviteStatus === 0
+            ? "Pending"
+            : i.inviteStatus === 1
+              ? "Accepted"
+              : "Declined",
+        expiresAt: i.expiresAt,
+        createdAt: new Date().toISOString(),
+      });
+      toast.success("You received a party invite!");
+      setLastEvent({ event: "invited", userId: i.partyId });
+    });
+
+    conn.on("LeadershipTransferred", (newLeaderId: string) => {
+      setLeader(newLeaderId);
+      clearParty();
+      triggerNavToDashboard();
+      toast.info("Leadership transferred. Returning to dashboard.");
+      setLastEvent({ event: "leadership", userId: newLeaderId });
+    });
+
+    conn.onreconnecting((err) => {
+      setConnected(false);
+      console.log("[PartyHub] Reconnecting...", err?.message);
+    });
+
+    conn.onreconnected(() => {
+      setConnected(true);
+      toast.info("WebSocket reconnected");
+    });
+
+    conn.onclose((err) => {
+      setConnected(false);
+      console.log("[PartyHub] Closed:", err?.message);
+    });
+
+    try {
+      await conn.start();
+      connectionRef.current = conn;
+      setConnected(true);
+      toast.success("Connected to party server");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes("404") ||
+        msg.includes("abort") ||
+        msg.includes("handshake")
+      ) {
+        toast.info("WS: not in a party yet");
+      } else {
+        toast.error(`WS error: ${msg}`);
+      }
+    }
+  }, [
+    accessToken,
+    userId,
+    addInvite,
+    setConnected,
+    setLastEvent,
+    triggerNavToDashboard,
+    addMember,
+    removeMember,
+    setLeader,
+    clearParty,
+  ]);
+
+  const disconnect = useCallback(async () => {
+    if (connectionRef.current) {
+      await connectionRef.current.stop();
+      connectionRef.current = null;
+      setConnected(false);
+    }
+  }, [setConnected]);
+
+  useEffect(() => {
+    if (accessToken) {
+      connect();
+    }
+    return () => {
+      disconnect();
+    };
+  }, [connect, disconnect, accessToken]);
+
+  return { connect, disconnect };
+}
