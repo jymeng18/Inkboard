@@ -38,7 +38,7 @@ export default function AuthForm() {
   const copy = COPY[mode]
 
   useEffect(() => {
-    if (isAuthenticated) navigate('/app', { replace: true })
+    if (isAuthenticated) navigate('/dashboard', { replace: true })
   }, [isAuthenticated, navigate])
 
   async function handleSubmit(event: React.FormEvent) {
