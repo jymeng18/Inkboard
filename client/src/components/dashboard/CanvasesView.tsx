@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus, RotateCw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { CanvasDto } from '../../api/canvas'
@@ -6,11 +6,21 @@ import CanvasCard from './CanvasCard'
 
 interface CanvasesViewProps {
   canvases: CanvasDto[]
+  isLoading: boolean
+  isError: boolean
+  onRetry: () => void
   onNewCanvas: () => void
   onOpenCanvas: (canvas: CanvasDto) => void
 }
 
-export default function CanvasesView({ canvases, onNewCanvas, onOpenCanvas }: CanvasesViewProps) {
+export default function CanvasesView({
+  canvases,
+  isLoading,
+  isError,
+  onRetry,
+  onNewCanvas,
+  onOpenCanvas,
+}: CanvasesViewProps) {
   return (
     <section>
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -36,16 +46,42 @@ export default function CanvasesView({ canvases, onNewCanvas, onOpenCanvas }: Ca
           New Canvas
         </button>
 
-        {canvases.map((canvas) => (
-          <CanvasCard key={canvas.id} canvas={canvas} onOpen={onOpenCanvas} />
-        ))}
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, i) => <CanvasCardSkeleton key={i} />)
+          : canvases.map((canvas) => (
+              <CanvasCard key={canvas.id} canvas={canvas} onOpen={onOpenCanvas} />
+            ))}
       </div>
 
-      {canvases.length === 0 && (
+      {isError && (
+        <div className="mt-8 flex flex-col items-center gap-3 text-center">
+          <p className="font-body text-sm text-on-background/70">
+            Couldn't load your canvases.
+          </p>
+          <Button variant="surface" size="sm" onClick={onRetry}>
+            <RotateCw />
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {!isLoading && !isError && canvases.length === 0 && (
         <p className="mt-8 text-center font-body text-sm text-on-background/60">
           No canvases yet — start your first one and it'll show up here.
         </p>
       )}
     </section>
+  )
+}
+
+function CanvasCardSkeleton() {
+  return (
+    <div className="flex animate-pulse flex-col overflow-hidden rounded-2xl border-[3px] border-outline bg-surface">
+      <div className="aspect-4/3 border-b-[3px] border-outline bg-surface-dim/40" />
+      <div className="space-y-2 p-3">
+        <div className="h-4 w-2/3 rounded bg-surface-dim/50" />
+        <div className="h-3 w-1/3 rounded bg-surface-dim/40" />
+      </div>
+    </div>
   )
 }

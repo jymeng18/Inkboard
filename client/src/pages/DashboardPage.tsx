@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Palette, Settings, Users } from 'lucide-react'
 
-import type { CanvasDto } from '../api/canvas'
 import { extractErrorMessage, removeMember as removeMemberApi } from '../api/party'
+import { useCanvases } from '../hooks/useCanvases'
 import CanvasesView from '../components/dashboard/CanvasesView'
 import DashboardSidebar, { type DashboardView } from '../components/dashboard/DashboardSidebar'
 import DashboardTopBar from '../components/dashboard/DashboardTopBar'
@@ -41,8 +41,7 @@ export default function DashboardPage() {
   const [view, setView] = useState<DashboardView>('canvases')
   const [friendsOpen, setFriendsOpen] = useState(false)
 
-  // Canvas fetching is a separate wire-up; the gallery shows its empty state for now.
-  const canvases: CanvasDto[] = []
+  const { data: canvases = [], isLoading, isError, refetch } = useCanvases()
 
   async function handleLogout() {
     await logout()
@@ -97,6 +96,9 @@ export default function DashboardPage() {
           {view === 'canvases' && (
             <CanvasesView
               canvases={canvases}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={() => refetch()}
               onNewCanvas={canvasComingSoon}
               onOpenCanvas={canvasComingSoon}
             />
