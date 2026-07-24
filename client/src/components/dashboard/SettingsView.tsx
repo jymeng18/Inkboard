@@ -1,4 +1,6 @@
-import { Bell, LogOut, Palette, UserCog } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Bell, Check, Copy, LogOut, Palette, UserCog } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -10,11 +12,12 @@ const SETTINGS: { icon: LucideIcon; title: string; description: string }[] = [
 ]
 
 interface SettingsViewProps {
+  userId: string
   userName: string
   onLogout: () => void
 }
 
-export default function SettingsView({ userName, onLogout }: SettingsViewProps) {
+export default function SettingsView({ userId, userName, onLogout }: SettingsViewProps) {
   return (
     <section className="max-w-2xl">
       <div className="mb-6">
@@ -23,6 +26,8 @@ export default function SettingsView({ userName, onLogout }: SettingsViewProps) 
           Signed in as {userName || 'your account'}.
         </p>
       </div>
+
+      <UserIdCard userId={userId} />
 
       <ul className="flex flex-col gap-3">
         {SETTINGS.map(({ icon: Icon, title, description }) => (
@@ -46,5 +51,43 @@ export default function SettingsView({ userName, onLogout }: SettingsViewProps) 
         Log out
       </Button>
     </section>
+  )
+}
+
+function UserIdCard({ userId }: { userId: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    if (!userId) return
+    try {
+      await navigator.clipboard.writeText(userId)
+      setCopied(true)
+      toast.success('User ID copied')
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error('Could not copy to clipboard')
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Click to copy your user ID"
+      className="mb-3 flex w-full items-center gap-4 rounded-2xl border-[3px] border-outline bg-primary-container p-4 text-left sticker-shadow-sm transition-transform hover:-translate-y-0.5"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="font-label text-xs font-bold">Your User ID</p>
+        <p className="mt-0.5 truncate font-mono text-sm font-medium select-all">
+          {userId || '—'}
+        </p>
+        <p className="mt-1 font-body text-[11px] text-on-background/60">
+          Share this so friends can invite you to their party.
+        </p>
+      </div>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-surface">
+        {copied ? <Check className="size-4 text-primary" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+      </span>
+    </button>
   )
 }
