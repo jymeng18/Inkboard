@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
+import { showPartyInviteToast } from "../lib/partyInviteToast";
 import { useAuthStore } from "../stores/authStore";
 import { useInviteStore } from "../stores/inviteStore";
 import { useConnectionStore } from "../stores/connectionStore";
@@ -13,6 +14,8 @@ export function usePartyHub() {
   const addInvite = useInviteStore((s) => s.addInvite);
   const setConnected = useConnectionStore((s) => s.setConnected);
   const setLastEvent = useConnectionStore((s) => s.setLastEvent);
+  const setPresence = useConnectionStore((s) => s.setPresence);
+  const resetPresence = useConnectionStore((s) => s.resetPresence);
   const triggerNavToDashboard = useConnectionStore(
     (s) => s.triggerNavToDashboard,
   );
@@ -45,15 +48,18 @@ export function usePartyHub() {
       .build();
 
     conn.on("NotifyOnConnection", (uid: string) => {
+      setPresence(uid, true);
       setLastEvent({ event: "connected", userId: uid });
     });
 
     conn.on("NotifyOnDisconnect", (uid: string) => {
+      setPresence(uid, false);
       setLastEvent({ event: "disconnected", userId: uid });
     });
 
     conn.on("NotifyOnMemberJoined", (uid: string) => {
       addMember(uid);
+      setPresence(uid, true);
       toast.success(`Member joined: ${uid.slice(0, 8)}...`);
       setLastEvent({ event: "joined", userId: uid });
     });
@@ -96,7 +102,12 @@ export function usePartyHub() {
         expiresAt: i.expiresAt,
         createdAt: new Date().toISOString(),
       });
-      toast.success("You received a party invite!");
+      showPartyInviteToast({
+        id: i.id,
+        partyId: i.partyId,
+        invitedByUserId: i.invitedByUserId,
+        expiresAt: i.expiresAt,
+      });
       setLastEvent({ event: "invited", userId: i.partyId });
     });
 
@@ -115,7 +126,6 @@ export function usePartyHub() {
 
     conn.onreconnected(() => {
       setConnected(true);
-      toast.info("WebSocket reconnected");
     });
 
     conn.onclose((err) => {
@@ -123,22 +133,15 @@ export function usePartyHub() {
       console.log("[PartyHub] Closed:", err?.message);
     });
 
+    // Connection lifecycle stays in the console — only real party activity
+    // (joins, kicks, invites) surfaces as a toast.
     try {
       await conn.start();
       connectionRef.current = conn;
       setConnected(true);
-      toast.success("Connected to party server");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (
-        msg.includes("404") ||
-        msg.includes("abort") ||
-        msg.includes("handshake")
-      ) {
-        toast.info("WS: not in a party yet");
-      } else {
-        toast.error(`WS error: ${msg}`);
-      }
+      console.log("[PartyHub] Connect failed:", msg);
     }
   }, [
     accessToken,
@@ -146,6 +149,7 @@ export function usePartyHub() {
     addInvite,
     setConnected,
     setLastEvent,
+    setPresence,
     triggerNavToDashboard,
     addMember,
     removeMember,
@@ -158,8 +162,9 @@ export function usePartyHub() {
       await connectionRef.current.stop();
       connectionRef.current = null;
       setConnected(false);
+      resetPresence();
     }
-  }, [setConnected]);
+  }, [setConnected, resetPresence]);
 
   useEffect(() => {
     if (accessToken) {
