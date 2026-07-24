@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Check, X } from 'lucide-react'
 
@@ -25,11 +26,14 @@ export default function PartyInviteToast({
   invite: InviteSummary
 }) {
   const [pending, setPending] = useState<'accept' | 'decline' | null>(null)
+  const navigate = useNavigate()
   const inviter = `${invite.invitedByUserId.slice(0, 8)}…`
 
   async function respond(accepted: boolean) {
     setPending(accepted ? 'accept' : 'decline')
     try {
+      // Order matters: respond first (adds you to the party), then getParty so
+      // the member list already includes you.
       await respondToInvite(invite.id, accepted)
       useInviteStore.getState().removeInvite(invite.id)
 
@@ -40,7 +44,12 @@ export default function PartyInviteToast({
         for (const member of party.members) {
           if (member.userId !== party.leaderId) store.addMember(member.userId)
         }
-        toast.success('You joined the party!')
+        if (party.canvasId) {
+          navigate(`/canvas/${party.canvasId}`)
+          toast.success('Invite accepted!')
+        } else {
+          toast.info('Joined party (no active canvas)')
+        }
       } else {
         toast('Invite declined')
       }
