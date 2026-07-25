@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
-import AuthForm from "../components/auth/AuthForm";
-import BrandPanel from "../components/auth/BrandPanel";
+import AuthForm from "@/components/auth/AuthForm";
+import BrandPanel from "@/components/auth/BrandPanel";
 
 export default function AuthPage() {
   return (

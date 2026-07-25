@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PartyInviteDto } from '../api/party'
+import type { PartyInviteDto } from '@/api/party'
 
 type InviteState = {
   invites: PartyInviteDto[]

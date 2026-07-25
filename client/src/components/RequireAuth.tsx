@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
-import { usePartyHub } from '../hooks/usePartyHub'
-import { useAuthStore } from '../stores/authStore'
+import { usePartyHub } from '@/hooks/usePartyHub'
+import { useAuthStore } from '@/stores/authStore'
 
 /*
  * Gate for every page that isn't the landing or login. Redirects signed-out

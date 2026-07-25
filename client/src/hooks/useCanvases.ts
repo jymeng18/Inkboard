@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getCanvases } from '../api/canvas'
-import { useAuthStore } from '../stores/authStore'
+import { getCanvases } from '@/api/canvas'
+import { useAuthStore } from '@/stores/authStore'
 
 /*
  * Query keys for canvas data. Keeping them here means future mutations

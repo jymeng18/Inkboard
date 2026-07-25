@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-import { loginUser, logoutUser, registerUser } from '../api/auth'
-import { decodeClaims, getRefreshToken } from '../lib/session'
-import { useAuthStore } from '../stores/authStore'
+import { loginUser, logoutUser, registerUser } from '@/api/auth'
+import { decodeClaims, getRefreshToken } from '@/lib/session'
+import { useAuthStore } from '@/stores/authStore'
 
 /** Pulls a human-readable message out of the various server error shapes. */
 function getErrorMessage(err: unknown, fallback: string): string {

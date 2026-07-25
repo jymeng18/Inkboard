@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 
-import PartyInviteToast, { type InviteSummary } from '../components/dashboard/PartyInviteToast'
+import PartyInviteToast, { type InviteSummary } from '@/components/dashboard/PartyInviteToast'
 
 /**
  * Shows the party invite as a custom, on-brand sonner toast with inline

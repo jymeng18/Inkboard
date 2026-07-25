@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import CanvasPreview from '../components/landing/CanvasPreview'
-import Doodles from '../components/landing/Doodles'
-import FinalCta from '../components/landing/FinalCta'
-import Footer from '../components/landing/Footer'
-import Hero from '../components/landing/Hero'
-import Navbar from '../components/landing/Navbar'
-import PartyMode from '../components/landing/PartyMode'
-import UnderTheHood from '../components/landing/UnderTheHood'
+import CanvasPreview from '@/components/landing/CanvasPreview'
+import Doodles from '@/components/landing/Doodles'
+import FinalCta from '@/components/landing/FinalCta'
+import Footer from '@/components/landing/Footer'
+import Hero from '@/components/landing/Hero'
+import Navbar from '@/components/landing/Navbar'
+import PartyMode from '@/components/landing/PartyMode'
+import UnderTheHood from '@/components/landing/UnderTheHood'
 
 export default function LandingPage() {
   const navigate = useNavigate()

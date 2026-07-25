@@ -1,11 +1,11 @@
 import { useRef, useEffect, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
-import { showPartyInviteToast } from "../lib/partyInviteToast";
-import { useAuthStore } from "../stores/authStore";
-import { useInviteStore } from "../stores/inviteStore";
-import { useConnectionStore } from "../stores/connectionStore";
-import { usePartyStore } from "../stores/partyStore";
+import { showPartyInviteToast } from "@/lib/partyInviteToast";
+import { useAuthStore } from "@/stores/authStore";
+import { useInviteStore } from "@/stores/inviteStore";
+import { useConnectionStore } from "@/stores/connectionStore";
+import { usePartyStore } from "@/stores/partyStore";
 
 export function usePartyHub() {
   const connectionRef = useRef<signalR.HubConnection | null>(null);
@@ -73,10 +73,13 @@ export function usePartyHub() {
     conn.on("NotifyOnKick", (uid: string) => {
       removeMember(uid);
       if (uid === userId) {
+        // Kicked = out of the party entirely, and off the canvas.
         clearParty();
         triggerNavToDashboard();
+        toast.error("You were removed from the party");
+      } else {
+        toast.info(`Removed: ${uid.slice(0, 8)}...`);
       }
-      toast.error(`Kicked: ${uid.slice(0, 8)}...`);
       setLastEvent({ event: "kicked", userId: uid });
     });
 
@@ -112,10 +115,11 @@ export function usePartyHub() {
     });
 
     conn.on("LeadershipTransferred", (newLeaderId: string) => {
+      // The old leader left: leadership passes on and the canvas link breaks, so
+      // everyone exits to the dashboard, the party itself stays intact.
       setLeader(newLeaderId);
-      clearParty();
       triggerNavToDashboard();
-      toast.info("Leadership transferred. Returning to dashboard.");
+      toast.info("Leadership changed — the canvas closed. You're still in the party.");
       setLastEvent({ event: "leadership", userId: newLeaderId });
     });
 

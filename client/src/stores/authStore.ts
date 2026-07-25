@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import { clearSession, readSession, saveSession } from '../lib/session'
+import { clearSession, readSession, saveSession } from '@/lib/session'
 import type { SessionUser } from '../types/auth'
 
 interface AuthState {
