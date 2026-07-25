@@ -43,6 +43,23 @@ public abstract class PartyTestBase : TestBase
         );
     }
 
+    protected static PartyService CreatePartyServiceWithNotifier(
+        AppDbContext context,
+        out Mock<IPartyNotifier> notifierMock)
+    {
+        notifierMock = new Mock<IPartyNotifier>(MockBehavior.Loose);
+        var canvasRepository = new CanvasRepository(context);
+        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context));
+        return new PartyService(
+            new PartyRepository(context),
+            new PartyInviteRepository(context),
+            new BlockListRepository(context),
+            notifierMock.Object,
+            canvasService,
+            canvasRepository
+        );
+    }
+
     protected static async Task<User> SeedUserAsync(AppDbContext context, string userName)
     {
         var user = new User

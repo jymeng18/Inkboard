@@ -139,7 +139,7 @@ namespace Inkboard.Application.Services
             );
             if (isBlocked)
             {
-                return Result<PartyInvite>.Fail(ErrorType.Validation, "You have blocked user.");
+                return Result<PartyInvite>.Fail(ErrorType.Validation, "You have blocked this user.");
             }
 
             var memberCount = await _partyRepository.GetMemberCountAsync(partyId);
@@ -159,7 +159,7 @@ namespace Inkboard.Application.Services
             {
                 return Result<PartyInvite>.Fail(
                     ErrorType.Conflict,
-                    "An invite is already pending for user."
+                    "An invite is already pending for this user."
                 );
             }
 
@@ -186,7 +186,7 @@ namespace Inkboard.Application.Services
 
             var member = await _partyRepository.GetMemberAsync(partyId, userId);
             if (member is null)
-                return Result.Fail(ErrorType.Validation, "You are not in party.");
+                return Result.Fail(ErrorType.Validation, "You are not in this party.");
 
             var isLeader = party.LeaderId == userId;
 
@@ -304,7 +304,7 @@ namespace Inkboard.Application.Services
             {
                 return Result<PartyInvite>.Fail(
                     ErrorType.Forbidden,
-                    "You are no longer able to join party."
+                    "You are no longer able to join this party."
                 );
             }
 
