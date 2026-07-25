@@ -272,6 +272,14 @@ namespace Inkboard.Application.Services
             if (invite.ExpiresAt < DateTime.UtcNow)
                 return Result<PartyInvite>.Fail(ErrorType.Validation, "This invite has expired.");
 
+            // Check if user alr in a Party
+            var activeParty = await partyRepository.GetActivePartyForUserAsync(userId);
+            if (activeParty is not null)
+            {
+                return Result<PartyInvite>.Fail(ErrorType.Validation, "You are already in an active Party.");
+            }
+
+
             if (!accepted)
             {
                 invite.InviteStatus = InviteStatus.Declined;
