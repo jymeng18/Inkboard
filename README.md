@@ -36,16 +36,13 @@ Inkboard is a shared drawing app made for quick live collaboration. It is inspir
 
 ## Preview
 
-### Landing Page
+### Demo Video
 
 <p align="center">
-  <img src="./assets/landing.png" alt="Inkboard landing page" width="100%">
-</p>
-
-### Doodles Page
-
-<p align="center">
-  <img src="./assets/doodles.png" alt="Inkboard doodles page" width="100%">
+  <video controls autoplay muted loop playsinline width="100%" poster="./assets/landing.png">
+    <source src="./assets/inkboard_demo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
 </p>
 
 ## Schema
