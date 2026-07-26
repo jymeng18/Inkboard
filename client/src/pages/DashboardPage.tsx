@@ -1,18 +1,27 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Palette, Settings, Users } from "lucide-react";
 
-import { createCanvas, type CanvasDto } from "@/api/canvas";
+import {
+  canvasDisplayName,
+  normalizeCanvasName,
+  DEFAULT_CANVAS_NAME,
+  type CanvasDto,
+} from "@/api/canvas";
 import {
   extractErrorMessage,
   removeMember as removeMemberApi,
 } from "@/api/party";
 
-import { canvasKeys, useCanvases } from "@/hooks/useCanvases";
+import {
+  useCanvases,
+  useCreateCanvas,
+  useRenameCanvas,
+} from "@/hooks/useCanvases";
 import { useAuth } from "@/hooks/useAuth";
 
+import CanvasNameDialog from "@/components/dashboard/CanvasNameDialog";
 import CanvasesView from "@/components/dashboard/CanvasesView";
 import DashboardSidebar, {
   type DashboardView,
@@ -47,9 +56,14 @@ const MOBILE_TABS: {
 const FRIENDS: Friend[] = [];
 const FRIEND_REQUESTS: FriendRequest[] = [];
 
+/* Which naming dialog is open, and what it is naming. */
+type NameDialogState =
+  | { mode: "create" }
+  | { mode: "rename"; canvas: CanvasDto }
+  | null;
+
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { logout } = useAuth();
   const userName = useAuthStore((s) => s.userName);
   const currentUserId = useAuthStore((s) => s.userId);
@@ -61,6 +75,7 @@ export default function DashboardPage() {
 
   const [view, setView] = useState<DashboardView>("canvases");
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [nameDialog, setNameDialog] = useState<NameDialogState>(null);
 
   // * useQuery rets all properties, not explicitly defined in the hook
   const { data: canvases = [], isLoading, isError, refetch } = useCanvases();
@@ -83,17 +98,42 @@ export default function DashboardPage() {
 
   const openCanvas = (canvas: CanvasDto) => navigate(`/canvas/${canvas.id}`);
 
-  const createCanvasMutation = useMutation({
-    mutationFn: () => createCanvas("Untitled canvas"),
-    onSuccess: (canvas) => {
-      queryClient.invalidateQueries({ queryKey: canvasKeys.all });
-      navigate(`/canvas/${canvas.id}`);
-    },
-    onError: (err) => toast.error(extractErrorMessage(err)),
-  });
-  const newCanvas = () => {
-    if (!createCanvasMutation.isPending) createCanvasMutation.mutate();
-  };
+  const createCanvasMutation = useCreateCanvas();
+  const renameCanvasMutation = useRenameCanvas();
+
+  /* The dialog names the canvas first; creating it drops us straight into it. */
+  function handleCreate(rawName: string) {
+    if (createCanvasMutation.isPending) return;
+    createCanvasMutation.mutate(normalizeCanvasName(rawName), {
+      onSuccess: (canvas) => {
+        setNameDialog(null);
+        navigate(`/canvas/${canvas.id}`);
+      },
+      onError: (err) => toast.error(extractErrorMessage(err)),
+    });
+  }
+
+  function handleRename(canvas: CanvasDto, rawName: string) {
+    if (renameCanvasMutation.isPending) return;
+    const name = normalizeCanvasName(rawName);
+
+    // Nothing changed, so skip the request and just close.
+    if (name === canvasDisplayName(canvas)) {
+      setNameDialog(null);
+      return;
+    }
+
+    renameCanvasMutation.mutate(
+      { canvasId: canvas.id, name },
+      {
+        onSuccess: () => {
+          setNameDialog(null);
+          toast.success(`Renamed to "${name}"`);
+        },
+        onError: (err) => toast.error(extractErrorMessage(err)),
+      },
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background font-body text-on-background">
@@ -137,8 +177,11 @@ export default function DashboardPage() {
               isLoading={isLoading}
               isError={isError}
               onRetry={() => refetch()}
-              onNewCanvas={newCanvas}
+              onNewCanvas={() => setNameDialog({ mode: "create" })}
               onOpenCanvas={openCanvas}
+              onRenameCanvas={(canvas) =>
+                setNameDialog({ mode: "rename", canvas })
+              }
             />
           )}
 
@@ -168,6 +211,31 @@ export default function DashboardPage() {
         friends={FRIENDS}
         requests={FRIEND_REQUESTS}
       />
+
+      {nameDialog?.mode === "create" && (
+        <CanvasNameDialog
+          title="Name your canvas"
+          description="Give it something you'll recognize later. You can rename it any time."
+          submitLabel="Create"
+          initialName={DEFAULT_CANVAS_NAME}
+          pending={createCanvasMutation.isPending}
+          onSubmit={handleCreate}
+          onClose={() => setNameDialog(null)}
+        />
+      )}
+
+      {nameDialog?.mode === "rename" && (
+        <CanvasNameDialog
+          key={nameDialog.canvas.id}
+          title="Rename canvas"
+          description="Pick a new name for this board."
+          submitLabel="Save"
+          initialName={canvasDisplayName(nameDialog.canvas)}
+          pending={renameCanvasMutation.isPending}
+          onSubmit={(name) => handleRename(nameDialog.canvas, name)}
+          onClose={() => setNameDialog(null)}
+        />
+      )}
     </div>
   );
 }

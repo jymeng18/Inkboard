@@ -11,6 +11,7 @@ interface CanvasesViewProps {
   onRetry: () => void
   onNewCanvas: () => void
   onOpenCanvas: (canvas: CanvasDto) => void
+  onRenameCanvas: (canvas: CanvasDto) => void
 }
 
 export default function CanvasesView({
@@ -20,6 +21,7 @@ export default function CanvasesView({
   onRetry,
   onNewCanvas,
   onOpenCanvas,
+  onRenameCanvas,
 }: CanvasesViewProps) {
   return (
     <section>
@@ -49,7 +51,12 @@ export default function CanvasesView({
         {isLoading
           ? Array.from({ length: 3 }).map((_, i) => <CanvasCardSkeleton key={i} />)
           : canvases.map((canvas) => (
-              <CanvasCard key={canvas.id} canvas={canvas} onOpen={onOpenCanvas} />
+              <CanvasCard
+                key={canvas.id}
+                canvas={canvas}
+                onOpen={onOpenCanvas}
+                onRename={onRenameCanvas}
+              />
             ))}
       </div>
 
