@@ -65,8 +65,12 @@ This diagram shows the database schema used by the app.
 
 ## Docs
 
-If you want more detail, start with [ARCHITECTURE.md](/home/jymeng18/Projects/Inkboard/docs/ARCHITECTURE.md).
+If you want more detail, start with [ARCHITECTURE.md](/docs/ARCHITECTURE.md).
 
 ## Notes
 
 The project is still growing, so small changes may happen over time.
+
+# Contributing
+
+If you're interested in making contributions, check [TODO.md](/TODO.md)
