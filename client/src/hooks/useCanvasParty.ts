@@ -2,14 +2,13 @@ import {
   blockUser,
   createParty,
   inviteUser,
+  isGuid,
   leaveParty,
   removeMember as removeMemberApi,
 } from '@/api/party'
 import { useAuthStore } from '@/stores/authStore'
 import { useConnectionStore } from '@/stores/connectionStore'
 import { usePartyStore } from '@/stores/partyStore'
-
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /*
  * All party operations for the canvas, in one place. The party is born lazily:
@@ -30,7 +29,7 @@ export function useCanvasParty(canvasId: string | undefined) {
 
   async function ensurePartyId(): Promise<string> {
     if (partyId) return partyId
-    if (!canvasId || !GUID.test(canvasId)) {
+    if (!canvasId || !isGuid(canvasId)) {
       throw new Error('Save this canvas before inviting anyone.')
     }
     const party = await createParty(canvasId)

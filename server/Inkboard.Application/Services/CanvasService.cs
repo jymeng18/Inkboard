@@ -18,6 +18,11 @@ public class CanvasService : ICanvasService
 
     public async Task<Result<Canvas>> CreateCanvasAsync(Guid userId, string canvasName)
     {
+        if (canvasName.Length > 50)
+        {
+            return Result<Canvas>.Fail(ErrorType.Validation, "Canvas name exceeds 50 characters.");
+        }
+
         Canvas canvas = new()
         {
             OwnerId = userId,
@@ -78,6 +83,11 @@ public class CanvasService : ICanvasService
 
     public async Task<Result> RenameCanvas(string newCanvasName, Guid canvasId, Guid userId)
     {
+        if (newCanvasName.Length > 50)
+        {
+            return Result.Fail(ErrorType.Validation, "Canvas name exceeds 50 characters.");
+        }
+
         var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
         if (canvas is null)
         {

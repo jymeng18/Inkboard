@@ -3,7 +3,11 @@ import { toast } from 'sonner'
 import { UserPlus, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { extractErrorMessage } from '@/api/party'
+import {
+  extractErrorMessage,
+  INVITED_USER_ID_MAX_LENGTH,
+  isGuid,
+} from '@/api/party'
 
 /*
  * Invite-by-user-ID dialog. Invites are the one place a party is born (it's
@@ -34,6 +38,14 @@ export default function InviteDialog({
   async function handleSend() {
     const id = userId.trim()
     if (!id || sending) return
+
+    // The server rejects anything that isn't a parseable GUID, so don't spend a
+    // round trip on a typo (or on a paste the length cap just truncated).
+    if (!isGuid(id)) {
+      toast.error("That doesn't look like a user ID.")
+      return
+    }
+
     setSending(true)
     try {
       await onInvite(id)
@@ -79,6 +91,7 @@ export default function InviteDialog({
             value={userId}
             onChange={(event) => setUserId(event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && handleSend()}
+            maxLength={INVITED_USER_ID_MAX_LENGTH}
             placeholder="e.g. 3f9a1c2e-…"
             className="min-w-0 flex-1 rounded-full border-[3px] border-outline bg-background px-4 py-2.5 font-body text-sm outline-none placeholder:text-on-background/35 focus:border-primary"
           />

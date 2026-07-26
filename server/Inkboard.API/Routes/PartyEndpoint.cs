@@ -88,7 +88,7 @@ namespace Inkboard.API.Routes
                 )
                 .RequireAuthorization();
 
-            _ = endpoint
+            endpoint
                 .MapPost(
                     "/api/parties/{partyId}/invites",
                     async (
@@ -104,12 +104,13 @@ namespace Inkboard.API.Routes
 
                         if (string.IsNullOrWhiteSpace(userRequest.InvitedUserId))
                         {
-                            return Results.BadRequest();
+                            return Results.BadRequest("Invited userId cannot be empty.");
                         }
 
-                        if (!Guid.TryParse(userRequest.InvitedUserId, out var invitedUserId))
+                        // Evaluate that InvitedUserId from reqbody is not some 100mb bullshit before trying to parse
+                        if (userRequest.InvitedUserId.Length >= 50 || !Guid.TryParse(userRequest.InvitedUserId, out var invitedUserId))
                         {
-                            return Results.BadRequest();
+                            return Results.BadRequest("UserId is malformed or is too long.");
                         }
 
                         var result = await partyService.InviteUserAsync(

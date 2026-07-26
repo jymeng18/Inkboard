@@ -1,7 +1,9 @@
 import api from './client'
 
 export const DEFAULT_CANVAS_NAME = 'Untitled canvas'
-export const CANVAS_NAME_MAX_LENGTH = 60
+
+/* Mirrors CanvasService, which rejects names longer than 50 characters. */
+export const CANVAS_NAME_MAX_LENGTH = 50
 
 export type CanvasDto = {
   id: string

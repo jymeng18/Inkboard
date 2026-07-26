@@ -1,5 +1,18 @@
 import api from './client'
 
+/*
+ * The invite endpoint rejects an id of 50 characters or more before it even
+ * tries to parse it, so a well-formed 36-char GUID always clears the bar.
+ */
+export const INVITED_USER_ID_MAX_LENGTH = 49
+
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Matches the server's `Guid.TryParse` gate on ids coming from user input. */
+export function isGuid(value: string): boolean {
+  return GUID.test(value)
+}
+
 export type PartyDto = {
   id: string
   leaderId: string
