@@ -14,11 +14,11 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import Dock from '@/components/dashboard/Dock'
 import { useAuthStore } from '@/stores/authStore'
 import { useCanvasUiStore, type Tool } from '@/stores/canvasUiStore'
 import { useSceneStore } from '@/stores/sceneStore'
 import ColorPicker from './ColorPicker'
-import ToolButton from './ToolButton'
 
 const TOOLS: { tool: Tool; icon: LucideIcon; label: string }[] = [
   { tool: 'pencil', icon: Pencil, label: 'Pencil (P)' },
@@ -27,6 +27,13 @@ const TOOLS: { tool: Tool; icon: LucideIcon; label: string }[] = [
   { tool: 'shapes', icon: Shapes, label: 'Shapes (U)' },
   { tool: 'hand', icon: Hand, label: 'Hand (H)' },
 ]
+
+/*
+ * Kept modest on purpose: the dock shifts its neighbours as it swells, and
+ * these are targets people click mid-drawing, so a big pop makes them slippery.
+ */
+const TOOL_SIZE = 40
+const TOOL_MAGNIFICATION = 54
 
 const soon = () => toast.info('This action is coming soon.')
 
@@ -52,17 +59,17 @@ export default function CanvasToolbar() {
       </Link>
 
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-2 sticker-shadow">
-        <div className="flex items-center gap-1">
-          {TOOLS.map(({ tool: value, icon, label }) => (
-            <ToolButton
-              key={value}
-              icon={icon}
-              label={label}
-              active={tool === value}
-              onClick={() => setTool(value)}
-            />
-          ))}
-        </div>
+        <Dock
+          items={TOOLS.map(({ tool: value, icon: Icon, label }) => ({
+            label,
+            active: tool === value,
+            onClick: () => setTool(value),
+            icon: <Icon className="size-5" aria-hidden />,
+          }))}
+          baseItemSize={TOOL_SIZE}
+          magnification={TOOL_MAGNIFICATION}
+          distance={130}
+        />
 
         <span className="mx-1 h-7 w-0.5 rounded bg-outline/15" aria-hidden />
 
