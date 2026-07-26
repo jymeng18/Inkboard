@@ -27,6 +27,12 @@ import { useConnectionStore } from "@/stores/connectionStore";
 import { usePartyStore } from "@/stores/partyStore";
 import type { Friend, FriendRequest } from "@/types/social";
 
+/**
+ * useMutation, useQeury used for anything involving backend requests, 
+ * useQuery: reading data from server
+ * useMutation: editing/create/delete data from server
+ */
+
 const MOBILE_TABS: {
   view: DashboardView;
   label: string;
@@ -56,6 +62,7 @@ export default function DashboardPage() {
   const [view, setView] = useState<DashboardView>("canvases");
   const [friendsOpen, setFriendsOpen] = useState(false);
 
+  // * useQuery rets all properties, not explicitly defined in the hook
   const { data: canvases = [], isLoading, isError, refetch } = useCanvases();
 
   async function handleLogout() {
