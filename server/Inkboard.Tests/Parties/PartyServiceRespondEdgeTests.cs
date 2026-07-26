@@ -17,8 +17,12 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     }
 
     private async Task<PartyInvite> SeedRawInvite(
-        Guid partyId, Guid leaderId, Guid invitedUserId,
-        InviteStatus status, DateTime expiresAt)
+        Guid partyId,
+        Guid leaderId,
+        Guid invitedUserId,
+        InviteStatus status,
+        DateTime expiresAt
+    )
     {
         var invite = new PartyInvite
         {
@@ -40,8 +44,12 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         var (party, leader) = await SeedActiveParty();
         var invited = await SeedUserAsync(Context, "invited");
         var invite = await SeedRawInvite(
-            party.Id, leader.Id, invited.Id,
-            InviteStatus.Pending, DateTime.UtcNow.AddMinutes(-1));
+            party.Id,
+            leader.Id,
+            invited.Id,
+            InviteStatus.Pending,
+            DateTime.UtcNow.AddMinutes(-1)
+        );
 
         var result = await Service.RespondToUserInviteAsync(invite.Id, invited.Id, false);
 
@@ -58,7 +66,11 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, false);
 
-        var result = await Service.RespondToUserInviteAsync(inviteResult.Data.Id, invited.Id, false);
+        var result = await Service.RespondToUserInviteAsync(
+            inviteResult.Data.Id,
+            invited.Id,
+            false
+        );
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(ErrorType.Conflict, result.ErrorType);
@@ -88,7 +100,11 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.BlockUserAsync(leader.Id, invited.Id);
 
-        var result = await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, false);
+        var result = await Service.RespondToUserInviteAsync(
+            inviteResult.Data!.Id,
+            invited.Id,
+            false
+        );
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(InviteStatus.Declined, result.Data!.InviteStatus);
@@ -108,7 +124,11 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
             await Service.RespondToUserInviteAsync(inv.Data!.Id, m.Id, true);
         }
 
-        var result = await Service.RespondToUserInviteAsync(delayedInvite.Data!.Id, delayed.Id, false);
+        var result = await Service.RespondToUserInviteAsync(
+            delayedInvite.Data!.Id,
+            delayed.Id,
+            false
+        );
 
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(InviteStatus.Declined, result.Data!.InviteStatus);
@@ -123,8 +143,9 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
 
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, true);
 
-        var member = await Context.PartyMembers
-            .FirstAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
+        var member = await Context.PartyMembers.FirstAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == invited.Id
+        );
         Assert.AreEqual(UserRole.Member, member.Role);
     }
 
@@ -155,12 +176,17 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.BlockUserAsync(leader.Id, invited.Id);
 
-        var result = await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, true);
+        var result = await Service.RespondToUserInviteAsync(
+            inviteResult.Data!.Id,
+            invited.Id,
+            true
+        );
 
         Assert.IsFalse(result.IsSuccess);
         Assert.AreEqual(ErrorType.Forbidden, result.ErrorType);
-        var isMember = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
+        var isMember = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == invited.Id
+        );
         Assert.IsFalse(isMember);
     }
 
@@ -191,11 +217,16 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
             await Service.RespondToUserInviteAsync(inv.Data!.Id, m.Id, true);
         }
 
-        var result = await Service.RespondToUserInviteAsync(delayedInvite.Data!.Id, delayed.Id, true);
+        var result = await Service.RespondToUserInviteAsync(
+            delayedInvite.Data!.Id,
+            delayed.Id,
+            true
+        );
 
         Assert.IsFalse(result.IsSuccess);
-        var isMember = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == delayed.Id);
+        var isMember = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == delayed.Id
+        );
         Assert.IsFalse(isMember);
     }
 
@@ -205,14 +236,19 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         var (party, leader) = await SeedActiveParty();
         var invited = await SeedUserAsync(Context, "invited");
         var invite = await SeedRawInvite(
-            party.Id, leader.Id, invited.Id,
-            InviteStatus.Pending, DateTime.UtcNow.AddSeconds(-1));
+            party.Id,
+            leader.Id,
+            invited.Id,
+            InviteStatus.Pending,
+            DateTime.UtcNow.AddSeconds(-1)
+        );
 
         var result = await Service.RespondToUserInviteAsync(invite.Id, invited.Id, true);
 
         Assert.IsFalse(result.IsSuccess);
-        var isMember = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
+        var isMember = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == invited.Id
+        );
         Assert.IsFalse(isMember);
     }
 }

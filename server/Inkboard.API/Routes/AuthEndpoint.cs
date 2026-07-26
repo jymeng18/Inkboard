@@ -1,4 +1,3 @@
-using FluentValidation;
 using Inkboard.Application.Auth.DTO;
 using Inkboard.Application.Interfaces;
 

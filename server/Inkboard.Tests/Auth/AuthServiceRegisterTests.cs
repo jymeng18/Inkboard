@@ -1,5 +1,4 @@
 using Inkboard.Application.Auth.DTO;
-using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Tests.Auth;
 
@@ -12,12 +11,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(result.UserId);
@@ -30,19 +31,23 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = "otheruser",
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = "otheruser",
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.AreEqual("Email is already registered.", result.ErrorMessage);
@@ -55,19 +60,23 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = "Coolusername21312",
-            Email = ValidEmail,
-            Password = "ab3213123",
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = "Coolusername21312",
+                Email = ValidEmail,
+                Password = "ab3213123",
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.AreEqual("Email is already registered.", result.ErrorMessage);
@@ -80,12 +89,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = "",
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = "",
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -98,12 +109,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = "ab",
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = "ab",
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -117,12 +130,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = new string('a', 31),
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = new string('a', 31),
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -135,12 +150,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = "",
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = "",
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -153,12 +170,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = "12345",
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = "12345",
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -172,12 +191,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = "",
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = "",
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -190,12 +211,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = "not-an-email",
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = "not-an-email",
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -208,12 +231,14 @@ public sealed class RegisterTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(result.UserId);

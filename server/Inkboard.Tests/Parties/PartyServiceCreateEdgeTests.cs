@@ -38,8 +38,7 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        var anyInvites = await Context.PartyInvites
-            .AnyAsync(pi => pi.PartyId == result.Data!.Id);
+        var anyInvites = await Context.PartyInvites.AnyAsync(pi => pi.PartyId == result.Data!.Id);
         Assert.IsFalse(anyInvites);
     }
 
@@ -126,9 +125,12 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
         Assert.IsTrue(result.IsSuccess);
 
         notifier.Verify(
-            n => n.NotifyMemberJoined(
-                result.Data!.Id,
-                It.Is<PartyMember>(m => m.UserId == leader.Id && m.Role == UserRole.Leader)),
-            Times.Once);
+            n =>
+                n.NotifyMemberJoined(
+                    result.Data!.Id,
+                    It.Is<PartyMember>(m => m.UserId == leader.Id && m.Role == UserRole.Leader)
+                ),
+            Times.Once
+        );
     }
 }

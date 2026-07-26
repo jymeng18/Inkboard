@@ -91,10 +91,12 @@ public sealed class PartyServiceRemoveEdgeTests : PartyTestBase
 
         await Service.RemoveMemberAsync(party.Id, leader.Id, m1.Id);
 
-        var m1Gone = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == m1.Id);
-        var m2Present = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == m2.Id);
+        var m1Gone = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == m1.Id
+        );
+        var m2Present = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == m2.Id
+        );
         Assert.IsFalse(m1Gone);
         Assert.IsTrue(m2Present);
     }

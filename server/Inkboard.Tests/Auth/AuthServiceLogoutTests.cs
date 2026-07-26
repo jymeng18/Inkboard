@@ -12,18 +12,18 @@ public sealed class LogoutTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var result = await service.LogoutAsync(login.RefreshToken!);
 
@@ -37,18 +37,18 @@ public sealed class LogoutTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         await service.LogoutAsync(login.RefreshToken!);
 
@@ -75,18 +75,18 @@ public sealed class LogoutTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         await service.LogoutAsync(login.RefreshToken!);
         var secondLogout = await service.LogoutAsync(login.RefreshToken!);

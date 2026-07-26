@@ -15,8 +15,9 @@ public sealed class PartyServiceBlockTests : PartyTestBase
         var result = await Service.BlockUserAsync(user.Id, target.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        var isBlocked = await Context.BlockLists
-            .AnyAsync(bl => bl.UserId == user.Id && bl.BlockedUserId == target.Id);
+        var isBlocked = await Context.BlockLists.AnyAsync(bl =>
+            bl.UserId == user.Id && bl.BlockedUserId == target.Id
+        );
         Assert.IsTrue(isBlocked);
     }
 

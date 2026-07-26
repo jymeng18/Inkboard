@@ -25,8 +25,9 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
         var result = await Service.LeavePartyAsync(party.Id, member.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        var isMember = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == member.Id);
+        var isMember = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == member.Id
+        );
         Assert.IsFalse(isMember);
 
         var partyExists = await Context.Parties.AnyAsync(p => p.Id == party.Id);
@@ -77,8 +78,7 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
         var deletedParty = await Context.Parties.FindAsync(party.Id);
         Assert.IsNull(deletedParty);
 
-        var members = await Context.PartyMembers
-            .Where(pm => pm.PartyId == party.Id).ToListAsync();
+        var members = await Context.PartyMembers.Where(pm => pm.PartyId == party.Id).ToListAsync();
         Assert.IsEmpty(members);
     }
 
@@ -110,13 +110,15 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
         Assert.IsNotNull(updatedParty);
         Assert.AreEqual(member1.Id, updatedParty.LeaderId);
 
-        var newLeaderMember = await Context.PartyMembers
-            .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == member1.Id);
+        var newLeaderMember = await Context.PartyMembers.FirstOrDefaultAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == member1.Id
+        );
         Assert.IsNotNull(newLeaderMember);
         Assert.AreEqual(UserRole.Leader, newLeaderMember.Role);
 
-        var oldLeaderGone = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
+        var oldLeaderGone = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == leader.Id
+        );
         Assert.IsFalse(oldLeaderGone);
     }
 }

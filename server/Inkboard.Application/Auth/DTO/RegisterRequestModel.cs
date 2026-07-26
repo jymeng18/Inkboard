@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Inkboard.Application.Auth.DTO;
 
 public class RegisterRequestModel

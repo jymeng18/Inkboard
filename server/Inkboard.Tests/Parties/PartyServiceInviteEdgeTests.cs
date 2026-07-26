@@ -77,8 +77,9 @@ public sealed class PartyServiceInviteEdgeTests : PartyTestBase
             Assert.IsTrue(result.IsSuccess, $"Invite {i} should succeed while pending.");
         }
 
-        var pendingCount = await Context.PartyInvites
-            .CountAsync(pi => pi.PartyId == party.Id && pi.InviteStatus == InviteStatus.Pending);
+        var pendingCount = await Context.PartyInvites.CountAsync(pi =>
+            pi.PartyId == party.Id && pi.InviteStatus == InviteStatus.Pending
+        );
         Assert.AreEqual(8, pendingCount);
     }
 

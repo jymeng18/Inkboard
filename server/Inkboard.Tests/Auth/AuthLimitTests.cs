@@ -41,9 +41,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(userName: new string('a', UserNameMin))
-        );
+        var result = await service.RegisterAsync(Register(userName: new string('a', UserNameMin)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -55,9 +53,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(userName: new string('a', UserNameMax))
-        );
+        var result = await service.RegisterAsync(Register(userName: new string('a', UserNameMax)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -87,9 +83,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(password: new string('p', PasswordMin))
-        );
+        var result = await service.RegisterAsync(Register(password: new string('p', PasswordMin)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -101,9 +95,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(password: new string('p', PasswordMax))
-        );
+        var result = await service.RegisterAsync(Register(password: new string('p', PasswordMax)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -135,9 +127,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(password: new string('p', 100_000))
-        );
+        var result = await service.RegisterAsync(Register(password: new string('p', 100_000)));
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -169,9 +159,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(email: EmailOfLength(EmailMax + 1))
-        );
+        var result = await service.RegisterAsync(Register(email: EmailOfLength(EmailMax + 1)));
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -185,9 +173,7 @@ public sealed class AuthLimitTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.RegisterAsync(
-            Register(email: EmailOfLength(100_000))
-        );
+        var result = await service.RegisterAsync(Register(email: EmailOfLength(100_000)));
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -287,11 +273,7 @@ public sealed class AuthLimitTests : TestBase
         var service = CreateAuthService(context);
 
         var result = await service.LoginAsync(
-            new LoginRequestModel
-            {
-                Email = EmailOfLength(EmailMax + 1),
-                Password = ValidPassword,
-            }
+            new LoginRequestModel { Email = EmailOfLength(EmailMax + 1), Password = ValidPassword }
         );
 
         Assert.IsFalse(result.Success);

@@ -1,4 +1,3 @@
-using System.Net.NetworkInformation;
 using Inkboard.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 

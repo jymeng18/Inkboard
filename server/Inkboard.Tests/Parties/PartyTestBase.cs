@@ -1,11 +1,7 @@
-using Inkboard.API.Hubs;
-using Inkboard.API.Realtime;
 using Inkboard.Application.Interfaces;
 using Inkboard.Application.Services;
 using Inkboard.Domain.Models;
 using Inkboard.Infra.Db;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace Inkboard.Tests.Parties;
@@ -45,7 +41,8 @@ public abstract class PartyTestBase : TestBase
 
     protected static PartyService CreatePartyServiceWithNotifier(
         AppDbContext context,
-        out Mock<IPartyNotifier> notifierMock)
+        out Mock<IPartyNotifier> notifierMock
+    )
     {
         notifierMock = new Mock<IPartyNotifier>(MockBehavior.Loose);
         var canvasRepository = new CanvasRepository(context);
@@ -73,7 +70,11 @@ public abstract class PartyTestBase : TestBase
         return user;
     }
 
-    protected static async Task<Canvas> SeedCanvasAsync(AppDbContext context, Guid ownerId, string name = "Test Canvas")
+    protected static async Task<Canvas> SeedCanvasAsync(
+        AppDbContext context,
+        Guid ownerId,
+        string name = "Test Canvas"
+    )
     {
         var canvas = new Canvas
         {
@@ -86,7 +87,11 @@ public abstract class PartyTestBase : TestBase
         return canvas;
     }
 
-    protected static async Task<(Party Party, Canvas Canvas)> SeedPartyAsync(AppDbContext context, Guid leaderId, string canvasName = "Test Canvas")
+    protected static async Task<(Party Party, Canvas Canvas)> SeedPartyAsync(
+        AppDbContext context,
+        Guid leaderId,
+        string canvasName = "Test Canvas"
+    )
     {
         var canvas = await SeedCanvasAsync(context, leaderId, canvasName);
         var partyRepo = new PartyRepository(context);

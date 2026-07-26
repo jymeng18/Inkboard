@@ -2,10 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text.Json;
-using Inkboard.Domain.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.TestHost;
@@ -35,7 +33,9 @@ public sealed class PartyHubTestFactory : IntegrationTestFactory
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         base.ConfigureWebHost(builder);
-        builder.ConfigureTestServices(services => services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>());
+        builder.ConfigureTestServices(services =>
+            services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>()
+        );
     }
 }
 

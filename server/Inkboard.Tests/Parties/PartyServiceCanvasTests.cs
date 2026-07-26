@@ -1,7 +1,7 @@
 using Inkboard.Application.Common;
+using Inkboard.Application.Services;
 using Inkboard.Domain.Models;
 using Inkboard.Infra.Db;
-using Inkboard.Application.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Tests.Parties;
@@ -37,8 +37,9 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
         var existingCanvas = await Context.Canvas.FindAsync(canvas.Id);
         Assert.IsNotNull(existingCanvas, "Canvas must NOT be deleted when session is force-ended.");
 
-        var oldLeaderGone = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
+        var oldLeaderGone = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == leader.Id
+        );
         Assert.IsFalse(oldLeaderGone);
     }
 
@@ -133,8 +134,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
 
         Assert.AreEqual(user.Id, canvas.OwnerId);
 
-        var partiesForUser = await Context.Parties
-            .AnyAsync(p => p.LeaderId == user.Id);
+        var partiesForUser = await Context.Parties.AnyAsync(p => p.LeaderId == user.Id);
         Assert.IsFalse(partiesForUser, "Creating a canvas must NOT create a party.");
     }
 

@@ -1,8 +1,6 @@
 using Inkboard.Application.Common;
 using Inkboard.Application.Services;
-using Inkboard.Domain.Models;
 using Inkboard.Infra.Db;
-using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Tests.Parties;
 

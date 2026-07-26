@@ -1,5 +1,4 @@
 using Inkboard.Application.Common;
-using Inkboard.Domain.Models;
 
 namespace Inkboard.Tests.Parties;
 

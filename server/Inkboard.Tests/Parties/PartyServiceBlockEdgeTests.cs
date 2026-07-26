@@ -1,5 +1,4 @@
 using Inkboard.Application.Common;
-using Inkboard.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Tests.Parties;
@@ -37,8 +36,9 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
         var blockResult = await Service.BlockUserAsync(leader.Id, member.Id);
         Assert.IsTrue(blockResult.IsSuccess);
 
-        var stillMember = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == member.Id);
+        var stillMember = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == member.Id
+        );
         Assert.IsTrue(stillMember, "Blocking a user does not eject them from the party.");
     }
 
@@ -80,8 +80,9 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
 
         await Service.BlockUserAsync(user.Id, target.Id);
 
-        var block = await Context.BlockLists
-            .FirstAsync(bl => bl.UserId == user.Id && bl.BlockedUserId == target.Id);
+        var block = await Context.BlockLists.FirstAsync(bl =>
+            bl.UserId == user.Id && bl.BlockedUserId == target.Id
+        );
         Assert.IsTrue(block.CreatedAt >= before);
         Assert.IsTrue(block.CreatedAt <= DateTime.UtcNow.AddSeconds(1));
     }

@@ -1,4 +1,3 @@
-using Inkboard.Application.Common;
 using Inkboard.Domain.Models;
 using Inkboard.Infra.Db;
 using Microsoft.EntityFrameworkCore;
@@ -39,21 +38,25 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
         var repo = new PartyRepository(Context);
 
         // Insert the "late" member first, but with a newer JoinedAt.
-        await repo.AddMemberAsync(new PartyMember
-        {
-            PartyId = party.Id,
-            UserId = lateJoiner.Id,
-            Role = UserRole.Member,
-            JoinedAt = DateTime.UtcNow,
-        });
+        await repo.AddMemberAsync(
+            new PartyMember
+            {
+                PartyId = party.Id,
+                UserId = lateJoiner.Id,
+                Role = UserRole.Member,
+                JoinedAt = DateTime.UtcNow,
+            }
+        );
         // Insert the "early" member second, but with an older JoinedAt.
-        await repo.AddMemberAsync(new PartyMember
-        {
-            PartyId = party.Id,
-            UserId = earlyJoiner.Id,
-            Role = UserRole.Member,
-            JoinedAt = DateTime.UtcNow.AddMinutes(-30),
-        });
+        await repo.AddMemberAsync(
+            new PartyMember
+            {
+                PartyId = party.Id,
+                UserId = earlyJoiner.Id,
+                Role = UserRole.Member,
+                JoinedAt = DateTime.UtcNow.AddMinutes(-30),
+            }
+        );
 
         var result = await Service.LeavePartyAsync(party.Id, leader.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -78,8 +81,9 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
 
         var updated = await Context.Parties.FindAsync(party.Id);
         Assert.AreEqual(leader.Id, updated!.LeaderId);
-        var stillLeaderMember = await Context.PartyMembers
-            .FirstAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
+        var stillLeaderMember = await Context.PartyMembers.FirstAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == leader.Id
+        );
         Assert.AreEqual(UserRole.Leader, stillLeaderMember.Role);
     }
 
@@ -151,8 +155,9 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
 
         await Service.LeavePartyAsync(party.Id, leader.Id);
 
-        var leaders = await Context.PartyMembers
-            .CountAsync(pm => pm.PartyId == party.Id && pm.Role == UserRole.Leader);
+        var leaders = await Context.PartyMembers.CountAsync(pm =>
+            pm.PartyId == party.Id && pm.Role == UserRole.Leader
+        );
         Assert.AreEqual(1, leaders);
     }
 
@@ -175,8 +180,9 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
 
         var count = await Context.PartyMembers.CountAsync(pm => pm.PartyId == party.Id);
         Assert.AreEqual(4, count);
-        var oldLeaderGone = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
+        var oldLeaderGone = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == leader.Id
+        );
         Assert.IsFalse(oldLeaderGone);
     }
 }
