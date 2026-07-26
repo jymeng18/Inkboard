@@ -17,17 +17,21 @@ const STORAGE_KEY = 'activePartyId'
 export const usePartyStore = create<PartyState>((set) => ({
   partyId: null,
   members: [],
+  
   setParty: (partyId, leaderUserId) => {
     localStorage.setItem(STORAGE_KEY, partyId)
     set({ partyId, members: [{ userId: leaderUserId, role: 'Leader' }] })
   },
+
   addMember: (userId) =>
     set((s) => {
       if (s.members.some((m) => m.userId === userId)) return s
       return { members: [...s.members, { userId, role: 'Member' }] }
     }),
+
   removeMember: (userId) =>
     set((s) => ({ members: s.members.filter((m) => m.userId !== userId) })),
+
   setLeader: (userId) =>
     set((s) => ({
       members: s.members.map((m) => ({
@@ -35,6 +39,7 @@ export const usePartyStore = create<PartyState>((set) => ({
         role: m.userId === userId ? 'Leader' : 'Member',
       })),
     })),
+
   clearParty: () => {
     localStorage.removeItem(STORAGE_KEY)
     set({ partyId: null, members: [] })

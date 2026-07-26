@@ -29,6 +29,7 @@
     "konva": "^10.3.0",
     "lucide-react": "^1.25.0",
     "motion": "^12.42.2",
+    "ogl": "^1.0.11",
     "perfect-freehand": "^1.2.3",
     "radix-ui": "^1.6.5",
     "react": "^19.2.6",
