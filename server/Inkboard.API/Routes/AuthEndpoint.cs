@@ -1,4 +1,3 @@
-using FluentValidation;
 using Inkboard.Application.Auth.DTO;
 using Inkboard.Application.Interfaces;
 
@@ -13,11 +12,18 @@ public static class AuthEndpoint
             async (LoginRequestModel request, IAuthService authService) =>
             {
                 var result = await authService.LoginAsync(request);
+                if (result.ValidationErrors is not null)
+                {
+                    return Results.ValidationProblem(result.ValidationErrors);
+                }
+
                 if (!result.Success)
                 {
                     return Results.Problem(detail: result.ErrorMessage, statusCode: 401); // 401 unauthorized
                 }
-                return Results.Ok(new { access_token = result.AccessToken, refresh_token = result.RefreshToken });
+                return Results.Ok(
+                    new { access_token = result.AccessToken, refresh_token = result.RefreshToken }
+                );
             }
         );
 
@@ -41,14 +47,16 @@ public static class AuthEndpoint
             }
         );
 
-        endpoint.MapPost(
-            "/api/auth/logout",
-            async (RefreshRequestModel request, IAuthService authService) =>
-            {
-                var result = await authService.LogoutAsync(request.RefreshToken);
-                return Results.Ok(result);
-            }
-        ).RequireAuthorization();
+        endpoint
+            .MapPost(
+                "/api/auth/logout",
+                async (RefreshRequestModel request, IAuthService authService) =>
+                {
+                    var result = await authService.LogoutAsync(request.RefreshToken);
+                    return Results.Ok(result);
+                }
+            )
+            .RequireAuthorization();
 
         endpoint.MapPost(
             "/api/auth/refresh",

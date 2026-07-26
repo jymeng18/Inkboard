@@ -26,8 +26,9 @@ public sealed class PartyServiceRespondTests : PartyTestBase
 
         Assert.AreEqual(InviteStatus.Accepted, updatedInvite.InviteStatus);
 
-        var member = await Context.PartyMembers
-            .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
+        var member = await Context.PartyMembers.FirstOrDefaultAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == invited.Id
+        );
         Assert.IsNotNull(member);
         Assert.AreEqual(UserRole.Member, member.Role);
     }
@@ -51,8 +52,9 @@ public sealed class PartyServiceRespondTests : PartyTestBase
 
         Assert.AreEqual(InviteStatus.Declined, updatedInvite.InviteStatus);
 
-        var member = await Context.PartyMembers
-            .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == invited.Id);
+        var member = await Context.PartyMembers.FirstOrDefaultAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == invited.Id
+        );
         Assert.IsNull(member);
     }
 

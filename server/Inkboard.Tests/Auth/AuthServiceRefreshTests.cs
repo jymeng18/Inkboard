@@ -14,18 +14,18 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var result = await service.RefreshAsync(login.RefreshToken!);
 
@@ -40,18 +40,18 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var result = await service.RefreshAsync(login.RefreshToken!);
 
@@ -64,18 +64,18 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var result = await service.RefreshAsync(login.RefreshToken!);
 
@@ -88,18 +88,18 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var oldHash = Convert.ToBase64String(
             SHA256.HashData(Encoding.UTF8.GetBytes(login.RefreshToken!))
@@ -107,8 +107,7 @@ public sealed class RefreshTests : TestBase
 
         await service.RefreshAsync(login.RefreshToken!);
 
-        var oldToken = await context.RefreshTokens
-            .FirstOrDefaultAsync(t => t.TokenHash == oldHash);
+        var oldToken = await context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == oldHash);
         Assert.IsNotNull(oldToken);
         Assert.IsTrue(oldToken.IsRevoked);
     }
@@ -119,18 +118,18 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         await service.RefreshAsync(login.RefreshToken!);
 
@@ -145,23 +144,21 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
-        var login2 = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
+        var login2 = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         await service.RefreshAsync(login2.RefreshToken!);
 
@@ -188,18 +185,18 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         await service.LogoutAsync(login.RefreshToken!);
         var result = await service.RefreshAsync(login.RefreshToken!);
@@ -214,24 +211,23 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var rawHash = Convert.ToBase64String(
             SHA256.HashData(Encoding.UTF8.GetBytes(login.RefreshToken!))
         );
-        var stored = await context.RefreshTokens
-            .FirstAsync(t => t.TokenHash == rawHash);
+        var stored = await context.RefreshTokens.FirstAsync(t => t.TokenHash == rawHash);
         stored.ExpiresAt = DateTime.UtcNow.AddDays(-1);
         await context.SaveChangesAsync();
 
@@ -247,25 +243,24 @@ public sealed class RefreshTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var login = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var login = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var rawHash = Convert.ToBase64String(
             SHA256.HashData(Encoding.UTF8.GetBytes(login.RefreshToken!))
         );
-        var stored = await context.RefreshTokens
-            .FirstAsync(t => t.TokenHash == rawHash);
-        stored.UserId = Guid.NewGuid();  // point to non-existent user
+        var stored = await context.RefreshTokens.FirstAsync(t => t.TokenHash == rawHash);
+        stored.UserId = Guid.NewGuid(); // point to non-existent user
         await context.SaveChangesAsync();
 
         var result = await service.RefreshAsync(login.RefreshToken!);

@@ -12,24 +12,36 @@ public class AuthService : IAuthService
 {
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IUserRepository _repository;
-    private readonly IValidator<RegisterRequestModel> _validator;
+    private readonly IValidator<RegisterRequestModel> _registerValidator;
+    private readonly IValidator<LoginRequestModel> _loginValidator;
     private readonly ITokenRepository _tokenRepository;
 
     public AuthService(
         ITokenGenerator tokenGenerator,
         IUserRepository repository,
-        IValidator<RegisterRequestModel> validator,
+        IValidator<RegisterRequestModel> registerRequestValidator,
+        IValidator<LoginRequestModel> loginRequestValidator,
         ITokenRepository tokenRepository
     )
     {
         _tokenGenerator = tokenGenerator;
         _repository = repository;
-        _validator = validator;
+        _registerValidator = registerRequestValidator;
+        _loginValidator = loginRequestValidator;
         _tokenRepository = tokenRepository;
     }
 
     public async Task<LoginResult> LoginAsync(LoginRequestModel request)
     {
+        var result = await _loginValidator.ValidateAsync(request);
+        if (!result.IsValid)
+        {
+            var errors = result
+                .Errors.GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            return new LoginResult { ValidationErrors = errors };
+        }
+
         var user = await _repository.FindByEmailAsync(request.Email);
         if (user is null)
         {
@@ -70,14 +82,8 @@ public class AuthService : IAuthService
 
     public async Task<RegisterResult> RegisterAsync(RegisterRequestModel request)
     {
-        bool emailExists = await _repository.EmailExistsAsync(request.Email);
-        if (emailExists)
-        {
-            return new RegisterResult { ErrorMessage = "Email is already registered." };
-        }
-
         // Authorize all fields in request
-        var result = await _validator.ValidateAsync(request);
+        var result = await _registerValidator.ValidateAsync(request);
         if (!result.IsValid)
         {
             var errors = result
@@ -86,8 +92,14 @@ public class AuthService : IAuthService
             return new RegisterResult { ValidationErrors = errors };
         }
 
+        bool emailExists = await _repository.EmailExistsAsync(request.Email);
+        if (emailExists)
+        {
+            return new RegisterResult { ErrorMessage = "Email is already registered." };
+        }
+
         // Create new user to save to db(Users)
-        User user = new User
+        User user = new()
         {
             UserName = request.UserName,
             Email = request.Email,

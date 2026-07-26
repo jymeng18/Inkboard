@@ -1,4 +1,3 @@
-using Inkboard.API.Realtime;
 using Inkboard.Application.Interfaces;
 using Inkboard.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;

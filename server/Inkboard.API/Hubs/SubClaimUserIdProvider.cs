@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Inkboard.API.Hubs;

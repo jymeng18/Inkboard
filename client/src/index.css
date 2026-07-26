@@ -1,111 +1,161 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@import "@fontsource/gochi-hand/400.css";
+@import "@fontsource/patrick-hand/400.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/bricolage-grotesque/700.css";
+@import "@fontsource/bricolage-grotesque/800.css";
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Design tokens from designs/landing/code.html */
+@theme {
+  --color-primary: #ff7070;
+  --color-secondary: #00c1fd;
+  --color-tertiary: #a73a00;
+  --color-background: #fdfaf2;
+  --color-surface: #ffffff;
+  --color-on-background: #2d2926;
+  --color-primary-container: #ffd23f;
+  --color-secondary-container: #a7dbfe;
+  --color-outline: #2d2926;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  /* Tonal fixed roles, used by the "Under the hood" card collage. */
+  --color-primary-fixed: #ffe089;
+  --color-secondary-fixed: #c2e8ff;
+  --color-secondary-fixed-dim: #75d1ff;
+  --color-tertiary-fixed: #ffdbce;
+  --color-inverse-surface: #303030;
+  --color-outline-variant: #d1c5ad;
+  --color-surface-dim: #dcd9d9;
+  --color-on-secondary-container: #004b65;
+
+  --font-display: "Gochi Hand", cursive;
+  --font-handwriting: "Patrick Hand", cursive;
+  --font-label: "Space Grotesk", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-headline: "Bricolage Grotesque", sans-serif;
+
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-drift: drift 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(5deg);
+    }
+  }
+
+  @keyframes drift {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    50% {
+      transform: translate(10px, 5px);
+    }
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/*
+ * Offset "sticker" shadows are the core of the retro-brutalist look: a hard,
+ * un-blurred drop in the outline color rather than a soft ambient shadow.
+ */
+@utility sticker-shadow-sm {
+  box-shadow: 4px 4px 0 0 var(--color-outline);
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+@utility sticker-shadow {
+  box-shadow: 6px 6px 0 0 var(--color-outline);
+}
+
+@utility sticker-shadow-lg {
+  box-shadow: 8px 8px 0 0 var(--color-outline);
+}
+
+/* Hand-drawn highlighter blob behind inline text, as if swiped with a marker. */
+@utility highlight-blob {
+  position: relative;
+  z-index: 1;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: -5%;
+    bottom: 5%;
+    width: 110%;
+    height: 40%;
+    background-color: var(--color-primary-container);
+    border-radius: 20% 80% 30% 70% / 60% 30% 70% 40%;
+    opacity: 0.8;
+    z-index: -1;
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+/* Marker struck through a word, angled so it reads as hand-drawn. */
+@utility strike-through {
+  position: relative;
+  display: inline-block;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: -5%;
+    top: 50%;
+    width: 110%;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--color-primary);
+    transform: rotate(-3deg);
+  }
+}
+
+/* Dot grid, so a section reads as a sheet of drafting paper. */
+@utility canvas-bg {
+  background-image: radial-gradient(var(--color-surface-dim) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-drift {
+    animation: none;
+  }
+}
+
+/*
+ * Legacy globals for the existing barebones app (LoginPage / DashboardPage /
+ * CanvasPage). These sit after Tailwind's preflight so they still win there.
+ * The landing page sets its own font on its root and is unaffected.
+ */
+* {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  padding: 0;
+  font-family: monospace;
+  background: #fff;
+  color: #222;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+button {
+  cursor: pointer;
+  font-family: monospace;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+input {
+  font-family: monospace;
 }
 
 code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
 }

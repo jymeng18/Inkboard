@@ -1,6 +1,5 @@
 using Inkboard.Application.Common;
 using Inkboard.Domain.Models;
-using Inkboard.Infra.Db;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Tests.Parties;
@@ -22,8 +21,9 @@ public sealed class PartyServiceCreateTests : PartyTestBase
         Assert.AreEqual(canvas.Id, party.CanvasId);
         Assert.AreNotEqual(Guid.Empty, party.Id);
 
-        var member = await Context.PartyMembers
-            .FirstOrDefaultAsync(pm => pm.PartyId == party.Id && pm.UserId == leader.Id);
+        var member = await Context.PartyMembers.FirstOrDefaultAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == leader.Id
+        );
         Assert.IsNotNull(member);
         Assert.AreEqual(UserRole.Leader, member.Role);
     }

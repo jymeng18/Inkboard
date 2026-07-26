@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json;
 
 namespace Inkboard.Domain.Models;
 

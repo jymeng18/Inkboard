@@ -12,12 +12,14 @@ public sealed class LoginTests : TestBase
     private async Task<AuthService> RegisterAndGetService(AppDbContext context)
     {
         var service = CreateAuthService(context);
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
         return service;
     }
 
@@ -27,11 +29,9 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = await RegisterAndGetService(context);
 
-        var result = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(result.AccessToken);
@@ -44,18 +44,18 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var regResult = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var regResult = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var result = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(regResult.UserId);
@@ -68,11 +68,9 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = await RegisterAndGetService(context);
 
-        var result = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = "wrongpassword",
-        });
+        var result = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = "wrongpassword" }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.AreEqual("Invalid email or password.", result.ErrorMessage);
@@ -85,11 +83,9 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var result = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = "nonexistent@example.com",
-            Password = ValidPassword,
-        });
+        var result = await service.LoginAsync(
+            new LoginRequestModel { Email = "nonexistent@example.com", Password = ValidPassword }
+        );
 
         Assert.IsFalse(result.Success);
         Assert.AreEqual("Invalid email or password.", result.ErrorMessage);
@@ -102,24 +98,22 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = CreateAuthService(context);
 
-        var wrongEmailResult = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = "wrong@example.com",
-            Password = ValidPassword,
-        });
+        var wrongEmailResult = await service.LoginAsync(
+            new LoginRequestModel { Email = "wrong@example.com", Password = ValidPassword }
+        );
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var wrongPassResult = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = "wrongpassword",
-        });
+        var wrongPassResult = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = "wrongpassword" }
+        );
 
         Assert.AreEqual(wrongEmailResult.ErrorMessage, wrongPassResult.ErrorMessage);
     }
@@ -130,11 +124,9 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = await RegisterAndGetService(context);
 
-        var result = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         Assert.IsTrue(result.Success);
 
@@ -156,24 +148,23 @@ public sealed class LoginTests : TestBase
             .Verifiable();
         var service = CreateAuthService(context, tokenGenMock);
 
-        var regResult = await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var regResult = await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        var result = await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        var result = await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(regResult.UserId);
         Assert.AreEqual($"token-{regResult.UserId}-{ValidEmail}", result.AccessToken);
-        tokenGenMock.Verify(
-            t => t.GenerateToken(regResult.UserId.Value, ValidEmail), Times.Once);
+        tokenGenMock.Verify(t => t.GenerateToken(regResult.UserId.Value, ValidEmail), Times.Once);
     }
 
     [TestMethod]
@@ -183,18 +174,18 @@ public sealed class LoginTests : TestBase
         var tokenGenMock = CreateTokenGeneratorMock();
         var service = CreateAuthService(context, tokenGenMock);
 
-        await service.RegisterAsync(new RegisterRequestModel
-        {
-            UserName = ValidUserName,
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.RegisterAsync(
+            new RegisterRequestModel
+            {
+                UserName = ValidUserName,
+                Email = ValidEmail,
+                Password = ValidPassword,
+            }
+        );
 
-        await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         tokenGenMock.Verify(t => t.GenerateRefreshToken(), Times.Once);
     }
@@ -205,11 +196,9 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var service = await RegisterAndGetService(context);
 
-        await service.LoginAsync(new LoginRequestModel
-        {
-            Email = ValidEmail,
-            Password = ValidPassword,
-        });
+        await service.LoginAsync(
+            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
+        );
 
         var tokens = await context.RefreshTokens.ToListAsync();
         Assert.HasCount(1, tokens);

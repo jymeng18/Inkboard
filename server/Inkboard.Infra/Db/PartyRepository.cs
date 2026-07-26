@@ -1,6 +1,5 @@
 using Inkboard.Domain.Models;
 using Inkboard.Domain.Repositories;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inkboard.Infra.Db

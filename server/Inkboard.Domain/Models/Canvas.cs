@@ -12,6 +12,7 @@ public class Canvas
 
     public Guid OwnerId { get; set; }
 
+    [MaxLength(50)]
     public string? Name { get; set; }
 
     public string? SnapshotURL { get; set; }

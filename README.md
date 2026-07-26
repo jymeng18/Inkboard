@@ -61,8 +61,8 @@ This diagram shows the database schema used by the app.
 ### Client
 
 1. Go to `client/`.
-2. Run `npm install`.
-3. Run `npm run dev`.
+2. Run `pnpm install`.
+3. Run `pnpm run dev`.
 
 ### Server
 

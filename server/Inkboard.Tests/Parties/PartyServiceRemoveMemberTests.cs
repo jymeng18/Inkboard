@@ -24,8 +24,9 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
         var result = await Service.RemoveMemberAsync(party.Id, leader.Id, member.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        var isMember = await Context.PartyMembers
-            .AnyAsync(pm => pm.PartyId == party.Id && pm.UserId == member.Id);
+        var isMember = await Context.PartyMembers.AnyAsync(pm =>
+            pm.PartyId == party.Id && pm.UserId == member.Id
+        );
         Assert.IsFalse(isMember);
     }
 
