@@ -50,7 +50,7 @@ public sealed class RegisterTests : TestBase
     }
 
     [TestMethod]
-    public async Task DuplicateEmail_ReturnsBeforeValidation()
+    public async Task DuplicateEmail_ReturnsAfterValidation()
     {
         var context = CreateDbContext();
         var service = CreateAuthService(context);
@@ -64,9 +64,9 @@ public sealed class RegisterTests : TestBase
 
         var result = await service.RegisterAsync(new RegisterRequestModel
         {
-            UserName = "",
+            UserName = "Coolusername21312",
             Email = ValidEmail,
-            Password = "ab",
+            Password = "ab3213123",
         });
 
         Assert.IsFalse(result.Success);
