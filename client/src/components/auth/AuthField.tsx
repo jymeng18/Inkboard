@@ -10,6 +10,8 @@ interface AuthFieldProps {
   onChange: (value: string) => void
   autoComplete?: string
   required?: boolean
+  maxLength?: number
+  error?: string
 }
 
 export default function AuthField({
@@ -22,7 +24,11 @@ export default function AuthField({
   onChange,
   autoComplete,
   required,
+  maxLength,
+  error,
 }: AuthFieldProps) {
+  const errorId = `${id}-error`
+
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 ml-4 block font-label text-xs font-bold">
@@ -42,9 +48,23 @@ export default function AuthField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required={required}
-          className="w-full rounded-full border-[3px] border-outline bg-background py-2.5 pr-5 pl-11 font-body text-sm font-medium transition-shadow outline-none placeholder:text-on-background/35 focus:border-primary focus:sticker-shadow-sm"
+          maxLength={maxLength}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className={`w-full rounded-full border-[3px] bg-background py-2.5 pr-5 pl-11 font-body text-sm font-medium transition-shadow outline-none placeholder:text-on-background/35 focus:sticker-shadow-sm ${
+            error ? 'border-primary' : 'border-outline focus:border-primary'
+          }`}
         />
       </div>
+
+      {error && (
+        <p
+          id={errorId}
+          className="mt-1.5 ml-4 font-body text-xs font-medium text-tertiary"
+        >
+          {error}
+        </p>
+      )}
     </div>
   )
 }

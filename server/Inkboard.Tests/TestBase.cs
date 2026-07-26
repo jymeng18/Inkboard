@@ -1,10 +1,11 @@
+using FluentValidation;
+using Inkboard.Application;
 using Inkboard.Application.Auth.DTO;
+using Inkboard.Application.Auth.Handlers;
 using Inkboard.Application.Interfaces;
 using Inkboard.Application.Services;
 using Inkboard.Domain.Repositories;
 using Inkboard.Infra.Db;
-using FluentValidation;
-using Inkboard.Application;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -26,25 +27,35 @@ public abstract class TestBase
     {
         var mock = new Mock<ITokenGenerator>(MockBehavior.Strict);
         mock.Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>()))
-            .Returns((Guid userId, string _) =>
-                $"test-access-token-{userId}-{Interlocked.Increment(ref _tokenCounter)}");
+            .Returns(
+                (Guid userId, string _) =>
+                    $"test-access-token-{userId}-{Interlocked.Increment(ref _tokenCounter)}"
+            );
         mock.Setup(t => t.GenerateRefreshToken())
             .Returns(() => $"test-refresh-token-{Guid.NewGuid()}");
         return mock;
     }
 
-    protected static IValidator<RegisterRequestModel> CreateValidator()
+    protected static IValidator<RegisterRequestModel> CreateRegisterValidator()
     {
         return new RegisterRequestValidator();
+    }
+
+    protected static IValidator<LoginRequestModel> CreateLoginValidator()
+    {
+        return new LoginRequestValidator();
     }
 
     protected static AuthService CreateAuthService(
         AppDbContext context,
         Mock<ITokenGenerator>? tokenGenMock = null,
-        IValidator<RegisterRequestModel>? validator = null)
+        IValidator<RegisterRequestModel>? registerValidator = null,
+        IValidator<LoginRequestModel>? loginValidator = null
+    )
     {
         tokenGenMock ??= CreateTokenGeneratorMock();
-        validator ??= CreateValidator();
+        registerValidator ??= CreateRegisterValidator();
+        loginValidator ??= CreateLoginValidator();
 
         IUserRepository userRepo = new UserRepository(context);
         ITokenRepository tokenRepo = new TokenRepository(context);
@@ -52,7 +63,8 @@ public abstract class TestBase
         return new AuthService(
             tokenGenMock.Object,
             userRepo,
-            validator,
+            registerValidator,
+            loginValidator,
             tokenRepo
         );
     }

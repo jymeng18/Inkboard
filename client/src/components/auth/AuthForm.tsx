@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { Lock, Mail, User } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { AUTH_LIMITS } from '@/api/auth'
 import { useAuth } from '../../hooks/useAuth'
 import { useAuthStore } from '../../stores/authStore'
 import AuthField from './AuthField'
 import { GithubIcon, GoogleIcon } from './SocialIcons'
 
 type Mode = 'login' | 'signup'
+
+type FieldErrors = Partial<Record<'name' | 'email' | 'password', string>>
+
+/* Deliberately loose — the server owns the real check, this catches typos. */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const COPY = {
   login: {
@@ -34,6 +40,7 @@ export default function AuthForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
   const copy = COPY[mode]
 
@@ -41,12 +48,65 @@ export default function AuthForm() {
     if (isAuthenticated) navigate('/dashboard', { replace: true })
   }, [isAuthenticated, navigate])
 
+  function switchMode(next: Mode) {
+    setMode(next)
+    setFieldErrors({})
+  }
+
+  function validate(): FieldErrors {
+    const errors: FieldErrors = {}
+
+    if (!email.trim()) {
+      errors.email = 'Email is required.'
+    } else if (!EMAIL.test(email.trim())) {
+      errors.email = 'Enter a valid email address.'
+    }
+
+    if (!password) {
+      errors.password = 'Password is required.'
+    }
+
+    // Only on signup: an existing account shouldn't be locked out of logging in
+    // by rules that tightened after it was created.
+    if (mode === 'signup') {
+      if (!name.trim()) {
+        errors.name = 'Display name is required.'
+      } else if (name.trim().length < AUTH_LIMITS.userName.min) {
+        errors.name = `Display name must be at least ${AUTH_LIMITS.userName.min} characters.`
+      }
+
+      if (password && password.length < AUTH_LIMITS.password.min) {
+        errors.password = `Password must be at least ${AUTH_LIMITS.password.min} characters.`
+      }
+    }
+
+    return errors
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+
+    const errors = validate()
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     if (mode === 'login') {
-      await login(email, password)
+      await login(email.trim(), password)
     } else {
-      await register(name, email, password)
+      await register(name.trim(), email.trim(), password)
+    }
+  }
+
+  /** Clears a field's error as soon as the user starts fixing it. */
+  function fieldSetter(
+    field: keyof FieldErrors,
+    set: (value: string) => void,
+  ) {
+    return (value: string) => {
+      set(value)
+      setFieldErrors((prev) =>
+        prev[field] ? { ...prev, [field]: undefined } : prev,
+      )
     }
   }
 
@@ -58,15 +118,16 @@ export default function AuthForm() {
       </div>
 
       <div className="mb-7 flex gap-1 rounded-full border-[3px] border-outline bg-background p-1 sticker-shadow-sm">
-        <ModeTab mode="login" current={mode} onSelect={setMode}>
+        <ModeTab mode="login" current={mode} onSelect={switchMode}>
           Log In
         </ModeTab>
-        <ModeTab mode="signup" current={mode} onSelect={setMode}>
+        <ModeTab mode="signup" current={mode} onSelect={switchMode}>
           Sign Up
         </ModeTab>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      {/* noValidate: the messages below are ours, not the browser's bubbles. */}
+      <form className="space-y-4" onSubmit={handleSubmit} noValidate>
         {mode === 'signup' && (
           <AuthField
             id="name"
@@ -75,9 +136,11 @@ export default function AuthForm() {
             placeholder="Artist name"
             icon={User}
             value={name}
-            onChange={setName}
+            onChange={fieldSetter('name', setName)}
             autoComplete="nickname"
             required
+            maxLength={AUTH_LIMITS.userName.max}
+            error={fieldErrors.name}
           />
         )}
 
@@ -88,9 +151,11 @@ export default function AuthForm() {
           placeholder="you@example.com"
           icon={Mail}
           value={email}
-          onChange={setEmail}
+          onChange={fieldSetter('email', setEmail)}
           autoComplete="email"
           required
+          maxLength={AUTH_LIMITS.email.max}
+          error={fieldErrors.email}
         />
 
         <AuthField
@@ -100,9 +165,11 @@ export default function AuthForm() {
           placeholder="••••••••"
           icon={Lock}
           value={password}
-          onChange={setPassword}
+          onChange={fieldSetter('password', setPassword)}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           required
+          maxLength={AUTH_LIMITS.password.max}
+          error={fieldErrors.password}
         />
 
         {mode === 'login' && (
