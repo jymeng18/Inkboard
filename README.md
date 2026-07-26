@@ -38,12 +38,8 @@ Inkboard is a shared drawing app made for quick live collaboration. It is inspir
 
 ### Demo Video
 
-<p align="center">
-  <video controls autoplay muted loop playsinline width="100%" poster="./assets/landing.png">
-    <source src="./assets/inkboard_demo.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-</p>
+https://github.com/user-attachments/assets/9f100f4d-8ae1-4a37-ac01-8cd2d7037b84
+
 
 ## Schema
 
