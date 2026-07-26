@@ -4,9 +4,10 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import './index.css'
 import App from './App'
-import RequireAuth from './components/RequireAuth'
-import { queryClient } from './lib/queryClient'
+import RequireAuth from '@/components/RequireAuth'
+import { queryClient } from '@/lib/queryClient'
 import AuthPage from './pages/AuthPage'
+import CanvasPage from './pages/CanvasPage'
 import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
 
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<AuthPage />} />
         <Route element={<RequireAuth />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/canvas/:canvasId" element={<CanvasPage />} />
           <Route path="/app" element={<App />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
