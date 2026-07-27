@@ -1,0 +1,33 @@
+name: React Vite Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'pnpm' 
+
+    - name: Install dependencies
+      run: pnpm ci
+      working-directory: ./client 
+
+    - name: Type-check TypeScript
+      run: npx tsc --noEmit
+      working-directory: ./client 
+
+    - name: Build React Vite app
+      run: pnpm run build
+      working-directory: ./client 
