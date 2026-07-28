@@ -22,6 +22,20 @@ public class AppDbContext : DbContext
     // area for db constraints/restrictions, etc..
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Registration only checks this in AuthService, which two concurrent
+        // requests can both pass, so the DB has to be the real guard
+        modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+
+        modelBuilder
+            .Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Refresh and logout both look a token up by its hash
+        modelBuilder.Entity<RefreshToken>().HasIndex(rt => rt.TokenHash).IsUnique();
+
         // PartyMember composite key
         modelBuilder.Entity<PartyMember>().HasKey(pm => new { pm.PartyId, pm.UserId });
 
@@ -107,12 +121,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(co => co.CanvasId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Attribution only: a deleted account nulls the stroke's author but never
+        // removes the stroke, otherwise replaying the canvas would skip operations
         modelBuilder
             .Entity<CanvasOperation>()
             .HasOne(co => co.User)
             .WithMany()
             .HasForeignKey(co => co.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Replay reads every operation for one canvas in order
+        modelBuilder.Entity<CanvasOperation>().HasIndex(co => new { co.CanvasId, co.Timestamp });
 
         modelBuilder
             .Entity<Canvas>()

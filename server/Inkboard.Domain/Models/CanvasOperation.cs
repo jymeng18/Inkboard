@@ -1,3 +1,4 @@
+#nullable enable
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Inkboard.Domain.Models;
@@ -9,19 +10,21 @@ public class CanvasOperation
 
     public ActionType Type { get; set; }
 
-    public string OperationData { get; set; } // * This is jsondata but BE never reads/writes/parse ret. JsonData, just broadcasts to other clients
+    public string OperationData { get; set; } = ""; // * This is jsondata but BE never reads/writes/parse ret. JsonData, just broadcasts to other clients
 
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     public Guid CanvasId { get; set; }
 
-    public Guid UserId { get; set; } // * which user performed this operation
+    // * which user performed this operation, null once that account is deleted:
+    // * the stroke is kept for replay but is no longer attributed to anyone
+    public Guid? UserId { get; set; }
 
     // *  Navigation props
 
     public Canvas Canvas { get; set; } = null!;
 
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }
 
 /// <summary>
