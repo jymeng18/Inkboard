@@ -36,5 +36,6 @@ public enum InviteStatus
 {
   Pending,
   Accepted,
-  Declined
+  Declined,
+  Expired,
 }

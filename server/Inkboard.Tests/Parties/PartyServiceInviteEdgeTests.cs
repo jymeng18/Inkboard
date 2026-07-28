@@ -192,4 +192,46 @@ public sealed class PartyServiceInviteEdgeTests : PartyTestBase
         var oldInvite = await Context.PartyInvites.FirstAsync(pi => pi.Id == first.Data.Id);
         Assert.AreEqual(InviteStatus.Declined, oldInvite.InviteStatus);
     }
+
+    [TestMethod]
+    public async Task InviteUser_PreviousInviteExpiredUnanswered_CreatesNewPendingInvite()
+    {
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
+        var party = partyResult.Data!;
+        var first = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        await ExpireInviteAsync(first.Data!.Id);
+
+        var second = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+
+        Assert.IsTrue(second.IsSuccess);
+        Assert.AreNotEqual(first.Data.Id, second.Data!.Id);
+        Assert.AreEqual(InviteStatus.Pending, second.Data.InviteStatus);
+    }
+
+    [TestMethod]
+    public async Task InviteUser_PreviousInviteExpiredUnanswered_MarksOldInviteExpired()
+    {
+        var leader = await SeedUserAsync(Context, "leader");
+        var invited = await SeedUserAsync(Context, "invited");
+        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
+        var party = partyResult.Data!;
+        var first = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+        await ExpireInviteAsync(first.Data!.Id);
+
+        await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
+
+        var oldInvite = await Context.PartyInvites.FirstAsync(pi => pi.Id == first.Data.Id);
+        Assert.AreEqual(InviteStatus.Expired, oldInvite.InviteStatus);
+    }
+
+    private async Task ExpireInviteAsync(Guid inviteId)
+    {
+        var invite = await Context.PartyInvites.FirstAsync(pi => pi.Id == inviteId);
+        invite.ExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+        await Context.SaveChangesAsync();
+    }
 }

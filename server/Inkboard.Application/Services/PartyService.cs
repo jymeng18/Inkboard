@@ -139,7 +139,10 @@ namespace Inkboard.Application.Services
             );
             if (isBlocked)
             {
-                return Result<PartyInvite>.Fail(ErrorType.Validation, "You have blocked this user.");
+                return Result<PartyInvite>.Fail(
+                    ErrorType.Validation,
+                    "You have blocked this user."
+                );
             }
 
             var memberCount = await _partyRepository.GetMemberCountAsync(partyId);
@@ -157,10 +160,16 @@ namespace Inkboard.Application.Services
             );
             if (existingInvite is not null)
             {
-                return Result<PartyInvite>.Fail(
-                    ErrorType.Conflict,
-                    "An invite is already pending for this user."
-                );
+                // If inv not expired, then its an active invite, reject ops
+                if (existingInvite.ExpiresAt > DateTime.UtcNow)
+                {
+                    return Result<PartyInvite>.Fail(
+                        ErrorType.Conflict,
+                        "An invite is already pending for this user."
+                    );
+                }
+                existingInvite.InviteStatus = InviteStatus.Expired;
+                await _partyInviteRepository.UpdateInviteAsync(existingInvite);
             }
 
             PartyInvite partyInvite = new()

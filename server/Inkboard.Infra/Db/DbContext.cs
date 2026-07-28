@@ -93,6 +93,14 @@ public class AppDbContext : DbContext
             .HasForeignKey(pi => pi.InvitedUserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // One live invite per user per party. Filtered on Pending so that superseded
+        // invites (Expired/Declined/Accepted) never block a re-invite
+        modelBuilder
+            .Entity<PartyInvite>()
+            .HasIndex(pi => new { pi.PartyId, pi.InvitedUserId })
+            .IsUnique()
+            .HasFilter("\"InviteStatus\" = 0");
+
         modelBuilder.Entity<BlockList>().HasKey(bl => new { bl.BlockedUserId, bl.UserId });
 
         modelBuilder
