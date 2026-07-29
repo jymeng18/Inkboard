@@ -27,3 +27,6 @@ export const useHasFinePointer = () =>
 
 export const usePrefersReducedMotion = () =>
   useMediaQuery("(prefers-reduced-motion: reduce)");
+
+/* Phone-sized viewports — 768px is the conventional phone/tablet cutoff. */
+export const MOBILE_VIEWPORT = "(max-width: 767px)";

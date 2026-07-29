@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Palette, Settings, Users } from "lucide-react";
@@ -20,6 +20,11 @@ import {
   useRenameCanvas,
 } from "@/hooks/useCanvases";
 import { useAuth } from "@/hooks/useAuth";
+import { MOBILE_VIEWPORT } from "@/hooks/useMediaQuery";
+import {
+  clearMobileNoticePending,
+  isMobileNoticePending,
+} from "@/lib/firstRun";
 
 import CanvasNameDialog from "@/components/dashboard/CanvasNameDialog";
 import CanvasesView from "@/components/dashboard/CanvasesView";
@@ -28,6 +33,7 @@ import DashboardSidebar, {
 } from "@/components/dashboard/DashboardSidebar";
 import DashboardTopBar from "@/components/dashboard/DashboardTopBar";
 import FriendsPanel from "@/components/dashboard/FriendsPanel";
+import MobileExperienceNotice from "@/components/dashboard/MobileExperienceNotice";
 import PartyView from "@/components/dashboard/PartyView";
 import SettingsView from "@/components/dashboard/SettingsView";
 
@@ -76,6 +82,25 @@ export default function DashboardPage() {
   const [view, setView] = useState<DashboardView>("canvases");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null);
+  /*
+   * The pending flag is only ever set by registering, so this resolves on the
+   * first dashboard load of a brand new account. Read once rather than through
+   * a live media query: the rule is "was this a phone at first sign-in", so
+   * later rotating or resizing shouldn't change the answer.
+   */
+  const [mobileNoticeOpen, setMobileNoticeOpen] = useState(
+    () => isMobileNoticePending() && window.matchMedia(MOBILE_VIEWPORT).matches,
+  );
+
+  /*
+   * Burn the flag the moment the notice isn't showing: either it was just
+   * dismissed, or this was a desktop signup and it never had cause to appear.
+   * Clearing on dismissal rather than on display is what lets a refresh
+   * mid-notice still bring it back.
+   */
+  useEffect(() => {
+    if (!mobileNoticeOpen) clearMobileNoticePending();
+  }, [mobileNoticeOpen]);
 
   // * useQuery rets all properties, not explicitly defined in the hook
   const { data: canvases = [], isLoading, isError, refetch } = useCanvases();
@@ -211,6 +236,10 @@ export default function DashboardPage() {
         friends={FRIENDS}
         requests={FRIEND_REQUESTS}
       />
+
+      {mobileNoticeOpen && (
+        <MobileExperienceNotice onDismiss={() => setMobileNoticeOpen(false)} />
+      )}
 
       {nameDialog?.mode === "create" && (
         <CanvasNameDialog

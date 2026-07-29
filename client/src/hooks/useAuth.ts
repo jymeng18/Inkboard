@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { loginUser, logoutUser, registerUser } from '@/api/auth'
+import { markMobileNoticePending } from '@/lib/firstRun'
 import { decodeClaims, getRefreshToken } from '@/lib/session'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -61,6 +62,12 @@ export function useAuth() {
     setError(null)
     try {
       await registerUser(userName, email, password)
+
+      // Flagged off the account being created rather than the sign-in that
+      // follows, so the notice still waits for them if auto-login below fails
+      // and they come back to log in by hand.
+      markMobileNoticePending()
+
       await openSession(email, password, userName)
       return true
     } catch (err) {
