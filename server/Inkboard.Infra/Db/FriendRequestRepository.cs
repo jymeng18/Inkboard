@@ -19,10 +19,10 @@ public class FriendRequestRepository : IFriendRequestRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<FriendRequest>> GetAllReqsByUserIdAsync(Guid requesteeId)
+    public async Task<List<FriendRequest>> GetAllReqsByUserIdAsync(Guid userId)
     {
         var allReqs = await _context
-            .FriendRequests.Where(fr => fr.RequesteeId == requesteeId)
+            .FriendRequests.Where(fr => fr.RequesteeId == userId)
             .Include(fr => fr.Requester) // * we want to know who sent the req
             .ToListAsync();
         return allReqs;
@@ -43,11 +43,11 @@ public class FriendRequestRepository : IFriendRequestRepository
         );
     }
 
-    public Task<List<FriendRequest>> GetPendingReqsByUserIdAsync(Guid requesteeId)
+    public Task<List<FriendRequest>> GetPendingReqsByUserIdAsync(Guid userId)
     {
         return _context
             .FriendRequests.Where(fr =>
-                fr.RequesteeId == requesteeId && fr.Status == RequestStatus.Pending
+                fr.RequesteeId == userId && fr.Status == RequestStatus.Pending
             )
             .Include(fr => fr.Requester)
             .ToListAsync();
