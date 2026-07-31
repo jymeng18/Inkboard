@@ -29,7 +29,7 @@ public class FriendshipRepository : IFriendshipRepository
 
     /*
      * each side is a clean seek (the key for UserId1, its own index for UserId2)
-     * and pulls only the one User(friends) it needs. UNION ALL much faster then OR 
+     * and pulls only the one User(friends) it needs. UNION ALL much faster then OR
      * operator.
      */
     public async Task<List<User>> GetFriendsListByIdAsync(Guid userId)
@@ -67,15 +67,17 @@ public class FriendshipRepository : IFriendshipRepository
 
 
     /// <summary>
-    /// Postgres orders uuid by its raw bytes, but Guid.CompareTo reads the first
-    /// three fields as signed integers, so the two disagree whenever a high bit
-    /// is set. Comparing big-endian bytes keeps
-    /// "smaller" here identical to "smaller" in the check constraint.
+    /// We cannot use Guid.CompareTo, since they cannot compare Spans<T>, & we need
+    /// spans since Postgres compares v4 guids as raw byte by byte lexicographically in Big Endian
+    /// By default, .NET10 will not work with guids in Big Endian, causing inconsistnecy between postgres and .NET
+    /// If byte reading is inconsistent, On record insertion, our CHECK constraint for uid1 < uid2 will fail, even if 
+    /// it seems like it was sorted using Canonical(..)
     /// </summary>
-    private static int CompareAsUuid(Guid alpha, Guid beta) =>
-        alpha
-            .ToByteArray(bigEndian: true)
-            .AsSpan()
-            .SequenceCompareTo(beta.ToByteArray(bigEndian: true));
+    private static int CompareAsUuid(Guid alpha, Guid beta)
+    {
+        ReadOnlySpan<byte> b1 = alpha.ToByteArray(bigEndian: true);
+        ReadOnlySpan<byte> b2 = beta.ToByteArray(bigEndian: true);
+        return b1.SequenceCompareTo(b2);
+    }
 
 }
