@@ -11,3 +11,16 @@ replay feature under the hood.
 
 # Minor Configuration Notes
 Storage account on Azure is set to allow anonymous access on blob storage snapshots. This means we do not need a direct endpoint on the server asking for a Canvas snapshot, client side can directly call it and receive it. 
+
+# Interface
+
+`IBlobStorageService` lives in Inkboard.Application/Interfaces and has no knowledge of Azure, it is a pure abstraction. It has no implementation yet, only the interface exists today. Once built, the concrete `BlobStorageService` belongs in Inkboard.Infra/Blob and should use the Azure SDK directly. `CanvasService` should be the only caller, the API layer and hubs should never touch blob storage.
+
+```csharp
+public interface IBlobStorageService
+{
+    Task<string> UploadSnapshotAsync(Guid canvasId, Stream imageData, string contentType);
+}
+```
+
+`UploadSnapshotAsync` returns the public URL of the uploaded blob so `CanvasService` can update `Canvas.SnapshotURL` right after. The plan is a single container named `snapshots`, created at startup if it does not already exist, with blobs keyed by canvas id, `snapshots/{canvasId}.png`.
