@@ -236,6 +236,65 @@ namespace Inkboard.Application.Services
             return Result.Ok();
         }
 
+        /*
+         * The deliberate end of a session. LeavePartyAsync exists for one person
+         * stepping out, which keeps the party alive under a new leader; this is
+         * the leader closing the whole thing down, so every member is notified,
+         * every membership row goes, and the party itself is deleted.
+         */
+        public async Task<Result> EndSessionAsync(Guid partyId, Guid leaderId)
+        {
+            var party = await _partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result.Fail(ErrorType.NotFound, "Party not found.");
+
+            if (party.LeaderId != leaderId)
+                return Result.Fail(ErrorType.Forbidden, "Only the leader can end the session.");
+
+            var members = await _partyRepository.GetMembersAsync(partyId);
+            var memberIds = members.ConvertAll(m => m.UserId);
+
+            // Notify first: once the rows are gone there's no way to look up who
+            // was in the party.
+            await _partyNotifier.NotifyPartyEnded(partyId, memberIds);
+
+            foreach (var member in members)
+                await _partyRepository.RemoveMemberAsync(member);
+
+            await _partyRepository.DeletePartyAsync(party);
+
+            return Result.Ok();
+        }
+
+        /*
+         * Re-links a party that already exists to a different canvas. 
+         */
+        public async Task<Result> SetPartyCanvasAsync(Guid partyId, Guid leaderId, Guid canvasId)
+        {
+            var party = await _partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result.Fail(ErrorType.NotFound, "Party not found.");
+
+            if (party.LeaderId != leaderId)
+                return Result.Fail(ErrorType.Forbidden, "Only the leader can open a canvas for the party.");
+
+            var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
+            if (canvas is null)
+                return Result.Fail(ErrorType.NotFound, "Canvas does not exist.");
+
+            party.CanvasId = canvasId;
+            await _partyRepository.UpdatePartyAsync(party);
+
+            // Everyone but the leader, who is already on their way there.
+            var members = await _partyRepository.GetMembersAsync(partyId);
+            var memberIds = members.ConvertAll(m => m.UserId).FindAll(id => id != leaderId);
+
+            if (memberIds.Count > 0)
+                await _partyNotifier.NotifyPartyCanvasOpened(partyId, canvasId, memberIds);
+
+            return Result.Ok();
+        }
+
         public async Task<Result> RemoveMemberAsync(Guid partyId, Guid leaderId, Guid targetUserId)
         {
             var party = await _partyRepository.GetByIdAsync(partyId);

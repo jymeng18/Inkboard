@@ -66,4 +66,30 @@ public class PartyNotifier : IPartyNotifier
             await _hub.Clients.Group(groupName).NotifyOnMemberLeft(userId);
         }
     }
+
+    public async Task NotifyPartyEnded(Guid partyId, IReadOnlyCollection<Guid> memberIds)
+    {
+        var groupName = PartyHub.GroupName(partyId);
+
+        foreach (var memberId in memberIds)
+        {
+            await _hub.Clients.User(memberId.ToString()).PartyEnded();
+
+            var connId = _connectionStore.Get(memberId);
+            if (connId is not null)
+                await _hub.Groups.RemoveFromGroupAsync(connId, groupName);
+        }
+    }
+
+    public async Task NotifyPartyCanvasOpened(
+        Guid partyId,
+        Guid canvasId,
+        IReadOnlyCollection<Guid> memberIds
+    )
+    {
+        foreach (var memberId in memberIds)
+        {
+            await _hub.Clients.User(memberId.ToString()).PartyCanvasOpened(canvasId);
+        }
+    }
 }
