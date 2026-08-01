@@ -19,6 +19,7 @@ export function usePartyHub() {
   const triggerNavToDashboard = useConnectionStore(
     (s) => s.triggerNavToDashboard,
   );
+  const triggerNavToCanvas = useConnectionStore((s) => s.triggerNavToCanvas);
   const addMember = usePartyStore((s) => s.addMember);
   const removeMember = usePartyStore((s) => s.removeMember);
   const setLeader = usePartyStore((s) => s.setLeader);
@@ -114,6 +115,25 @@ export function usePartyHub() {
       setLastEvent({ event: "invited", userId: i.partyId });
     });
 
+    // The leader tore the session down: the party is gone for everyone, so the
+    // wording stays neutral. The leader hears this back about their own action.
+    conn.on("PartyEnded", () => {
+      clearParty();
+      triggerNavToDashboard();
+      toast.info("Session ended — the party has been disbanded.");
+      setLastEvent({ event: "party-ended", userId: "" });
+    });
+
+    /*
+     * The leader opened a canvas for the party; everyone follows them in.
+     * usePartyCanvasNavigation announces it, since it's the one that knows
+     * whether this member actually had to move.
+     */
+    conn.on("PartyCanvasOpened", (canvasId: string) => {
+      triggerNavToCanvas(canvasId);
+      setLastEvent({ event: "canvas-opened", userId: canvasId });
+    });
+
     conn.on("LeadershipTransferred", (newLeaderId: string) => {
       // The old leader left: leadership passes on and the canvas link breaks, so
       // everyone exits to the dashboard, the party itself stays intact.
@@ -137,7 +157,7 @@ export function usePartyHub() {
       console.log("[PartyHub] Closed:", err?.message);
     });
 
-    // Connection lifecycle stays in the console — only real party activity
+    // Connection lifecycle stays in the console. Only real party activity
     // (joins, kicks, invites) surfaces as a toast.
     try {
       await conn.start();
@@ -155,6 +175,7 @@ export function usePartyHub() {
     setLastEvent,
     setPresence,
     triggerNavToDashboard,
+    triggerNavToCanvas,
     addMember,
     removeMember,
     setLeader,
