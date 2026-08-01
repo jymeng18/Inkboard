@@ -1,5 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
+import { useFriendRequestNotifications } from '@/hooks/useFriendRequestNotifications'
+import { usePartyCanvasNavigation } from '@/hooks/usePartyCanvasNavigation'
 import { usePartyHub } from '@/hooks/usePartyHub'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -13,6 +15,14 @@ export default function RequireAuth() {
 
   // Hooks must run unconditionally; the hub no-ops until there's a token.
   usePartyHub()
+
+  // One poll for the whole session, so a friend request finds the user wherever
+  // they are rather than only on the dashboard.
+  useFriendRequestNotifications()
+
+  // Members are usually on the dashboard when the leader opens a canvas, so the
+  // listener that follows them in has to live above both pages.
+  usePartyCanvasNavigation()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

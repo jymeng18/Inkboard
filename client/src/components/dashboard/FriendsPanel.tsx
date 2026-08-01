@@ -1,25 +1,41 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Search, UserPlus, Users, X } from 'lucide-react'
+import { Check, Search, UserMinus, UserPlus, Users, X } from 'lucide-react'
 
+import { truncateId, type FriendDto, type FriendRequestDto } from '@/api/friends'
+import { extractErrorMessage, isGuid } from '@/api/party'
 import { Button } from '@/components/ui/button'
-import type { Friend, FriendRequest, PresenceStatus } from '../../types/social'
-
-const STATUS_STYLES: Record<PresenceStatus, { dot: string; label: string }> = {
-  online: { dot: 'bg-green-500', label: 'Online' },
-  'in-canvas': { dot: 'bg-secondary', label: 'In a canvas' },
-  offline: { dot: 'bg-surface-dim', label: 'Offline' },
-}
+import UserAvatar from '@/components/ui/UserAvatar'
+import {
+  useFriends,
+  usePendingFriendRequests,
+  useRespondToFriendRequest,
+  useSendFriendRequest,
+  useUnfriend,
+} from '@/hooks/useFriends'
+import { useAuthStore } from '@/stores/authStore'
+import { useConnectionStore } from '@/stores/connectionStore'
 
 interface FriendsPanelProps {
   open: boolean
   onClose: () => void
-  friends: Friend[]
-  requests: FriendRequest[]
 }
 
-export default function FriendsPanel({ open, onClose, friends, requests }: FriendsPanelProps) {
+export default function FriendsPanel({ open, onClose }: FriendsPanelProps) {
   const [search, setSearch] = useState('')
+
+  const { data: friends = [], refetch: refetchFriends } = useFriends()
+  const { data: requests } = usePendingFriendRequests()
+  const sendRequest = useSendFriendRequest()
+  const currentUserId = useAuthStore((s) => s.userId)
+
+  /*
+   * The only presence signal that exists today is the PartyHub feed, which
+   * covers party members and nobody else. Anyone we have no word on renders
+   * offline rather than optimistically online. A real presence source lands
+   * later and slots in right here.
+   */
+  const presence = useConnectionStore((s) => s.presence)
 
   useEffect(() => {
     if (!open) return
@@ -30,15 +46,42 @@ export default function FriendsPanel({ open, onClose, friends, requests }: Frien
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
-  const online = friends.filter((f) => f.status !== 'offline')
-  const offline = friends.filter((f) => f.status === 'offline')
+  /*
+   * Nothing tells the sender that their request was accepted: they can't see
+   * their own outgoing requests, and the poll only covers incoming ones. So
+   * opening the panel is the refresh, one request per open, which is as light
+   * as this gets without a socket.
+   */
+  useEffect(() => {
+    if (open) refetchFriends()
+  }, [open, refetchFriends])
+
+  const online = friends.filter((friend) => presence[friend.userId])
+  const offline = friends.filter((friend) => !presence[friend.userId])
   const isEmpty = friends.length === 0 && requests.length === 0
 
   function handleAdd() {
-    const id = search.trim()
-    if (!id) return
-    toast.info('Friend requests are coming soon.')
-    setSearch('')
+    const targetUserId = search.trim()
+    if (!targetUserId || sendRequest.isPending) return
+
+    // Same gate the server applies before it will even parse the id.
+    if (!isGuid(targetUserId)) {
+      toast.error("That doesn't look like a user ID.")
+      return
+    }
+
+    if (targetUserId === currentUserId) {
+      toast.error('You cannot add yourself.')
+      return
+    }
+
+    sendRequest.mutate(targetUserId, {
+      onSuccess: (request) => {
+        setSearch('')
+        toast.success(`Request sent to ${request.userName}`)
+      },
+      onError: (err) => toast.error(extractErrorMessage(err)),
+    })
   }
 
   return (
@@ -82,8 +125,9 @@ export default function FriendsPanel({ open, onClose, friends, requests }: Frien
             <button
               type="button"
               onClick={handleAdd}
+              disabled={sendRequest.isPending}
               aria-label="Send friend request"
-              className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white transition-transform hover:scale-105"
+              className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white transition-transform hover:scale-105 disabled:opacity-50"
             >
               <UserPlus className="size-4" aria-hidden />
             </button>
@@ -98,54 +142,34 @@ export default function FriendsPanel({ open, onClose, friends, requests }: Frien
               </span>
               <p className="font-display text-xl leading-none">No friends yet</p>
               <p className="mt-2 font-body text-xs text-on-background/60">
-                Add someone by their user ID to get started once friends go live.
+                Add someone by their user ID to send your first request.
               </p>
             </div>
           )}
 
           {requests.length > 0 && (
-            <Section title={`Requests · ${requests.length}`}>
+            <Section title="Requests" count={requests.length} tone="bg-primary text-white">
               {requests.map((request) => (
-                <li
-                  key={request.id}
-                  className="flex items-center gap-3 rounded-xl border-[3px] border-outline bg-primary-container/40 p-2"
-                >
-                  <Avatar name={request.userName} />
-                  <span className="min-w-0 flex-1 truncate font-label text-sm font-bold">
-                    {request.userName}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Accept ${request.userName}`}
-                    className="flex size-8 items-center justify-center rounded-full border-2 border-outline bg-green-400 text-outline hover:scale-105"
-                  >
-                    <Check className="size-4" aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Decline ${request.userName}`}
-                    className="flex size-8 items-center justify-center rounded-full border-2 border-outline bg-surface hover:scale-105"
-                  >
-                    <X className="size-4" aria-hidden />
-                  </button>
-                </li>
+                <RequestRow key={request.id} request={request} />
               ))}
             </Section>
           )}
 
           {!isEmpty && (
             <>
-              <Section title={`Online · ${online.length}`}>
+              <Section title="Online" count={online.length} tone="bg-green-400">
                 {online.length === 0 ? (
                   <EmptyRow>No friends online.</EmptyRow>
                 ) : (
-                  online.map((friend) => <FriendRow key={friend.id} friend={friend} />)
+                  online.map((friend) => (
+                    <FriendRow key={friend.userId} friend={friend} online />
+                  ))
                 )}
               </Section>
 
-              <Section title={`Offline · ${offline.length}`}>
+              <Section title="Offline" count={offline.length} tone="bg-surface-dim">
                 {offline.map((friend) => (
-                  <FriendRow key={friend.id} friend={friend} />
+                  <FriendRow key={friend.userId} friend={friend} online={false} />
                 ))}
               </Section>
             </>
@@ -156,42 +180,156 @@ export default function FriendsPanel({ open, onClose, friends, requests }: Frien
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  count,
+  tone,
+  children,
+}: {
+  title: string
+  count: number
+  tone: string
+  children: React.ReactNode
+}) {
   return (
     <div>
-      <h3 className="mb-2 font-label text-xs font-extrabold tracking-widest text-on-background/50 uppercase">
+      <h3 className="mb-2 flex items-center gap-2 font-label text-xs font-extrabold tracking-widest text-on-background/60 uppercase">
         {title}
+        <span
+          className={`rounded-full border-2 border-outline px-2 py-px font-label text-[10px] leading-tight ${tone}`}
+        >
+          {count}
+        </span>
       </h3>
       <ul className="flex flex-col gap-2">{children}</ul>
     </div>
   )
 }
 
-function FriendRow({ friend }: { friend: Friend }) {
-  const status = STATUS_STYLES[friend.status]
+function RequestRow({ request }: { request: FriendRequestDto }) {
+  const respond = useRespondToFriendRequest()
+
+  function handleRespond(accepted: boolean) {
+    if (respond.isPending) return
+
+    respond.mutate({
+      requestId: request.id,
+      requesterId: request.userId,
+      userName: request.userName,
+      accepted,
+    })
+  }
+
   return (
-    <li className="flex items-center gap-3 rounded-xl p-2 hover:bg-background">
-      <Avatar name={friend.userName} dimmed={friend.status === 'offline'} />
+    <li className="flex items-center gap-3 rounded-xl border-[3px] border-outline bg-primary-container p-2 sticker-shadow-sm">
+      <UserAvatar name={request.userName} userId={request.userId} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-label text-sm font-bold">{friend.userName}</p>
-        <span className="flex items-center gap-1.5 font-body text-xs text-on-background/60">
-          <span className={`size-2 rounded-full ${status.dot}`} aria-hidden />
-          {status.label}
-        </span>
+        <p className="truncate font-label text-sm font-bold">{request.userName}</p>
+        <p className="truncate font-body text-[11px] text-on-background/60">
+          {truncateId(request.userId)}
+        </p>
       </div>
+      <button
+        type="button"
+        disabled={respond.isPending}
+        onClick={() => handleRespond(true)}
+        aria-label={`Accept ${request.userName}`}
+        className="flex size-8 items-center justify-center rounded-full border-2 border-outline bg-green-400 text-outline hover:scale-105 disabled:opacity-50"
+      >
+        <Check className="size-4" aria-hidden />
+      </button>
+      <button
+        type="button"
+        disabled={respond.isPending}
+        onClick={() => handleRespond(false)}
+        aria-label={`Decline ${request.userName}`}
+        className="flex size-8 items-center justify-center rounded-full border-2 border-outline bg-surface hover:scale-105 disabled:opacity-50"
+      >
+        <X className="size-4" aria-hidden />
+      </button>
     </li>
   )
 }
 
-function Avatar({ name, dimmed }: { name: string; dimmed?: boolean }) {
+function FriendRow({ friend, online }: { friend: FriendDto; online: boolean }) {
+  // Removing a friend is one click away from irreversible, so the row asks
+  // first rather than reaching for a modal.
+  const [confirming, setConfirming] = useState(false)
+  const removeFriend = useUnfriend()
+
+  function handleRemove() {
+    removeFriend.mutate(friend.userId, {
+      onSuccess: () => toast(`Removed ${friend.userName}`),
+      onError: (err) => {
+        setConfirming(false)
+        toast.error(extractErrorMessage(err))
+      },
+    })
+  }
+
   return (
-    <span
-      className={`flex size-9 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-secondary-container font-display ${
-        dimmed ? 'opacity-50' : ''
+    <li
+      className={`group flex items-center gap-3 rounded-xl border-[3px] p-2 transition-transform ${
+        online
+          ? 'border-outline bg-surface sticker-shadow-sm hover:-translate-y-0.5'
+          : 'border-outline/25 bg-surface/50'
       }`}
     >
-      {name.charAt(0).toUpperCase()}
-    </span>
+      <span className="relative shrink-0">
+        <UserAvatar name={friend.userName} userId={friend.userId} dimmed={!online} />
+        <span
+          aria-hidden
+          className={`absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-surface ${
+            online ? 'bg-green-500' : 'bg-surface-dim'
+          }`}
+        />
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p
+          className={`truncate font-label text-sm font-bold ${online ? '' : 'text-on-background/60'}`}
+        >
+          {friend.userName}
+        </p>
+        <p className="truncate font-body text-[11px] text-on-background/45">
+          {truncateId(friend.userId)}
+        </p>
+        <span className="font-body text-xs text-on-background/60">
+          {online ? 'Online' : 'Offline'}
+        </span>
+      </div>
+
+      {confirming ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            disabled={removeFriend.isPending}
+            onClick={handleRemove}
+            aria-label={`Confirm removing ${friend.userName}`}
+            className="flex size-8 items-center justify-center rounded-full border-2 border-outline bg-primary text-white hover:scale-105 disabled:opacity-50"
+          >
+            <Check className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            aria-label="Keep friend"
+            className="flex size-8 items-center justify-center rounded-full border-2 border-outline bg-surface hover:scale-105"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          aria-label={`Remove ${friend.userName}`}
+          className="flex size-8 shrink-0 items-center justify-center rounded-full text-on-background/40 opacity-0 transition-opacity hover:text-primary focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <UserMinus className="size-4" aria-hidden />
+        </button>
+      )}
+    </li>
   )
 }
 
