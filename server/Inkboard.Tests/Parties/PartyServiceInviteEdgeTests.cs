@@ -30,11 +30,16 @@ public sealed class PartyServiceInviteEdgeTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
         var canvas = await SeedCanvasAsync(Context, leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(invite.Data!.Id, member.Id, true);
+        // Third member keeps the party alive after the first member leaves, so
+        // there's still a party to re-invite them back into.
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
         await Service.LeavePartyAsync(party.Id, member.Id);
 
         var result = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);

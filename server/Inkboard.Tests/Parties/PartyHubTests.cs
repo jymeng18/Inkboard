@@ -403,6 +403,16 @@ public sealed class PartyHubTests
         var inviteId = await InviteUserAsync(leaderToken, partyId, memberId);
         await RespondToInviteAsync(memberToken, inviteId, true);
 
+        // Third member so the leader leaving transfers leadership (to the oldest
+        // member) instead of dissolving the party down to one person.
+        var (member2Id, member2Token) = await RegisterUserAsync(
+            $"m2trans.{suffix}@t.com",
+            "Pass1!",
+            $"m2trans_{suffix}"
+        );
+        var invite2Id = await InviteUserAsync(leaderToken, partyId, member2Id);
+        await RespondToInviteAsync(member2Token, invite2Id, true);
+
         var req = new HttpRequestMessage(HttpMethod.Delete, $"/api/parties/{partyId}");
         req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
             "Bearer",

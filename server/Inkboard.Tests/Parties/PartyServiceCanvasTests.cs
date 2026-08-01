@@ -19,12 +19,18 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
         var (party, canvas) = await SeedPartyAsync(Context, leader.Id, "Shared Canvas");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         Assert.IsTrue(inviteResult.IsSuccess);
         var invite = inviteResult.Data!;
         var respondResult = await Service.RespondToUserInviteAsync(invite.Id, member.Id, true);
         Assert.IsTrue(respondResult.IsSuccess);
+
+        // Three members, so the leader leaving hands off leadership and keeps the
+        // party alive rather than dissolving it down to one person.
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
 
         var result = await Service.LeavePartyAsync(party.Id, leader.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -143,6 +149,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
 
         var canvasService = CreateCanvasService();
         var canvasResult = await canvasService.CreateCanvasAsync(leader.Id, "Workflow Canvas");
@@ -159,6 +166,10 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
         var invite = inviteResult.Data!;
         var respondResult = await Service.RespondToUserInviteAsync(invite.Id, member.Id, true);
         Assert.IsTrue(respondResult.IsSuccess);
+
+        // Three members, so leadership transfers on leave and the party survives.
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
 
         var leaveResult = await Service.LeavePartyAsync(party.Id, leader.Id);
         Assert.IsTrue(leaveResult.IsSuccess);
