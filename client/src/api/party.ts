@@ -61,6 +61,16 @@ export async function leaveParty(partyId: string) {
   await api.delete(`/parties/${partyId}`)
 }
 
+
+export async function endSession(partyId: string) {
+  await api.post(`/parties/${partyId}/end`)
+}
+
+/* Points the party at a canvas; members are pulled in over the hub. */
+export async function setPartyCanvas(partyId: string, canvasId: string) {
+  await api.patch(`/parties/${partyId}/canvas`, { canvasId })
+}
+
 export async function removeMember(partyId: string, targetUserId: string) {
   await api.delete(`/parties/${partyId}/members/${targetUserId}`)
 }

@@ -13,7 +13,7 @@ type Mode = 'login' | 'signup'
 
 type FieldErrors = Partial<Record<'name' | 'email' | 'password', string>>
 
-/* Deliberately loose — the server owns the real check, this catches typos. */
+/* Deliberately loose. The server owns the real check, this catches typos. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const COPY = {

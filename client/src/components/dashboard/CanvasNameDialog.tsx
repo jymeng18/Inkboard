@@ -16,7 +16,7 @@ interface CanvasNameDialogProps {
 
 /*
  * Names a canvas, both on the way in (create) and after the fact (rename).
- * Mount it only while it should be open — state seeds from `initialName` on
+ * Mount it only while it should be open. State seeds from `initialName` on
  * mount, so a fresh mount per canvas is what keeps the field from going stale.
  */
 export default function CanvasNameDialog({
