@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+
+import { statusToast } from '@/lib/notify'
 import { UserPlus, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -49,7 +51,7 @@ export default function InviteDialog({
     setSending(true)
     try {
       await onInvite(id)
-      toast.success('Invite sent')
+      statusToast.success('Invite sent')
       setUserId('')
     } catch (err) {
       toast.error(extractErrorMessage(err))

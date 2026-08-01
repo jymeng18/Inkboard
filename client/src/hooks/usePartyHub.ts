@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from "react";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
 import { showPartyInviteToast } from "@/lib/partyInviteToast";
+import { statusToast } from "@/lib/notify";
 import { useAuthStore } from "@/stores/authStore";
 import { useInviteStore } from "@/stores/inviteStore";
 import { useConnectionStore } from "@/stores/connectionStore";
@@ -61,13 +62,13 @@ export function usePartyHub() {
     conn.on("NotifyOnMemberJoined", (uid: string) => {
       addMember(uid);
       setPresence(uid, true);
-      toast.success(`Member joined: ${uid.slice(0, 8)}...`);
+      statusToast.success(`Member joined: ${uid.slice(0, 8)}...`);
       setLastEvent({ event: "joined", userId: uid });
     });
 
     conn.on("NotifyOnMemberLeft", (uid: string) => {
       removeMember(uid);
-      toast.info(`Member left: ${uid.slice(0, 8)}...`);
+      statusToast.info(`Member left: ${uid.slice(0, 8)}...`);
       setLastEvent({ event: "left", userId: uid });
     });
 
@@ -79,7 +80,7 @@ export function usePartyHub() {
         triggerNavToDashboard();
         toast.error("You were removed from the party");
       } else {
-        toast.info(`Removed: ${uid.slice(0, 8)}...`);
+        statusToast.info(`Removed: ${uid.slice(0, 8)}...`);
       }
       setLastEvent({ event: "kicked", userId: uid });
     });

@@ -4,11 +4,11 @@ import { Bell, Check, Copy, LogOut, Palette, UserCog } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { usePreferencesStore } from '@/stores/preferencesStore'
 
 const SETTINGS: { icon: LucideIcon; title: string; description: string }[] = [
   { icon: UserCog, title: 'Account', description: 'Display name, email, and password.' },
   { icon: Palette, title: 'Canvas defaults', description: 'Starting tool, grid, and colors.' },
-  { icon: Bell, title: 'Notifications', description: 'Party invites and friend requests.' },
 ]
 
 interface SettingsViewProps {
@@ -28,6 +28,8 @@ export default function SettingsView({ userId, userName, onLogout }: SettingsVie
       </div>
 
       <UserIdCard userId={userId} />
+
+      <NotificationsCard />
 
       <ul className="flex flex-col gap-3">
         {SETTINGS.map(({ icon: Icon, title, description }) => (
@@ -51,6 +53,65 @@ export default function SettingsView({ userId, userName, onLogout }: SettingsVie
         Log out
       </Button>
     </section>
+  )
+}
+
+/*
+ * The one live setting so far: mute the ambient party and social activity
+ * toasts. Invites and friend requests sent to the user are deliberately out of
+ * scope here and keep coming through.
+ */
+function NotificationsCard() {
+  const enabled = usePreferencesStore((s) => s.statusNotifications)
+  const setEnabled = usePreferencesStore((s) => s.setStatusNotifications)
+
+  return (
+    <div className="mb-3 flex items-center gap-4 rounded-2xl border-[3px] border-outline bg-surface p-4 sticker-shadow-sm">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-primary-container">
+        <Bell className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-label font-bold">Status notifications</p>
+        <p className="font-body text-xs text-on-background/60">
+          Party activity like members joining, invites you send, and kicks.
+          Invites and friend requests sent to you always come through.
+        </p>
+      </div>
+      <Switch
+        checked={enabled}
+        onToggle={() => setEnabled(!enabled)}
+        label="Status notifications"
+      />
+    </div>
+  )
+}
+
+function Switch({
+  checked,
+  onToggle,
+  label,
+}: {
+  checked: boolean
+  onToggle: () => void
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onToggle}
+      className={`relative h-8 w-14 shrink-0 rounded-full border-[3px] border-outline transition-colors ${
+        checked ? 'bg-primary' : 'bg-surface-dim'
+      }`}
+    >
+      <span
+        className={`absolute top-1/2 left-1 size-4 -translate-y-1/2 rounded-full border-2 border-outline bg-white transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-0'
+        }`}
+      />
+    </button>
   )
 }
 

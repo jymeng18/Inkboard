@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+
+import { statusToast } from '@/lib/notify'
 import { Check, Search, UserMinus, UserPlus, Users, X } from 'lucide-react'
 
 import { truncateId, type FriendDto, type FriendRequestDto } from '@/api/friends'
@@ -78,7 +80,7 @@ export default function FriendsPanel({ open, onClose }: FriendsPanelProps) {
     sendRequest.mutate(targetUserId, {
       onSuccess: (request) => {
         setSearch('')
-        toast.success(`Request sent to ${request.userName}`)
+        statusToast.success(`Request sent to ${request.userName}`)
       },
       onError: (err) => toast.error(extractErrorMessage(err)),
     })
@@ -259,7 +261,7 @@ function FriendRow({ friend, online }: { friend: FriendDto; online: boolean }) {
 
   function handleRemove() {
     removeFriend.mutate(friend.userId, {
-      onSuccess: () => toast(`Removed ${friend.userName}`),
+      onSuccess: () => statusToast.message(`Removed ${friend.userName}`),
       onError: (err) => {
         setConfirming(false)
         toast.error(extractErrorMessage(err))

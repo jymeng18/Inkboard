@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+
+import { statusToast } from '@/lib/notify'
 import { BookUser, ChevronRight, Copy, UserMinus, UserPlus } from 'lucide-react'
 
 import { truncateId } from '@/api/friends'
@@ -45,7 +47,7 @@ export default function CanvasFriendsPanel({ party }: { party: Party }) {
     setOpenMenuId(null)
     try {
       await party.invite(userId)
-      toast.success(`Invited ${userName}`)
+      statusToast.success(`Invited ${userName}`)
     } catch (err) {
       toast.error(extractErrorMessage(err))
     }
@@ -65,7 +67,7 @@ export default function CanvasFriendsPanel({ party }: { party: Party }) {
   function unfriend(userId: string, userName: string) {
     setOpenMenuId(null)
     removeFriend.mutate(userId, {
-      onSuccess: () => toast(`Removed ${userName}`),
+      onSuccess: () => statusToast.message(`Removed ${userName}`),
       onError: (err) => toast.error(extractErrorMessage(err)),
     })
   }

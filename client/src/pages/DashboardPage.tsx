@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { statusToast } from "@/lib/notify";
+
 import {
   canvasDisplayName,
   normalizeCanvasName,
@@ -129,7 +131,7 @@ export default function DashboardPage() {
     try {
       await removeMemberApi(partyId, targetUserId);
       removeMemberFromStore(targetUserId);
-      toast.success("Removed from party");
+      statusToast.success("Removed from party");
     } catch (err) {
       toast.error(extractErrorMessage(err));
     }
@@ -164,7 +166,7 @@ export default function DashboardPage() {
     if (partyId && isPartyLeader) {
       try {
         await setPartyCanvas(partyId, canvas.id);
-        if (members.length > 1) toast.success("Your party is coming with you");
+        if (members.length > 1) statusToast.success("Your party is coming with you");
       } catch (err) {
         // Non-fatal: opening your own canvas shouldn't hinge on the party link.
         toast.error(extractErrorMessage(err));

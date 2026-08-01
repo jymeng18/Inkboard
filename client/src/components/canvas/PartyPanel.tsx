@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+
+import { statusToast } from '@/lib/notify'
 import { ChevronRight, Crown, LogOut, ShieldBan, UserMinus, UserPlus, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -40,7 +42,7 @@ export default function PartyPanel({ party }: { party: Party }) {
     setOpenMenuId(null)
     try {
       await action()
-      toast.success(successMessage)
+      statusToast.success(successMessage)
       if (thenExit) navigate('/dashboard', { replace: true })
     } catch (err) {
       toast.error(extractErrorMessage(err))

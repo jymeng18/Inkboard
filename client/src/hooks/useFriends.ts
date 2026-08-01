@@ -12,6 +12,7 @@ import {
 } from '@/api/friends'
 import { extractErrorMessage } from '@/api/party'
 import { parseServerDate } from '@/lib/datetime'
+import { friendRequestToastId } from '@/lib/friendRequestToast'
 import { useAuthStore } from '@/stores/authStore'
 
 export const friendKeys = {
@@ -127,6 +128,9 @@ export function useRespondToFriendRequest() {
     }) => respondToFriendRequest(requestId, requesterId, accepted),
 
     onMutate: async ({ requestId, accepted }) => {
+      // Answered now, wherever from, so clear the arrival toast if it's still up.
+      toast.dismiss(friendRequestToastId(requestId))
+
       await queryClient.cancelQueries({ queryKey: friendKeys.requests })
       const previous = queryClient.getQueryData<FriendRequestDto[]>(friendKeys.requests)
 
