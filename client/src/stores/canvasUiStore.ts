@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export type Tool = 'pencil' | 'brush' | 'eraser' | 'shapes' | 'hand'
 
 /*
- * UI-only canvas state: the selected tool, colour, and which side panel is
+ * UI-only canvas state: the selected tool, colour, and which docked panel is
  * open. Pan/zoom live in viewportStore; committed content in sceneStore.
  * Kept separate so the Konva stage subscribes to just what it needs.
  */
@@ -11,11 +11,17 @@ interface CanvasUiState {
   tool: Tool
   color: string
   panelOpen: boolean
+  /*
+   * The friends list is an invite picker layered over the party lobby. It only
+   * opens from inside the invite dialog, and closes on an outside click, so it
+   * gets explicit open/close rather than a public toggle.
+   */
   friendsOpen: boolean
   setTool: (tool: Tool) => void
   setColor: (color: string) => void
   togglePanel: () => void
-  toggleFriends: () => void
+  openFriends: () => void
+  closeFriends: () => void
 }
 
 export const useCanvasUiStore = create<CanvasUiState>((set) => ({
@@ -25,20 +31,7 @@ export const useCanvasUiStore = create<CanvasUiState>((set) => ({
   friendsOpen: false,
   setTool: (tool) => set({ tool }),
   setColor: (color) => set({ color }),
-
-  /*
-   * Both panels dock to the same right-hand rail, so opening one closes the
-   * other rather than stacking two sheets over the drawing surface.
-   */
-  togglePanel: () =>
-    set((s) => {
-      const panelOpen = !s.panelOpen
-      return { panelOpen, friendsOpen: panelOpen ? false : s.friendsOpen }
-    }),
-
-  toggleFriends: () =>
-    set((s) => {
-      const friendsOpen = !s.friendsOpen
-      return { friendsOpen, panelOpen: friendsOpen ? false : s.panelOpen }
-    }),
+  togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
+  openFriends: () => set({ friendsOpen: true }),
+  closeFriends: () => set({ friendsOpen: false }),
 }))

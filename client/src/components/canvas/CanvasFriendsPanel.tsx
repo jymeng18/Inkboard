@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { statusToast } from '@/lib/notify'
-import { BookUser, ChevronRight, Copy, UserMinus, UserPlus } from 'lucide-react'
+import { BookUser, Copy, UserMinus, UserPlus, X } from 'lucide-react'
 
 import { truncateId } from '@/api/friends'
 import { extractErrorMessage } from '@/api/party'
@@ -17,8 +17,7 @@ type Party = ReturnType<typeof useCanvasParty>
 
 export default function CanvasFriendsPanel({ party }: { party: Party }) {
   const open = useCanvasUiStore((s) => s.friendsOpen)
-  const partyOpen = useCanvasUiStore((s) => s.panelOpen)
-  const toggleFriends = useCanvasUiStore((s) => s.toggleFriends)
+  const closeFriends = useCanvasUiStore((s) => s.closeFriends)
 
   const { data: friends = [], refetch: refetchFriends } = useFriends()
   const removeFriend = useUnfriend()
@@ -34,11 +33,11 @@ export default function CanvasFriendsPanel({ party }: { party: Party }) {
     if (open) refetchFriends()
   }, [open, refetchFriends])
 
-  // Collapsing shouldn't leave a menu hanging open behind the sheet, or waiting
+  // Closing shouldn't leave a row menu hanging open behind the sheet, or waiting
   // to reappear on the next open.
-  function togglePanel() {
+  function handleClose() {
     setOpenMenuId(null)
-    toggleFriends()
+    closeFriends()
   }
 
   const onlineCount = friends.filter((friend) => presence[friend.userId]).length
@@ -75,24 +74,15 @@ export default function CanvasFriendsPanel({ party }: { party: Party }) {
   return (
     <>
       {/*
-       * Sits directly under the party lobby pill in the collapsed rail. Both
-       * pills hide while a panel is docked, since the sheet covers that corner.
+       * Outside-click catcher. Only mounted while the picker is up, so the rest
+       * of the time the canvas is untouched. Any click that isn't on the sheet
+       * lands here and dismisses; the sheet then slides out on its own.
        */}
-      {!open && !partyOpen && (
-        <button
-          type="button"
-          onClick={togglePanel}
-          aria-label="Open friends list"
-          className="absolute top-40 right-4 z-20 flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2.5 font-label text-sm font-bold sticker-shadow-sm transition-transform hover:-translate-y-0.5"
-        >
-          <BookUser className="size-5" aria-hidden />
-          {friends.length}
-        </button>
-      )}
+      {open && <div className="absolute inset-0 z-30" onClick={handleClose} aria-hidden />}
 
       <aside
         aria-label="Friends"
-        className={`absolute top-4 right-4 bottom-4 z-20 flex w-80 flex-col rounded-3xl border-4 border-outline bg-surface p-5 sticker-shadow-lg transition-transform duration-200 ${
+        className={`absolute top-4 right-4 bottom-4 z-40 flex w-80 flex-col rounded-3xl border-4 border-outline bg-surface p-5 sticker-shadow-lg transition-transform duration-200 ${
           open ? 'translate-x-0' : 'translate-x-[calc(100%+1.5rem)]'
         }`}
       >
@@ -106,11 +96,11 @@ export default function CanvasFriendsPanel({ party }: { party: Party }) {
           </div>
           <button
             type="button"
-            onClick={togglePanel}
-            aria-label="Collapse friends panel"
+            onClick={handleClose}
+            aria-label="Close friends list"
             className="flex size-8 items-center justify-center rounded-full text-on-background/60 hover:bg-background hover:text-on-background"
           >
-            <ChevronRight className="size-5" aria-hidden />
+            <X className="size-5" aria-hidden />
           </button>
         </div>
 

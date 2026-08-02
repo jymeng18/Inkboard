@@ -23,8 +23,8 @@ function shortId(id: string) {
 
 export default function PartyPanel({ party }: { party: Party }) {
   const open = useCanvasUiStore((s) => s.panelOpen)
-  const friendsOpen = useCanvasUiStore((s) => s.friendsOpen)
   const togglePanel = useCanvasUiStore((s) => s.togglePanel)
+  const openFriends = useCanvasUiStore((s) => s.openFriends)
   const navigate = useNavigate()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -51,7 +51,7 @@ export default function PartyPanel({ party }: { party: Party }) {
 
   return (
     <>
-      {!open && !friendsOpen && (
+      {!open && (
         <button
           type="button"
           onClick={togglePanel}
@@ -185,6 +185,10 @@ export default function PartyPanel({ party }: { party: Party }) {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         onInvite={party.invite}
+        onPickFromFriends={() => {
+          setInviteOpen(false)
+          openFriends()
+        }}
       />
     </>
   )

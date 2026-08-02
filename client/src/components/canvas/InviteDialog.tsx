@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { statusToast } from '@/lib/notify'
-import { UserPlus, X } from 'lucide-react'
+import { BookUser, ChevronRight, UserPlus, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -20,10 +20,12 @@ export default function InviteDialog({
   open,
   onClose,
   onInvite,
+  onPickFromFriends,
 }: {
   open: boolean
   onClose: () => void
   onInvite: (userId: string) => Promise<void>
+  onPickFromFriends: () => void
 }) {
   const [userId, setUserId] = useState('')
   const [sending, setSending] = useState(false)
@@ -106,6 +108,30 @@ export default function InviteDialog({
         <p className="mt-4 font-body text-xs text-on-background/50">
           Invites expire after 5 minutes. Only the party leader can invite.
         </p>
+
+        <div className="mt-5 flex items-center gap-3">
+          <span className="h-0.5 flex-1 bg-outline/15" aria-hidden />
+          <span className="font-label text-xs font-bold text-on-background/40">or</span>
+          <span className="h-0.5 flex-1 bg-outline/15" aria-hidden />
+        </div>
+
+        {/* The other way in: pulls up the friends list to invite from directly. */}
+        <button
+          type="button"
+          onClick={onPickFromFriends}
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl border-[3px] border-outline bg-background px-4 py-3 text-left transition-transform hover:-translate-y-0.5"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-secondary-container">
+            <BookUser className="size-4" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-label text-sm font-bold">Invite from friends list</span>
+            <span className="block font-body text-xs text-on-background/60">
+              Pick from people you've already added.
+            </span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-on-background/40" aria-hidden />
+        </button>
       </div>
     </div>
   )
