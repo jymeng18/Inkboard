@@ -4,8 +4,8 @@ import { Lock, Mail, User } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { AUTH_LIMITS } from '@/api/auth'
-import { useAuth } from '../../hooks/useAuth'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import AuthField from './AuthField'
 import { GithubIcon, GoogleIcon } from './SocialIcons'
 
@@ -13,7 +13,7 @@ type Mode = 'login' | 'signup'
 
 type FieldErrors = Partial<Record<'name' | 'email' | 'password', string>>
 
-/* Deliberately loose — the server owns the real check, this catches typos. */
+/* Deliberately loose. The server owns the real check, this catches typos. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const COPY = {

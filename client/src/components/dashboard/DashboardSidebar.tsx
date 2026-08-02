@@ -1,13 +1,6 @@
-import type { LucideIcon } from 'lucide-react'
-import { HelpCircle, Palette, Settings, Shield, Users } from 'lucide-react'
+import { HelpCircle, Shield } from 'lucide-react'
 
-export type DashboardView = 'canvases' | 'party' | 'settings'
-
-const NAV_ITEMS: { view: DashboardView; label: string; icon: LucideIcon }[] = [
-  { view: 'canvases', label: 'Canvases', icon: Palette },
-  { view: 'party', label: 'Party', icon: Users },
-  { view: 'settings', label: 'Settings', icon: Settings },
-]
+import { NAV_ITEMS, type DashboardView } from './dashboardNav'
 
 const MAX_PARTY_SIZE = 5
 
@@ -15,9 +8,15 @@ interface DashboardSidebarProps {
   active: DashboardView
   onSelect: (view: DashboardView) => void
   partySize: number
+  unreadCount: number
 }
 
-export default function DashboardSidebar({ active, onSelect, partySize }: DashboardSidebarProps) {
+export default function DashboardSidebar({
+  active,
+  onSelect,
+  partySize,
+  unreadCount,
+}: DashboardSidebarProps) {
   const inParty = partySize > 0
 
   return (
@@ -39,6 +38,7 @@ export default function DashboardSidebar({ active, onSelect, partySize }: Dashbo
             >
               <Icon className="size-5" aria-hidden />
               {label}
+              {view === 'inbox' && unreadCount > 0 && <UnreadBadge count={unreadCount} />}
             </button>
           )
         })}
@@ -81,5 +81,20 @@ export default function DashboardSidebar({ active, onSelect, partySize }: Dashbo
         </a>
       </div>
     </aside>
+  )
+}
+
+/*
+ * The unread marker on the Inbox tab. Container yellow rather than primary so
+ * it stays legible both on the red active pill and on the plain surface.
+ */
+export function UnreadBadge({ count }: { count: number }) {
+  return (
+    <span
+      aria-label={`${count} unread`}
+      className="ml-auto rounded-full border-2 border-outline bg-primary-container px-2 py-0.5 font-label text-[11px] font-extrabold text-on-background"
+    >
+      +{Math.min(count, 99)}
+    </span>
   )
 }

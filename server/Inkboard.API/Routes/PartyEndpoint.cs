@@ -88,6 +88,62 @@ namespace Inkboard.API.Routes
                 )
                 .RequireAuthorization();
 
+            // Leader ends the session: canvas closes for everyone, party dissolves.
+            endpoint
+                .MapPost(
+                    "/api/parties/{partyId}/end",
+                    async (IPartyService partyService, ClaimsPrincipal user, Guid partyId) =>
+                    {
+                        var leaderId = user.GetUserId();
+                        if (leaderId == Guid.Empty)
+                            return Results.Unauthorized();
+
+                        var result = await partyService.EndSessionAsync(partyId, leaderId);
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.NoContent();
+                    }
+                )
+                .RequireAuthorization();
+
+            // Leader points the party at a canvas, pulling members in after them.
+            endpoint
+                .MapPatch(
+                    "/api/parties/{partyId}/canvas",
+                    async (
+                        IPartyService partyService,
+                        ClaimsPrincipal user,
+                        Guid partyId,
+                        SetPartyCanvasRequest request
+                    ) =>
+                    {
+                        var leaderId = user.GetUserId();
+                        if (leaderId == Guid.Empty)
+                            return Results.Unauthorized();
+
+                        if (
+                            string.IsNullOrWhiteSpace(request.CanvasId)
+                            || request.CanvasId.Length >= 50
+                            || !Guid.TryParse(request.CanvasId, out var canvasId)
+                        )
+                        {
+                            return Results.BadRequest("CanvasId is malformed or is too long.");
+                        }
+
+                        var result = await partyService.SetPartyCanvasAsync(
+                            partyId,
+                            leaderId,
+                            canvasId
+                        );
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.NoContent();
+                    }
+                )
+                .RequireAuthorization();
+
             endpoint
                 .MapPost(
                     "/api/parties/{partyId}/invites",
@@ -108,7 +164,10 @@ namespace Inkboard.API.Routes
                         }
 
                         // Evaluate that InvitedUserId from reqbody is not some 100mb bullshit before trying to parse
-                        if (userRequest.InvitedUserId.Length >= 50 || !Guid.TryParse(userRequest.InvitedUserId, out var invitedUserId))
+                        if (
+                            userRequest.InvitedUserId.Length >= 50
+                            || !Guid.TryParse(userRequest.InvitedUserId, out var invitedUserId)
+                        )
                         {
                             return Results.BadRequest("UserId is malformed or is too long.");
                         }
@@ -200,6 +259,20 @@ namespace Inkboard.API.Routes
                     }
                 )
                 .RequireAuthorization();
+
+            endpoint.MapGet(
+                "/api/invites",
+                async (IPartyService partyService, ClaimsPrincipal user) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await partyService.GetPartyInvitesByUserIdAsync(userId);
+                    // no such thing as this failing, since its either db exception(other issue) or just empty list
+                    return Results.Ok(result.Data);
+                }
+            );
         }
     }
 }

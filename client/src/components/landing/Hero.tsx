@@ -21,7 +21,7 @@ export default function Hero({ onStart }: HeroProps) {
       <p className="mx-auto mb-9 max-w-xl font-body text-base text-on-background/70 md:text-lg">
         A collaborative infinity canvas powered by{" "}
         <span className="font-bold text-on-background">
-          Operational Transformations
+          SignalR WebSockets & KonvaJS
         </span>
         . No conflicts, just pure creative flow.
       </p>

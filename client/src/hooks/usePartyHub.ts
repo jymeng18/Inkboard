@@ -1,17 +1,20 @@
 import { useRef, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
+import type { PendingPartyInvite } from "@/api/party";
 import { showPartyInviteToast } from "@/lib/partyInviteToast";
+import { statusToast } from "@/lib/notify";
+import { inviteKeys } from "@/hooks/usePartyInvites";
 import { useAuthStore } from "@/stores/authStore";
-import { useInviteStore } from "@/stores/inviteStore";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { usePartyStore } from "@/stores/partyStore";
 
 export function usePartyHub() {
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
-  const addInvite = useInviteStore((s) => s.addInvite);
   const setConnected = useConnectionStore((s) => s.setConnected);
   const setLastEvent = useConnectionStore((s) => s.setLastEvent);
   const setPresence = useConnectionStore((s) => s.setPresence);
@@ -19,6 +22,7 @@ export function usePartyHub() {
   const triggerNavToDashboard = useConnectionStore(
     (s) => s.triggerNavToDashboard,
   );
+  const triggerNavToCanvas = useConnectionStore((s) => s.triggerNavToCanvas);
   const addMember = usePartyStore((s) => s.addMember);
   const removeMember = usePartyStore((s) => s.removeMember);
   const setLeader = usePartyStore((s) => s.setLeader);
@@ -60,13 +64,13 @@ export function usePartyHub() {
     conn.on("NotifyOnMemberJoined", (uid: string) => {
       addMember(uid);
       setPresence(uid, true);
-      toast.success(`Member joined: ${uid.slice(0, 8)}...`);
+      statusToast.success(`Member joined: ${uid.slice(0, 8)}...`);
       setLastEvent({ event: "joined", userId: uid });
     });
 
     conn.on("NotifyOnMemberLeft", (uid: string) => {
       removeMember(uid);
-      toast.info(`Member left: ${uid.slice(0, 8)}...`);
+      statusToast.info(`Member left: ${uid.slice(0, 8)}...`);
       setLastEvent({ event: "left", userId: uid });
     });
 
@@ -78,7 +82,7 @@ export function usePartyHub() {
         triggerNavToDashboard();
         toast.error("You were removed from the party");
       } else {
-        toast.info(`Removed: ${uid.slice(0, 8)}...`);
+        statusToast.info(`Removed: ${uid.slice(0, 8)}...`);
       }
       setLastEvent({ event: "kicked", userId: uid });
     });
@@ -89,22 +93,25 @@ export function usePartyHub() {
         partyId: string;
         invitedByUserId: string;
         expiresAt: string;
-        inviteStatus: number;
       };
-      addInvite({
-        id: i.id,
-        partyId: i.partyId,
-        invitedByUserId: i.invitedByUserId,
-        invitedUserId: "",
-        inviteStatus:
-          i.inviteStatus === 0
-            ? "Pending"
-            : i.inviteStatus === 1
-              ? "Accepted"
-              : "Declined",
-        expiresAt: i.expiresAt,
-        createdAt: new Date().toISOString(),
-      });
+
+      // Realtime path: drop the invite straight into the inbox cache so it
+      // shows up instantly, deduped by id. GET /invites is only the backfill.
+      queryClient.setQueryData<PendingPartyInvite[]>(inviteKeys.all, (prev = []) =>
+        prev.some((existing) => existing.id === i.id)
+          ? prev
+          : [
+              {
+                id: i.id,
+                partyId: i.partyId,
+                invitedByUserId: i.invitedByUserId,
+                expiresAt: i.expiresAt,
+                createdAt: new Date().toISOString(),
+              },
+              ...prev,
+            ],
+      );
+
       showPartyInviteToast({
         id: i.id,
         partyId: i.partyId,
@@ -114,10 +121,32 @@ export function usePartyHub() {
       setLastEvent({ event: "invited", userId: i.partyId });
     });
 
+    // The leader tore the session down: the party is gone for everyone, so the
+    // wording stays neutral. The leader hears this back about their own action.
+    conn.on("PartyEnded", () => {
+      clearParty();
+      triggerNavToDashboard();
+      toast.info("Session ended — the party has been disbanded.");
+      setLastEvent({ event: "party-ended", userId: "" });
+    });
+
+    /*
+     * The leader opened a canvas for the party; everyone follows them in.
+     * usePartyCanvasNavigation announces it, since it's the one that knows
+     * whether this member actually had to move.
+     */
+    conn.on("PartyCanvasOpened", (canvasId: string) => {
+      triggerNavToCanvas(canvasId);
+      setLastEvent({ event: "canvas-opened", userId: canvasId });
+    });
+
     conn.on("LeadershipTransferred", (newLeaderId: string) => {
       // The old leader left: leadership passes on and the canvas link breaks, so
-      // everyone exits to the dashboard, the party itself stays intact.
+      // everyone exits to the dashboard, the party itself stays intact. Refresh
+      // the party query so a member already on the dashboard sees the canvas
+      // link gone and the session lock lifts.
       setLeader(newLeaderId);
+      queryClient.invalidateQueries({ queryKey: ["party"] });
       triggerNavToDashboard();
       toast.info("Leadership changed — the canvas closed. You're still in the party.");
       setLastEvent({ event: "leadership", userId: newLeaderId });
@@ -137,7 +166,7 @@ export function usePartyHub() {
       console.log("[PartyHub] Closed:", err?.message);
     });
 
-    // Connection lifecycle stays in the console — only real party activity
+    // Connection lifecycle stays in the console. Only real party activity
     // (joins, kicks, invites) surfaces as a toast.
     try {
       await conn.start();
@@ -150,11 +179,12 @@ export function usePartyHub() {
   }, [
     accessToken,
     userId,
-    addInvite,
+    queryClient,
     setConnected,
     setLastEvent,
     setPresence,
     triggerNavToDashboard,
+    triggerNavToCanvas,
     addMember,
     removeMember,
     setLeader,

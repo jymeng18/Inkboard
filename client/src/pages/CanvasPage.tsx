@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import CanvasFriendsPanel from '@/components/canvas/CanvasFriendsPanel'
 import CanvasStage from '@/components/canvas/CanvasStage'
 import CanvasToolbar from '@/components/canvas/CanvasToolbar'
 import CursorLayer, { type RemoteCursor } from '@/components/canvas/CursorLayer'
@@ -32,9 +33,10 @@ export default function CanvasPage() {
     <div className="relative h-screen w-screen overflow-hidden bg-background">
       <CanvasStage />
       <CursorLayer cursors={NO_CURSORS} />
-      <CanvasToolbar />
+      <CanvasToolbar party={party} />
       <ZoomControls />
       <PartyPanel party={party} />
+      <CanvasFriendsPanel party={party} />
     </div>
   )
 }

@@ -12,6 +12,7 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
         var canvas = await SeedCanvasAsync(Context, leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
@@ -21,6 +22,11 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
         var invite = inviteResult.Data!;
         var respondResult = await Service.RespondToUserInviteAsync(invite.Id, member.Id, true);
         Assert.IsTrue(respondResult.IsSuccess);
+
+        // Three members, so one non-leader leaving still leaves 2 behind and the
+        // party survives (it only dissolves when it would drop to a single person).
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
 
         var result = await Service.LeavePartyAsync(party.Id, member.Id);
         Assert.IsTrue(result.IsSuccess);

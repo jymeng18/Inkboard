@@ -28,7 +28,7 @@ export default function CanvasStage() {
   const y = useViewportStore((s) => s.y)
   const scale = useViewportStore((s) => s.scale)
 
-  // Hot-path scratch state — mutated without triggering renders.
+  // Hot path scratch state, mutated without triggering renders.
   const drawing = useRef(false)
   const pointsRef = useRef<number[][]>([])
   const shapeStart = useRef<[number, number] | null>(null)

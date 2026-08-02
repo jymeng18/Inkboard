@@ -1,6 +1,6 @@
 import { ImageIcon, Pencil } from 'lucide-react'
 
-import { canvasDisplayName, type CanvasDto } from '../../api/canvas'
+import { canvasDisplayName, type CanvasDto } from '@/api/canvas'
 
 /** Formats an ISO timestamp as a short relative string like "3d ago". */
 function timeAgo(iso: string): string {

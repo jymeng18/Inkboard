@@ -14,4 +14,7 @@ public interface IPartyHubClient
     Task NotifyOnKick(Guid userId);
     Task ReceiveInvite(PartyInvite partyInvite);
     Task LeadershipTransferred(Guid newLeaderId);
+    Task PartyEnded();
+    // The leader opened a canvas for the party, so members follow them into it.
+    Task PartyCanvasOpened(Guid canvasId);
 }

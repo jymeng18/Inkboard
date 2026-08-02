@@ -1,3 +1,4 @@
+using Inkboard.Application.Common;
 using Inkboard.Domain.Models;
 using Inkboard.Infra.Db;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ namespace Inkboard.Tests.Parties;
 public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
 {
     [TestMethod]
-    public async Task LeaveParty_LeaderLeavesTwoMemberParty_MemberPromoted_PartyRemains()
+    public async Task LeaveParty_LeaderLeavesTwoMemberParty_PartyDissolved()
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
@@ -21,11 +22,12 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
         var result = await Service.LeavePartyAsync(party.Id, leader.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        var updated = await Context.Parties.FindAsync(party.Id);
-        Assert.IsNotNull(updated);
-        Assert.AreEqual(member.Id, updated.LeaderId);
-        var count = await Context.PartyMembers.CountAsync(pm => pm.PartyId == party.Id);
-        Assert.AreEqual(1, count);
+        // Only one person would remain, so the whole party dissolves instead of
+        // leaving a lone member behind.
+        var deleted = await Context.Parties.FindAsync(party.Id);
+        Assert.IsNull(deleted);
+        var anyMembers = await Context.PartyMembers.AnyAsync(pm => pm.PartyId == party.Id);
+        Assert.IsFalse(anyMembers);
     }
 
     [TestMethod]
@@ -66,7 +68,7 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     }
 
     [TestMethod]
-    public async Task LeaveParty_NonLeaderLeavesTwoMemberParty_LeaderUnchanged()
+    public async Task LeaveParty_NonLeaderLeavesTwoMemberParty_PartyNotDissolved()
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
@@ -79,12 +81,8 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
         var result = await Service.LeavePartyAsync(party.Id, member.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        var updated = await Context.Parties.FindAsync(party.Id);
-        Assert.AreEqual(leader.Id, updated!.LeaderId);
-        var stillLeaderMember = await Context.PartyMembers.FirstAsync(pm =>
-            pm.PartyId == party.Id && pm.UserId == leader.Id
-        );
-        Assert.AreEqual(UserRole.Leader, stillLeaderMember.Role);
+        var deleted = await Context.Parties.FindAsync(party.Id);
+        Assert.IsNotNull(deleted);
     }
 
     [TestMethod]
@@ -106,7 +104,7 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     }
 
     [TestMethod]
-    public async Task LeaveParty_MemberLeavesThenSoleLeaderLeaves_PartyDissolved()
+    public async Task LeaveParty_MemberLeavesTwoMemberParty_DoesntDissolve()
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
@@ -116,12 +114,14 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
         var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(invite.Data!.Id, member.Id, true);
 
-        await Service.LeavePartyAsync(party.Id, member.Id);
-        var result = await Service.LeavePartyAsync(party.Id, leader.Id);
+        var result = await Service.LeavePartyAsync(party.Id, member.Id);
         Assert.IsTrue(result.IsSuccess);
 
         var deleted = await Context.Parties.FindAsync(party.Id);
-        Assert.IsNull(deleted);
+        Assert.IsNotNull(deleted);
+
+        var secondLeave = await Service.LeavePartyAsync(party.Id, leader.Id);
+        Assert.IsTrue(secondLeave.IsSuccess);
     }
 
     [TestMethod]

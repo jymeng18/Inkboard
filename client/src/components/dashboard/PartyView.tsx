@@ -1,7 +1,7 @@
 import { Crown, Palette, UserMinus, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import type { PartyMember } from '../../stores/partyStore'
+import type { PartyMember } from '@/stores/partyStore'
 
 const MAX_PARTY_SIZE = 5
 

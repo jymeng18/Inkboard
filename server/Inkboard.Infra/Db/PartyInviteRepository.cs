@@ -29,7 +29,7 @@ namespace Inkboard.Infra.Db
 
         public async Task CreateInviteAsync(PartyInvite invite)
         {
-            await _context.PartyInvites.AddAsync(invite);
+            _context.PartyInvites.Add(invite);
             await _context.SaveChangesAsync();
         }
 
@@ -37,6 +37,15 @@ namespace Inkboard.Infra.Db
         {
             _context.PartyInvites.Update(invite);
             await _context.SaveChangesAsync();
+        }
+
+        public Task<List<PartyInvite>> GetAllPendingByUserIdAsync(Guid userId)
+        {
+            return _context
+                .PartyInvites.Where(pi =>
+                    pi.InvitedUserId == userId && pi.InviteStatus == InviteStatus.Pending
+                )
+                .ToListAsync();
         }
     }
 }

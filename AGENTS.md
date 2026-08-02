@@ -100,6 +100,9 @@ return Results.Ok(result.Data);
 - DTOs go in `Inkboard.Application/{Feature}/DTO/`.
 ---
  
+### Frontend
+- Imports should use @/
+
 ## Testing
  
 ### Rules

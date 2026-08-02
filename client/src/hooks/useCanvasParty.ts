@@ -1,6 +1,7 @@
 import {
   blockUser,
   createParty,
+  endSession as endSessionApi,
   inviteUser,
   isGuid,
   leaveParty,
@@ -45,7 +46,7 @@ export function useCanvasParty(canvasId: string | undefined) {
   async function kick(userId: string) {
     if (!partyId) return
     await removeMemberApi(partyId, userId)
-    // Optimistic — the NotifyOnKick broadcast also removes it for everyone else.
+    // Optimistic. The NotifyOnKick broadcast removes it for everyone else.
     removeMemberFromStore(userId)
   }
 
@@ -59,5 +60,27 @@ export function useCanvasParty(canvasId: string | undefined) {
     clearParty()
   }
 
-  return { partyId, members, presence, currentUserId, isLeader, invite, kick, block, leave }
+  /*
+   * Ends it for everyone rather than handing leadership on. Members are ejected
+   * by the PartyEnded broadcast; clearing locally covers the caller, who isn't
+   * waiting on their own notification to come back around.
+   */
+  async function endSession() {
+    if (!partyId) return
+    await endSessionApi(partyId)
+    clearParty()
+  }
+
+  return {
+    partyId,
+    members,
+    presence,
+    currentUserId,
+    isLeader,
+    invite,
+    kick,
+    block,
+    leave,
+    endSession,
+  }
 }

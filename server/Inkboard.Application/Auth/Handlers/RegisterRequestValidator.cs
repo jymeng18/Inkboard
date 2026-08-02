@@ -1,7 +1,7 @@
 using FluentValidation;
 using Inkboard.Application.Auth.DTO;
 
-namespace Inkboard.Application;
+namespace Inkboard.Application.Auth.Handlers;
 
 public class RegisterRequestValidator : AbstractValidator<RegisterRequestModel>
 {

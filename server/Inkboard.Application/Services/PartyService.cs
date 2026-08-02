@@ -139,7 +139,10 @@ namespace Inkboard.Application.Services
             );
             if (isBlocked)
             {
-                return Result<PartyInvite>.Fail(ErrorType.Validation, "You have blocked this user.");
+                return Result<PartyInvite>.Fail(
+                    ErrorType.Validation,
+                    "You have blocked this user."
+                );
             }
 
             var memberCount = await _partyRepository.GetMemberCountAsync(partyId);
@@ -157,10 +160,16 @@ namespace Inkboard.Application.Services
             );
             if (existingInvite is not null)
             {
-                return Result<PartyInvite>.Fail(
-                    ErrorType.Conflict,
-                    "An invite is already pending for this user."
-                );
+                // If inv not expired, then its an active invite, reject ops
+                if (existingInvite.ExpiresAt > DateTime.UtcNow)
+                {
+                    return Result<PartyInvite>.Fail(
+                        ErrorType.Conflict,
+                        "An invite is already pending for this user."
+                    );
+                }
+                existingInvite.InviteStatus = InviteStatus.Expired;
+                await _partyInviteRepository.UpdateInviteAsync(existingInvite);
             }
 
             PartyInvite partyInvite = new()
@@ -189,6 +198,22 @@ namespace Inkboard.Application.Services
                 return Result.Fail(ErrorType.Validation, "You are not in this party.");
 
             var isLeader = party.LeaderId == userId;
+            var memberCount = await _partyRepository.GetMemberCountAsync(partyId);
+
+            // * We check cnt <= 2, and not cnt == 1, because this is checking before party dissolves
+            if (memberCount <= 2)
+            {
+                // If its not the leader who is initating the call, let member leave, but dont kick out leader
+                if (!isLeader)
+                {
+                    await _partyRepository.RemoveMemberAsync(member);
+                    await _partyNotifier.NotifyMemberLeft(partyId, member.UserId);
+                    return Result.Ok();
+                }
+
+                await DissolvePartyAsync(party);
+                return Result.Ok();
+            }
 
             if (!isLeader)
             {
@@ -197,24 +222,15 @@ namespace Inkboard.Application.Services
                 return Result.Ok();
             }
 
-            var memberCount = await _partyRepository.GetMemberCountAsync(partyId);
-            if (memberCount == 1)
-            {
-                await _partyRepository.RemoveMemberAsync(member);
-                await _partyNotifier.NotifyMemberLeft(partyId, member.UserId);
-                await _partyRepository.DeletePartyAsync(party);
-                return Result.Ok();
-            }
-
-            // Transfer leadership to longest-standing member
+            // Leader is leaving a party of 3+. Hand leadership to the
+            // longest-standing member and break the canvas link, keeping the
+            // party alive for everyone else.
             var newLeader = await _partyRepository.GetOldestMemberAsync(partyId);
 
-            // Completely shut Canvas and its users out, keep party alive
             var canvas = await _canvasRepository.GetCanvasByPartyIdAsync(partyId);
             if (canvas is not null)
                 await _canvasService.ForceEndSessionAsync(canvas.Id, userId);
 
-            // Shift party roles after force end
             party.LeaderId = newLeader.UserId;
             newLeader.Role = UserRole.Leader;
 
@@ -223,6 +239,69 @@ namespace Inkboard.Application.Services
 
             await _partyNotifier.NotifyMemberLeft(partyId, member.UserId);
             await _partyNotifier.NotifyLeadershipTransferred(newLeader.UserId, partyId);
+
+            return Result.Ok();
+        }
+
+
+        private async Task DissolvePartyAsync(Party party)
+        {
+            var members = await _partyRepository.GetMembersAsync(party.Id);
+            var memberIds = members.ConvertAll(m => m.UserId);
+
+            await _partyNotifier.NotifyPartyEnded(party.Id, memberIds);
+
+            foreach (var member in members)
+                await _partyRepository.RemoveMemberAsync(member);
+
+            await _partyRepository.DeletePartyAsync(party);
+        }
+
+        /*
+         * The deliberate end of a session. LeavePartyAsync exists for one person
+         * stepping out, which keeps the party alive under a new leader; this is
+         * the leader closing the whole thing down, so every member is notified,
+         * every membership row goes, and the party itself is deleted.
+         */
+        public async Task<Result> EndSessionAsync(Guid partyId, Guid leaderId)
+        {
+            var party = await _partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result.Fail(ErrorType.NotFound, "Party not found.");
+
+            if (party.LeaderId != leaderId)
+                return Result.Fail(ErrorType.Forbidden, "Only the leader can end the session.");
+
+            await DissolvePartyAsync(party);
+
+            return Result.Ok();
+        }
+
+        /*
+         * Re-links a party that already exists to a different canvas. 
+         */
+        public async Task<Result> SetPartyCanvasAsync(Guid partyId, Guid leaderId, Guid canvasId)
+        {
+            var party = await _partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result.Fail(ErrorType.NotFound, "Party not found.");
+
+            if (party.LeaderId != leaderId)
+                return Result.Fail(ErrorType.Forbidden, "Only the leader can open a canvas for the party.");
+
+            var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
+            if (canvas is null)
+                return Result.Fail(ErrorType.NotFound, "Canvas does not exist.");
+
+            party.CanvasId = canvasId;
+            await _partyRepository.UpdatePartyAsync(party);
+
+            // Everyone but the leader, who is already on their way there.
+            var members = await _partyRepository.GetMembersAsync(partyId);
+            var memberIds = members.ConvertAll(m => m.UserId).FindAll(id => id != leaderId);
+
+            if (memberIds.Count > 0)
+                await _partyNotifier.NotifyPartyCanvasOpened(partyId, canvasId, memberIds);
 
             return Result.Ok();
         }
@@ -329,5 +408,12 @@ namespace Inkboard.Application.Services
 
             return Result<PartyInvite>.Ok(invite);
         }
+
+        public async Task<Result<List<PartyInvite>>> GetPartyInvitesByUserIdAsync(Guid userId)
+        {
+            List<PartyInvite> partyInvites = await _partyInviteRepository.GetAllPendingByUserIdAsync(userId);
+            return Result<List<PartyInvite>>.Ok(data: partyInvites);
+        }
+
     }
 }

@@ -6,6 +6,7 @@ type PartyState = {
   partyId: string | null
   members: PartyMember[]
   setParty: (partyId: string, leaderUserId: string) => void
+  hydrateParty: (partyId: string, members: PartyMember[]) => void
   addMember: (userId: string) => void
   removeMember: (userId: string) => void
   setLeader: (userId: string) => void
@@ -15,12 +16,20 @@ type PartyState = {
 const STORAGE_KEY = 'activePartyId'
 
 export const usePartyStore = create<PartyState>((set) => ({
-  partyId: null,
+  // Seeded from localStorage so a reload remembers which party we're in; the
+  // member list is empty until usePartyHydration reconciles it with the server.
+  partyId: localStorage.getItem(STORAGE_KEY),
   members: [],
-  
+
   setParty: (partyId, leaderUserId) => {
     localStorage.setItem(STORAGE_KEY, partyId)
     set({ partyId, members: [{ userId: leaderUserId, role: 'Leader' }] })
+  },
+
+  /* Restores the full membership after a reload, from the server's snapshot. */
+  hydrateParty: (partyId, members) => {
+    localStorage.setItem(STORAGE_KEY, partyId)
+    set({ partyId, members })
   },
 
   addMember: (userId) =>

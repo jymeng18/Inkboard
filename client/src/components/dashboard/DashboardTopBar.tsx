@@ -1,4 +1,4 @@
-import { LogOut, Users } from 'lucide-react'
+import { UserRoundCheck, LogOut } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
@@ -34,7 +34,7 @@ export default function DashboardTopBar({
           aria-expanded={friendsOpen}
           className="relative"
         >
-          <Users />
+          <UserRoundCheck />
           <span className="hidden sm:inline">Friends</span>
           {requestCount > 0 && (
             <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full border-2 border-outline bg-primary font-label text-[10px] font-bold text-white">

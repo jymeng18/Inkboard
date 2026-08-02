@@ -3,7 +3,7 @@ using Inkboard.API;
 using Inkboard.API.Hubs;
 using Inkboard.API.Realtime;
 using Inkboard.API.Routes;
-using Inkboard.Application;
+using Inkboard.Application.Auth.Handlers;
 using Inkboard.Application.Interfaces;
 using Inkboard.Application.Services;
 using Inkboard.Domain.Repositories;
@@ -48,10 +48,15 @@ builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPartyNotifier, PartyNotifier>();
 builder.Services.AddScoped<ICanvasRepository, CanvasRepository>();
 builder.Services.AddScoped<ICanvasService, CanvasService>();
+builder.Services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
+builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
+builder.Services.AddScoped<IFriendsListService, FriendsListService>();
+
 
 builder.Services.AddSingleton<IConnectionStore, ConnectionStore>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
 var app = builder.Build();
 
@@ -64,6 +69,7 @@ app.MapAuthEndpoint();
 app.MapUserEndpoint();
 app.MapPartyEndpoint();
 app.MapCanvasEndpoint();
+app.MapFriendEndpoint();
 
 app.MapHub<PartyHub>("/hubs/party");
 

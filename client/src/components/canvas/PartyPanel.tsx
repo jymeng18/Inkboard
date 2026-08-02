@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+
+import { statusToast } from '@/lib/notify'
 import { ChevronRight, Crown, LogOut, ShieldBan, UserMinus, UserPlus, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -9,6 +11,7 @@ import type { useCanvasParty } from '@/hooks/useCanvasParty'
 import type { PartyMember } from '@/stores/partyStore'
 import { useCanvasUiStore } from '@/stores/canvasUiStore'
 import InviteDialog from './InviteDialog'
+import PanelMenuItem from './PanelMenuItem'
 
 const MAX_PARTY_SIZE = 5
 
@@ -21,13 +24,14 @@ function shortId(id: string) {
 export default function PartyPanel({ party }: { party: Party }) {
   const open = useCanvasUiStore((s) => s.panelOpen)
   const togglePanel = useCanvasUiStore((s) => s.togglePanel)
+  const openFriends = useCanvasUiStore((s) => s.openFriends)
   const navigate = useNavigate()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   const { members, presence, currentUserId, isLeader } = party
 
-  // Before the first invite there's no party yet — you're solo on the canvas.
+  // Before the first invite there's no party yet, so you're solo on the canvas.
   const displayMembers: PartyMember[] =
     members.length > 0 ? members : [{ userId: currentUserId, role: 'Leader' }]
 
@@ -38,7 +42,7 @@ export default function PartyPanel({ party }: { party: Party }) {
     setOpenMenuId(null)
     try {
       await action()
-      toast.success(successMessage)
+      statusToast.success(successMessage)
       if (thenExit) navigate('/dashboard', { replace: true })
     } catch (err) {
       toast.error(extractErrorMessage(err))
@@ -51,6 +55,7 @@ export default function PartyPanel({ party }: { party: Party }) {
         <button
           type="button"
           onClick={togglePanel}
+          aria-label="Open party lobby"
           className="absolute top-24 right-4 z-20 flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2.5 font-label text-sm font-bold sticker-shadow-sm transition-transform hover:-translate-y-0.5"
         >
           <Users className="size-5" aria-hidden />
@@ -139,21 +144,21 @@ export default function PartyPanel({ party }: { party: Party }) {
                     <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} aria-hidden />
                     <div className="absolute top-full right-0 z-50 mt-1 w-44 overflow-hidden rounded-2xl border-[3px] border-outline bg-surface py-1 sticker-shadow">
                       {canKick && (
-                        <MenuItem
+                        <PanelMenuItem
                           icon={UserMinus}
                           label="Kick from party"
                           onClick={() => run(() => party.kick(member.userId), 'Member removed')}
                         />
                       )}
                       {canBlock && (
-                        <MenuItem
+                        <PanelMenuItem
                           icon={ShieldBan}
                           label="Block user"
                           onClick={() => run(() => party.block(member.userId), 'User blocked')}
                         />
                       )}
                       {canLeave && (
-                        <MenuItem
+                        <PanelMenuItem
                           icon={LogOut}
                           label="Leave party"
                           destructive
@@ -180,32 +185,11 @@ export default function PartyPanel({ party }: { party: Party }) {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         onInvite={party.invite}
+        onPickFromFriends={() => {
+          setInviteOpen(false)
+          openFriends()
+        }}
       />
     </>
-  )
-}
-
-function MenuItem({
-  icon: Icon,
-  label,
-  onClick,
-  destructive,
-}: {
-  icon: typeof UserMinus
-  label: string
-  onClick: () => void
-  destructive?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left font-label text-sm font-bold transition-colors hover:bg-background ${
-        destructive ? 'text-primary' : 'text-on-background'
-      }`}
-    >
-      <Icon className="size-4" aria-hidden />
-      {label}
-    </button>
   )
 }

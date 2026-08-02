@@ -1,7 +1,7 @@
 import Cookies from 'js-cookie'
 import { jwtDecode } from 'jwt-decode'
 
-import type { AuthTokens, JwtClaims, SessionUser } from '../types/auth'
+import type { AuthTokens, JwtClaims, SessionUser } from '@/types/auth'
 
 const ACCESS_TOKEN = 'accessToken'
 const REFRESH_TOKEN = 'refreshToken'

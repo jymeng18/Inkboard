@@ -116,18 +116,22 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
         var canvas = await SeedCanvasAsync(Context, leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, member.Id, true);
+        // Third member keeps the party alive after one member leaves.
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
         await Service.LeavePartyAsync(party.Id, member.Id);
 
         var result = await Service.GetPartyByIdAsync(party.Id);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreEqual(1, result.Data!.Members.Count);
+        Assert.AreEqual(2, result.Data!.Members.Count);
         Assert.IsFalse(result.Data.Members.Exists(m => m.UserId == member.Id));
     }
 
@@ -136,12 +140,17 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
         var canvas = await SeedCanvasAsync(Context, leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, member.Id, true);
+        // Third member so the leader leaving transfers leadership instead of
+        // dissolving the party.
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
         await Service.LeavePartyAsync(party.Id, leader.Id);
 
         var result = await Service.GetPartyByIdAsync(party.Id);
@@ -158,9 +167,14 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var member = await SeedUserAsync(Context, "member");
+        var member2 = await SeedUserAsync(Context, "member2");
         var (party, _) = await SeedPartyAsync(Context, leader.Id, "Shared Canvas");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, member.Id, true);
+        // Third member so leadership transfers on leave and the party (with its
+        // severed canvas link) survives to be queried.
+        var invite2 = await Service.InviteUserAsync(party.Id, leader.Id, member2.Id);
+        await Service.RespondToUserInviteAsync(invite2.Data!.Id, member2.Id, true);
         await Service.LeavePartyAsync(party.Id, leader.Id);
 
         var result = await Service.GetPartyByIdAsync(party.Id);
