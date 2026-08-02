@@ -9,9 +9,10 @@ import {
   usePendingFriendRequests,
   useRespondToFriendRequest,
 } from '@/hooks/useFriends'
-import { timeAgo } from '@/lib/datetime'
+import { usePartyInvites, useRespondToInvite } from '@/hooks/usePartyInvites'
+import { formatClockTime, isFuture, timeAgo } from '@/lib/datetime'
 
-type InboxTab = 'requests' | 'history'
+type InboxTab = 'requests' | 'invites' | 'history'
 
 const STATUS_CHIPS: Record<number, { label: string; className: string }> = {
   [RequestStatus.Accepted]: { label: 'Accepted', className: 'bg-green-400' },
@@ -30,6 +31,17 @@ export default function InboxView() {
    * us which row is mid-flight, so only that row disables.
    */
   const respond = useRespondToFriendRequest()
+
+  const {
+    data: invites,
+    isLoading: invitesLoading,
+    isError: invitesError,
+    refetch: refetchInvites,
+  } = usePartyInvites()
+  const respondInvite = useRespondToInvite()
+
+  /* Expired invites drop out here: the server filters by status, not by time. */
+  const pendingInvites = invites.filter((invite) => isFuture(invite.expiresAt))
 
   function handleRespond(request: FriendRequestDto, accepted: boolean) {
     if (respond.isPending) return
@@ -60,6 +72,13 @@ export default function InboxView() {
           Requests
         </TabButton>
         <TabButton
+          active={tab === 'invites'}
+          count={pendingInvites.length}
+          onClick={() => setTab('invites')}
+        >
+          Party invites
+        </TabButton>
+        <TabButton
           active={tab === 'history'}
           count={answered.length}
           onClick={() => setTab('history')}
@@ -68,7 +87,7 @@ export default function InboxView() {
         </TabButton>
       </div>
 
-      {isError && (
+      {tab !== 'invites' && isError && (
         <div className="flex flex-col items-center gap-3 py-8 text-center">
           <p className="font-body text-sm text-on-background/70">Couldn't load your inbox.</p>
           <Button variant="surface" size="sm" onClick={() => refetch()}>
@@ -78,7 +97,7 @@ export default function InboxView() {
         </div>
       )}
 
-      {isLoading && !isError && (
+      {tab !== 'invites' && isLoading && !isError && (
         <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <RequestSkeleton key={i} />
@@ -175,6 +194,89 @@ export default function InboxView() {
                 </li>
               )
             })}
+          </ul>
+        )
+      )}
+
+      {tab === 'invites' && invitesError && (
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <p className="font-body text-sm text-on-background/70">
+            Couldn't load your party invites.
+          </p>
+          <Button variant="surface" size="sm" onClick={() => refetchInvites()}>
+            <RotateCw />
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {tab === 'invites' && !invitesError && invitesLoading && (
+        <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <RequestSkeleton key={i} />
+          ))}
+        </ul>
+      )}
+
+      {tab === 'invites' && !invitesError && !invitesLoading && (
+        pendingInvites.length === 0 ? (
+          <EmptyState
+            title="No party invites"
+            hint="When someone invites you to their canvas, it lands here for 5 minutes."
+          />
+        ) : (
+          <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            {pendingInvites.map((invite) => (
+              <li
+                key={invite.id}
+                className="flex items-center gap-4 rounded-2xl border-[3px] border-outline bg-surface p-3 sticker-shadow-sm"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-primary-container">
+                  <img src="/pen.svg" alt="" className="h-6 -rotate-[30deg]" />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-label font-bold">Party invite</p>
+                  <p className="truncate font-body text-xs text-on-background/50">
+                    from {truncateId(invite.invitedByUserId)} · Due{' '}
+                    {formatClockTime(invite.expiresAt)}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={respondInvite.isPending}
+                    onClick={() =>
+                      respondInvite.mutate({
+                        inviteId: invite.id,
+                        partyId: invite.partyId,
+                        accepted: true,
+                      })
+                    }
+                    aria-label="Accept party invite"
+                  >
+                    <Check />
+                    <span className="hidden lg:inline">Accept</span>
+                  </Button>
+                  <Button
+                    variant="surface"
+                    size="icon"
+                    disabled={respondInvite.isPending}
+                    onClick={() =>
+                      respondInvite.mutate({
+                        inviteId: invite.id,
+                        partyId: invite.partyId,
+                        accepted: false,
+                      })
+                    }
+                    aria-label="Decline party invite"
+                  >
+                    <X />
+                  </Button>
+                </div>
+              </li>
+            ))}
           </ul>
         )
       )}

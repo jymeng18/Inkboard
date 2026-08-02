@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 
-import { parseServerDate } from '@/lib/datetime'
+import { isFuture, parseServerDate } from '@/lib/datetime'
 import { readLastSeen, writeLastSeen } from '@/lib/inboxRead'
 import { useAuthStore } from '@/stores/authStore'
 import { usePendingFriendRequests } from './useFriends'
+import { usePartyInvites } from './usePartyInvites'
 
 /*
  * The "+3" next to the Inbox tab. Counts pending requests that landed after the
@@ -14,6 +15,7 @@ import { usePendingFriendRequests } from './useFriends'
 export function useInboxUnread() {
   const userId = useAuthStore((s) => s.userId)
   const { data: pending } = usePendingFriendRequests()
+  const { data: invites } = usePartyInvites()
 
   /*
    * The cutoff is stamped with the account it was read for. Signing into a
@@ -24,11 +26,22 @@ export function useInboxUnread() {
   const [seen, setSeen] = useState(() => ({ userId, at: readLastSeen(userId) }))
   const lastSeen = seen.userId === userId ? seen.at : readLastSeen(userId)
 
-  const unreadCount = pending.reduce(
+  const requestUnread = pending.reduce(
     (count, request) =>
       parseServerDate(request.createdAt).getTime() > lastSeen ? count + 1 : count,
     0,
   )
+
+  /*
+   * Party invites count too, but an expired one shouldn't: it's already gone
+   * from the inbox list, so it can't sit unread in the badge either.
+   */
+  const inviteUnread = invites.reduce((count, invite) => {
+    const arrivedAfterSeen = parseServerDate(invite.createdAt).getTime() > lastSeen
+    return isFuture(invite.expiresAt) && arrivedAfterSeen ? count + 1 : count
+  }, 0)
+
+  const unreadCount = requestUnread + inviteUnread
 
   const markAllRead = useCallback(() => {
     const now = Date.now()

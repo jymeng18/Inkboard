@@ -30,3 +30,19 @@ export function timeAgo(value: string): string {
     day: 'numeric',
   })
 }
+
+/* Wall-clock time like "2:05 PM", for a due/expiry stamp shown as-is. */
+export function formatClockTime(value: string): string {
+  return parseServerDate(value).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+/*
+ * True while a deadline is still ahead of the local clock. Wraps Date.now so
+ * callers can compare during render without tripping the purity rule.
+ */
+export function isFuture(value: string): boolean {
+  return parseServerDate(value).getTime() > Date.now()
+}

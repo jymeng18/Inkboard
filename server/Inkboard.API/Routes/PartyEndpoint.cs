@@ -259,6 +259,20 @@ namespace Inkboard.API.Routes
                     }
                 )
                 .RequireAuthorization();
+
+            endpoint.MapGet(
+                "/api/invites",
+                async (IPartyService partyService, ClaimsPrincipal user) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await partyService.GetPartyInvitesByUserIdAsync(userId);
+                    // no such thing as this failing, since its either db exception(other issue) or just empty list
+                    return Results.Ok(result.Data);
+                }
+            );
         }
     }
 }

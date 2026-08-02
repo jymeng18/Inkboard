@@ -1,18 +1,20 @@
 import { useRef, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import * as signalR from "@microsoft/signalr";
 import { toast } from "sonner";
+import type { PendingPartyInvite } from "@/api/party";
 import { showPartyInviteToast } from "@/lib/partyInviteToast";
 import { statusToast } from "@/lib/notify";
+import { inviteKeys } from "@/hooks/usePartyInvites";
 import { useAuthStore } from "@/stores/authStore";
-import { useInviteStore } from "@/stores/inviteStore";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { usePartyStore } from "@/stores/partyStore";
 
 export function usePartyHub() {
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
-  const addInvite = useInviteStore((s) => s.addInvite);
   const setConnected = useConnectionStore((s) => s.setConnected);
   const setLastEvent = useConnectionStore((s) => s.setLastEvent);
   const setPresence = useConnectionStore((s) => s.setPresence);
@@ -91,22 +93,25 @@ export function usePartyHub() {
         partyId: string;
         invitedByUserId: string;
         expiresAt: string;
-        inviteStatus: number;
       };
-      addInvite({
-        id: i.id,
-        partyId: i.partyId,
-        invitedByUserId: i.invitedByUserId,
-        invitedUserId: "",
-        inviteStatus:
-          i.inviteStatus === 0
-            ? "Pending"
-            : i.inviteStatus === 1
-              ? "Accepted"
-              : "Declined",
-        expiresAt: i.expiresAt,
-        createdAt: new Date().toISOString(),
-      });
+
+      // Realtime path: drop the invite straight into the inbox cache so it
+      // shows up instantly, deduped by id. GET /invites is only the backfill.
+      queryClient.setQueryData<PendingPartyInvite[]>(inviteKeys.all, (prev = []) =>
+        prev.some((existing) => existing.id === i.id)
+          ? prev
+          : [
+              {
+                id: i.id,
+                partyId: i.partyId,
+                invitedByUserId: i.invitedByUserId,
+                expiresAt: i.expiresAt,
+                createdAt: new Date().toISOString(),
+              },
+              ...prev,
+            ],
+      );
+
       showPartyInviteToast({
         id: i.id,
         partyId: i.partyId,
@@ -171,7 +176,7 @@ export function usePartyHub() {
   }, [
     accessToken,
     userId,
-    addInvite,
+    queryClient,
     setConnected,
     setLastEvent,
     setPresence,

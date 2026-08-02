@@ -37,6 +37,21 @@ export type PartyDetailDto = {
   members: { userId: string; role: string; joinedAt: string }[]
 }
 
+/*
+ * A pending invite addressed to the current user, from GET /invites. The server
+ * sends the full PartyInvite row; these are the fields the inbox and the arrival
+ * toast use. The server filters by Pending status only, not by time, so an
+ * expired-but-not-yet-swept invite can still come back — callers drop those by
+ * comparing expiresAt themselves.
+ */
+export type PendingPartyInvite = {
+  id: string
+  partyId: string
+  invitedByUserId: string
+  expiresAt: string
+  createdAt: string
+}
+
 export async function getParty(partyId: string) {
   const { data } = await api.get(`/parties/${partyId}`)
   return data as PartyDetailDto
@@ -55,6 +70,12 @@ export async function inviteUser(partyId: string, invitedUserId: string) {
 export async function respondToInvite(inviteId: string, accepted: boolean) {
   const { data } = await api.post(`/invites/${inviteId}/respond`, { accepted })
   return data as PartyInviteDto
+}
+
+/* Pending party invites addressed to the signed-in user. */
+export async function getPartyInvites() {
+  const { data } = await api.get('/invites')
+  return data as PendingPartyInvite[]
 }
 
 export async function leaveParty(partyId: string) {

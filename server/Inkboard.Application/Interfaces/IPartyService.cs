@@ -8,6 +8,7 @@ namespace Inkboard.Application.Interfaces
     {
         Task<Result<Party>> CreatePartyAsync(Guid leaderId, Guid canvasId);
         Task<Result<PartyDetailDto>> GetPartyByIdAsync(Guid partyId);
+        Task<Result<List<PartyInvite>>> GetPartyInvitesByUserIdAsync(Guid userId);
         Task<Result<PartyInvite>> InviteUserAsync(Guid partyId, Guid leaderId, Guid invitedUserId);
         Task<Result<PartyInvite>> RespondToUserInviteAsync(Guid id, Guid userId, bool accepted);
         Task<Result> RemoveMemberAsync(Guid partyId, Guid leaderId, Guid targetUserId);

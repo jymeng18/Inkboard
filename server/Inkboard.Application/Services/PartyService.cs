@@ -408,5 +408,12 @@ namespace Inkboard.Application.Services
 
             return Result<PartyInvite>.Ok(invite);
         }
+
+        public async Task<Result<List<PartyInvite>>> GetPartyInvitesByUserIdAsync(Guid userId)
+        {
+            List<PartyInvite> partyInvites = await _partyInviteRepository.GetAllPendingByUserIdAsync(userId);
+            return Result<List<PartyInvite>>.Ok(data: partyInvites);
+        }
+
     }
 }
