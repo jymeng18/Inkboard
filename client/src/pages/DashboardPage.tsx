@@ -52,7 +52,7 @@ import { useConnectionStore } from "@/stores/connectionStore";
 import { usePartyStore } from "@/stores/partyStore";
 
 /**
- * useMutation, useQeury used for anything involving backend requests, 
+ * useMutation, useQeury used for anything involving backend requests,
  * useQuery: reading data from server
  * useMutation: editing/create/delete data from server
  */
@@ -145,7 +145,9 @@ export default function DashboardPage() {
   const isPartyLeader = members.some(
     (m) => m.userId === currentUserId && m.role === "Leader",
   );
-  const [partyMoveCanvas, setPartyMoveCanvas] = useState<CanvasDto | null>(null);
+  const [partyMoveCanvas, setPartyMoveCanvas] = useState<CanvasDto | null>(
+    null,
+  );
   const [movingParty, setMovingParty] = useState(false);
 
   function openCanvas(canvas: CanvasDto) {
@@ -166,7 +168,8 @@ export default function DashboardPage() {
     if (partyId && isPartyLeader) {
       try {
         await setPartyCanvas(partyId, canvas.id);
-        if (members.length > 1) statusToast.success("Your party is coming with you");
+        if (members.length > 1)
+          statusToast.success("Your party is coming with you");
       } catch (err) {
         // Non-fatal: opening your own canvas shouldn't hinge on the party link.
         toast.error(extractErrorMessage(err));

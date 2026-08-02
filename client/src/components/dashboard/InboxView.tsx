@@ -51,7 +51,7 @@ export default function InboxView() {
         </p>
       </div>
 
-      <div className="mb-6 flex gap-2 overflow-x-auto">
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1.5">
         <TabButton
           active={tab === 'requests'}
           count={pending.length}

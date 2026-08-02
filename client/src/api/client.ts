@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-import { clearSession, getAccessToken, getRefreshToken, setTokens } from '../lib/session'
-import type { AuthTokens } from '../types/auth'
+import { clearSession, getAccessToken, getRefreshToken, setTokens } from '@/lib/session'
+import type { AuthTokens } from '@/types/auth'
 
 const api = axios.create({
   baseURL: '/api',

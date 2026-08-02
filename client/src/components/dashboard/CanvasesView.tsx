@@ -1,7 +1,7 @@
 import { Plus, RotateCw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import type { CanvasDto } from '../../api/canvas'
+import type { CanvasDto } from '@/api/canvas'
 import CanvasCard from './CanvasCard'
 
 interface CanvasesViewProps {

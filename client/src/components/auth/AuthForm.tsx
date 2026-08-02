@@ -4,8 +4,8 @@ import { Lock, Mail, User } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { AUTH_LIMITS } from '@/api/auth'
-import { useAuth } from '../../hooks/useAuth'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import AuthField from './AuthField'
 import { GithubIcon, GoogleIcon } from './SocialIcons'
 

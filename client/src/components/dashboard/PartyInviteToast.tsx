@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Check, X } from 'lucide-react'
 
-import { extractErrorMessage, getParty, respondToInvite } from '../../api/party'
-import { useInviteStore } from '../../stores/inviteStore'
-import { usePartyStore } from '../../stores/partyStore'
+import { extractErrorMessage, getParty, respondToInvite } from '@/api/party'
+import { useInviteStore } from '@/stores/inviteStore'
+import { usePartyStore } from '@/stores/partyStore'
 
 export interface InviteSummary {
   id: string

@@ -1,5 +1,5 @@
 import api from './client'
-import type { AuthTokens } from '../types/auth'
+import type { AuthTokens } from '@/types/auth'
 
 /* Mirrors RegisterRequestValidator and LoginRequestValidator. */
 export const AUTH_LIMITS = {
