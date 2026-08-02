@@ -4,6 +4,7 @@ import { loginUser, logoutUser, registerUser } from '@/api/auth'
 import { markMobileNoticePending } from '@/lib/firstRun'
 import { decodeClaims, getRefreshToken } from '@/lib/session'
 import { useAuthStore } from '@/stores/authStore'
+import { usePartyStore } from '@/stores/partyStore'
 
 /** Pulls a human-readable message out of the various server error shapes. */
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -83,8 +84,11 @@ export function useAuth() {
     try {
       if (refreshToken) await logoutUser(refreshToken)
     } catch {
-      // 
+      //
     }
+    // Drop the persisted party too, so the next account on this device doesn't
+    // inherit a stale activePartyId.
+    usePartyStore.getState().clearParty()
     clearSessionState()
   }
 

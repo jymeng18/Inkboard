@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useFriendRequestNotifications } from '@/hooks/useFriendRequestNotifications'
 import { usePartyCanvasNavigation } from '@/hooks/usePartyCanvasNavigation'
 import { usePartyHub } from '@/hooks/usePartyHub'
+import { usePartyHydration } from '@/hooks/usePartyHydration'
 import { useAuthStore } from '@/stores/authStore'
 
 /*
@@ -15,6 +16,10 @@ export default function RequireAuth() {
 
   // Hooks must run unconditionally; the hub no-ops until there's a token.
   usePartyHub()
+
+  // Rebuilds party state from the server after a reload wipes the in-memory
+  // stores, so the session lock (and party UI) survive a hard refresh.
+  usePartyHydration()
 
   // One poll for the whole session, so a friend request finds the user wherever
   // they are rather than only on the dashboard.

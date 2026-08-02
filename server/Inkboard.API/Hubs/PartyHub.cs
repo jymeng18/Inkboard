@@ -29,15 +29,20 @@ public sealed class PartyHub : Hub<IPartyHubClient>
 
         _connectionStore.Add(Context.ConnectionId, userId);
 
-        // var party = await _partyRepository.GetActivePartyForUserAsync(userId);
-        // if (party is not null)
-        // {
-        //     var groupName = PartyHub.GroupName(party.Id);
-        //     await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        /// <summary>
+        // Re-join a (re)connecting member to their party's group, so group
+        // broadcasts (member left, joined, kicked, leadership) reach them and
+        // they show as online. Without this, a member who reloaded back into a
+        // party is silently absent from the group and misses every broadcast.
+        /// </summary>
+        var party = await _partyRepository.GetActivePartyForUserAsync(userId);
+        if (party is not null)
+        {
+            var groupName = PartyHub.GroupName(party.Id);
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            await Clients.OthersInGroup(groupName).NotifyOnConnection(userId);
+        }
 
-        //     // Note: NotifyOnConnection(..) is a method that will be exposed to receive data from socket
-        //     await Clients.OthersInGroup(groupName).NotifyOnConnection(userId);
-        // }
         await base.OnConnectedAsync();
     }
 

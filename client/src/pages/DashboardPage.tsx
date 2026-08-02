@@ -12,6 +12,7 @@ import {
 } from "@/api/canvas";
 import {
   extractErrorMessage,
+  leaveParty as leavePartyApi,
   removeMember as removeMemberApi,
   setPartyCanvas,
 } from "@/api/party";
@@ -23,6 +24,7 @@ import {
 } from "@/hooks/useCanvases";
 import { usePendingFriendRequests } from "@/hooks/useFriends";
 import { useInboxUnread } from "@/hooks/useInboxUnread";
+import { usePartySession } from "@/hooks/usePartySession";
 import { useAuth } from "@/hooks/useAuth";
 import { MOBILE_VIEWPORT } from "@/hooks/useMediaQuery";
 import {
@@ -72,7 +74,15 @@ export default function DashboardPage() {
   const partyId = usePartyStore((s) => s.partyId);
   const members = usePartyStore((s) => s.members);
   const removeMemberFromStore = usePartyStore((s) => s.removeMember);
+  const clearPartyStore = usePartyStore((s) => s.clearParty);
   const presence = useConnectionStore((s) => s.presence);
+
+  /*
+   * Members of a party that's mid-session are locked out of the canvas actions
+   * below; opening or creating one here would strand them off the party's board.
+   */
+  const { activeCanvasId, isLeader: sessionIsLeader, inActiveSession, locked } =
+    usePartySession();
 
   const { data: pendingRequests } = usePendingFriendRequests();
   const { unreadCount, markAllRead } = useInboxUnread();
@@ -137,6 +147,18 @@ export default function DashboardPage() {
     }
   }
 
+  /* A member's escape hatch from the session lock: leave, and the lock lifts. */
+  async function handleLeaveParty() {
+    if (!partyId) return;
+    try {
+      await leavePartyApi(partyId);
+      clearPartyStore();
+      statusToast.success("You left the party");
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  }
+
   /*
    * A leader opening a canvas moves the whole party into it, which is a big
    * enough side effect to ask about first. Only the leader of a party that has
@@ -151,6 +173,12 @@ export default function DashboardPage() {
   const [movingParty, setMovingParty] = useState(false);
 
   function openCanvas(canvas: CanvasDto) {
+    if (locked) {
+      toast.info(
+        "You're in a party session — return to that canvas or leave the party first.",
+      );
+      return;
+    }
     if (partyId && isPartyLeader && members.length > 1) {
       setPartyMoveCanvas(canvas);
       return;
@@ -200,7 +228,7 @@ export default function DashboardPage() {
 
   /* The dialog names the canvas first; creating it drops us straight into it. */
   function handleCreate(rawName: string) {
-    if (createCanvasMutation.isPending) return;
+    if (locked || createCanvasMutation.isPending) return;
     createCanvasMutation.mutate(normalizeCanvasName(rawName), {
       onSuccess: (canvas) => {
         setNameDialog(null);
@@ -283,11 +311,23 @@ export default function DashboardPage() {
               isLoading={isLoading}
               isError={isError}
               onRetry={() => refetch()}
-              onNewCanvas={() => setNameDialog({ mode: "create" })}
+              onNewCanvas={() => {
+                if (locked) return;
+                setNameDialog({ mode: "create" });
+              }}
               onOpenCanvas={openCanvas}
               onRenameCanvas={(canvas) =>
                 setNameDialog({ mode: "rename", canvas })
               }
+              session={{
+                active: inActiveSession,
+                isLeader: sessionIsLeader,
+                locked,
+                onReturn: () => {
+                  if (activeCanvasId) navigate(`/canvas/${activeCanvasId}`);
+                },
+                onLeave: handleLeaveParty,
+              }}
             />
           )}
 

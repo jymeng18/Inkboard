@@ -142,8 +142,11 @@ export function usePartyHub() {
 
     conn.on("LeadershipTransferred", (newLeaderId: string) => {
       // The old leader left: leadership passes on and the canvas link breaks, so
-      // everyone exits to the dashboard, the party itself stays intact.
+      // everyone exits to the dashboard, the party itself stays intact. Refresh
+      // the party query so a member already on the dashboard sees the canvas
+      // link gone and the session lock lifts.
       setLeader(newLeaderId);
+      queryClient.invalidateQueries({ queryKey: ["party"] });
       triggerNavToDashboard();
       toast.info("Leadership changed — the canvas closed. You're still in the party.");
       setLastEvent({ event: "leadership", userId: newLeaderId });
