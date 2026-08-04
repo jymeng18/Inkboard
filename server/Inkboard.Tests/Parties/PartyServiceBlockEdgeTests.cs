@@ -76,7 +76,7 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     {
         var user = await SeedUserAsync(Context, "user");
         var target = await SeedUserAsync(Context, "target");
-        var before = DateTime.UtcNow.AddSeconds(-1);
+        var before = DateTimeOffset.UtcNow.AddSeconds(-1);
 
         await Service.BlockUserAsync(user.Id, target.Id);
 
@@ -84,7 +84,7 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
             bl.UserId == user.Id && bl.BlockedUserId == target.Id
         );
         Assert.IsTrue(block.CreatedAt >= before);
-        Assert.IsTrue(block.CreatedAt <= DateTime.UtcNow.AddSeconds(1));
+        Assert.IsTrue(block.CreatedAt <= DateTimeOffset.UtcNow.AddSeconds(1));
     }
 
     [TestMethod]

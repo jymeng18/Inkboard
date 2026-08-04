@@ -1,12 +1,11 @@
 /*
- * The API stamps timestamps in UTC, but a DateTime that loses its Kind on the
- * way out of EF serializes with no trailing Z. `new Date` reads that as local
- * time, which would skew both the "x ago" labels and the unread cutoff by the
- * viewer's offset. Anything without an explicit zone is pinned to UTC here.
+ * The API serializes every timestamp as a DateTimeOffset, so the string always
+ * carries an explicit zone (a trailing Z or a +hh:mm offset) that `new Date`
+ * reads correctly. This stays a single seam so parsing has one home if the wire
+ * format ever changes again.
  */
 export function parseServerDate(value: string): Date {
-  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value)
-  return new Date(hasZone ? value : `${value}Z`)
+  return new Date(value)
 }
 
 const MINUTE = 60_000

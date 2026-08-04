@@ -228,7 +228,7 @@ public sealed class RefreshTests : TestBase
             SHA256.HashData(Encoding.UTF8.GetBytes(login.RefreshToken!))
         );
         var stored = await context.RefreshTokens.FirstAsync(t => t.TokenHash == rawHash);
-        stored.ExpiresAt = DateTime.UtcNow.AddDays(-1);
+        stored.ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1);
         await context.SaveChangesAsync();
 
         var result = await service.RefreshAsync(login.RefreshToken!);

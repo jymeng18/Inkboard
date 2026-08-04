@@ -195,6 +195,6 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
         var result = await Service.GetPartyByIdAsync(party.Id);
 
         Assert.IsTrue(result.IsSuccess);
-        Assert.AreNotEqual(default(DateTime), result.Data!.Members[0].JoinedAt);
+        Assert.AreNotEqual(default(DateTimeOffset), result.Data!.Members[0].JoinedAt);
     }
 }

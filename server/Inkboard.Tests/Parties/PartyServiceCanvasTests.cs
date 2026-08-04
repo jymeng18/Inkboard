@@ -100,7 +100,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
         {
             LeaderId = otherUser.Id,
             CanvasId = otherCanvas.Id,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
         await partyRepo.CreatePartyAsync(otherParty);
 

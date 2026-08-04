@@ -236,7 +236,7 @@ public sealed class PartyServiceInviteEdgeTests : PartyTestBase
     private async Task ExpireInviteAsync(Guid inviteId)
     {
         var invite = await Context.PartyInvites.FirstAsync(pi => pi.Id == inviteId);
-        invite.ExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+        invite.ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1);
         await Context.SaveChangesAsync();
     }
 }

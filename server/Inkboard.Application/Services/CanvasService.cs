@@ -28,7 +28,7 @@ public class CanvasService : ICanvasService
             OwnerId = userId,
             Name = canvasName,
             SnapshotURL = null,
-            LastModifiedAt = DateTime.UtcNow,
+            LastModifiedAt = DateTimeOffset.UtcNow,
         };
 
         await _canvasRepository.CreateCanvasAsync(canvas);
@@ -100,7 +100,7 @@ public class CanvasService : ICanvasService
         }
 
         canvas.Name = newCanvasName;
-        canvas.LastModifiedAt = DateTime.UtcNow;
+        canvas.LastModifiedAt = DateTimeOffset.UtcNow;
         await _canvasRepository.UpdateCanvasAsync(canvas);
 
         return Result.Ok();

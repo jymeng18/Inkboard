@@ -9,7 +9,7 @@ public class BlockList
 
   public Guid BlockedUserId { get; set; }
 
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+  public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
   // nav props
   public User User { get; set; } = null!;

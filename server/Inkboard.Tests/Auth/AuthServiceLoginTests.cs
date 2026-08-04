@@ -202,7 +202,7 @@ public sealed class LoginTests : TestBase
 
         var tokens = await context.RefreshTokens.ToListAsync();
         Assert.HasCount(1, tokens);
-        var expectedExpiry = DateTime.UtcNow.AddDays(7);
+        var expectedExpiry = DateTimeOffset.UtcNow.AddDays(7);
         Assert.IsTrue(tokens[0].ExpiresAt <= expectedExpiry.AddMinutes(1));
         Assert.IsTrue(tokens[0].ExpiresAt >= expectedExpiry.AddMinutes(-1));
     }

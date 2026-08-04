@@ -46,7 +46,7 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
                 PartyId = party.Id,
                 UserId = lateJoiner.Id,
                 Role = UserRole.Member,
-                JoinedAt = DateTime.UtcNow,
+                JoinedAt = DateTimeOffset.UtcNow,
             }
         );
         // Insert the "early" member second, but with an older JoinedAt.
@@ -56,7 +56,7 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
                 PartyId = party.Id,
                 UserId = earlyJoiner.Id,
                 Role = UserRole.Member,
-                JoinedAt = DateTime.UtcNow.AddMinutes(-30),
+                JoinedAt = DateTimeOffset.UtcNow.AddMinutes(-30),
             }
         );
 

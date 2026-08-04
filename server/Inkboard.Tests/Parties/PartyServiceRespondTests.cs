@@ -130,7 +130,7 @@ public sealed class PartyServiceRespondTests : PartyTestBase
             InvitedByUserId = leader.Id,
             InvitedUserId = invited.Id,
             InviteStatus = InviteStatus.Pending,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(-1),
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1),
         };
         Context.PartyInvites.Add(invite);
         await Context.SaveChangesAsync();
