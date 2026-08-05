@@ -1,5 +1,6 @@
 using FluentValidation;
 using Inkboard.API;
+using Inkboard.API.Exceptions;
 using Inkboard.API.Hubs;
 using Inkboard.API.Realtime;
 using Inkboard.API.Routes;
@@ -8,6 +9,7 @@ using Inkboard.Application.Interfaces;
 using Inkboard.Application.Services;
 using Inkboard.Domain.Repositories;
 using Inkboard.Infra.Auth;
+using Inkboard.Infra.Azure;
 using Inkboard.Infra.Db;
 using Inkboard.Infra.DependencyInjection;
 using Microsoft.AspNetCore.SignalR;
@@ -51,15 +53,27 @@ builder.Services.AddScoped<ICanvasService, CanvasService>();
 builder.Services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendsListService, FriendsListService>();
-
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
 builder.Services.AddSingleton<IConnectionStore, ConnectionStore>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
+builder.Services.AddExceptionHandler<DbExceptionHandler>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddExceptionHandler<TimedOutExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var blobService = scope.ServiceProvider.GetRequiredService<IBlobStorageService>();
+    await blobService.CreateBlobContainerAsync();
+}
+
+app.UseExceptionHandler();
 app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
