@@ -12,8 +12,9 @@ This is the planned design for real time drawing sync and canvas persistence. No
 ## During a session
 
 * Members draw, operations broadcast via `CanvasHub` and persist asynchronously so persistence never blocks the broadcast.
-* A frontend interval timer periodically renders the stage to a blob and uploads it as a snapshot, as a safety net against unexpected termination.
+* A frontend interval timer, roughly every 15 minutes, renders the stage to a PNG blob and uploads it as a snapshot, as a safety net against unexpected termination.
 * Only the canvas owner's client sends periodic snapshots.
+* On each snapshot upload the backend overwrites the single blob `canvas/{canvasId}.png`, updates `Canvas.SnapshotURL`, and stamps `Canvas.SnapshotTakenAt`. See `../Services/AzureBlobStorage.md`.
 
 ## Ending a session, owner clicks end session
 
@@ -49,12 +50,25 @@ Cursor sync is a separate, never persisted path. See `../Services/CanvasCursorTr
 ## Snapshot upload
 
 1. Triggered by the periodic timer or by ending the session.
-2. Frontend renders the Konva stage to a PNG blob.
+2. Frontend renders the Konva stage to a PNG blob. Capture the render-start time, this becomes `SnapshotTakenAt`.
 3. Frontend uploads the blob as multipart form data.
 4. `CanvasService` verifies the requester is the owner.
-5. `CanvasService` calls `IBlobStorageService.UploadSnapshotAsync`, see `../Services/AzureBlobStorage.md`.
-6. `Canvas.SnapshotURL` is updated with the returned blob URL.
-7. A user joining an existing session receives the latest `SnapshotURL` immediately, and replays any `CanvasOperations` recorded since that snapshot to reach the current state.
+5. `CanvasService` calls `IBlobStorageService.UploadBlobAsync`, which overwrites `canvas/{canvasId}.png` in the private `inkboard-canvases` container. See `../Services/AzureBlobStorage.md`.
+6. `Canvas.SnapshotURL` is updated with the returned blob URL and `Canvas.SnapshotTakenAt` is stamped to the render-start time. Set it conservatively (early), applying an op twice is harmless but missing one desyncs the joiner.
+
+## Joining an in-progress session, buffer then catch-up
+
+The container is private, so a joiner gets a short-lived SAS URL from the server rather than the raw
+`SnapshotURL`. A joiner must not lose ops drawn while it is still loading, so the ordering matters.
+The frontend shows a loading screen ("Setting up environment for X user, please be patient...") for the duration.
+
+1. Join the CanvasHub group first and start buffering every live operation that arrives, do not apply yet.
+2. Fetch the snapshot via the SAS URL and query `CanvasOperations WHERE Timestamp > SnapshotTakenAt`.
+3. Apply the snapshot, then the historical ops in `(Timestamp, UserId)` order.
+4. Flush the buffer on top, deduping against the historical set by operation `Id`, then switch to live mode.
+5. Dismiss the loading screen.
+
+Querying the database before joining the group would drop anything drawn in between and desync the joiner silently. Join-then-buffer is what makes the catch-up converge.
 
 ## Conflict resolution
 

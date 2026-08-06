@@ -94,19 +94,21 @@ Contain all business logic. Controllers and Hubs call services, never the databa
 Azure Blob Storage is used to persist canvas snapshots.
 
 - The interface `IBlobStorageService` lives in `Inkboard.Application/Interfaces/`. It has no knowledge of Azure — it is a pure abstraction.
-- The concrete implementation `BlobStorageService` lives in `Inkboard.Infra/Blob/` and uses the Azure SDK directly.
-- A single blob container named `snapshots` is created once at application startup if it does not already exist.
-- Blobs are keyed by canvas ID: `snapshots/{canvasId}.png`.
+- The concrete implementation `BlobStorageService` lives in `Inkboard.Infra/Azure/` and uses the Azure SDK directly.
+- A single **private** blob container named `inkboard-canvases` is created once at application startup if it does not already exist.
+- One blob per canvas, overwritten each snapshot, keyed by canvas ID: `canvas/{canvasId}.png`. No timestamped history.
+- The container is private. Clients cannot read blobs directly; the server hands out a short-lived SAS URL on join, which every canvas member can use to download the snapshot straight from Azure.
 - `CanvasService` is the only caller of `IBlobStorageService`. The API layer and hubs are never aware of blob storage.
 
 ```csharp
 public interface IBlobStorageService
 {
-    Task<string> UploadSnapshotAsync(Guid canvasId, Stream imageData, string contentType);
+    Task CreateBlobContainerAsync();
+    Task<string> UploadBlobAsync(Guid canvasId, Stream imageData, string contentType);
 }
 ```
 
-`UploadSnapshotAsync` returns the public URL of the uploaded blob so `CanvasService` can update `Canvas.SnapshotUrl` immediately after.
+`UploadBlobAsync` returns the blob URL so `CanvasService` can update `Canvas.SnapshotURL` and `Canvas.SnapshotTakenAt` immediately after. `SnapshotURL` is stored for the record but is not usable on its own — a SAS token is layered on top when serving a join. See `Services/AzureBlobStorage.md`.
 
 ### Data Layer
 
@@ -144,7 +146,7 @@ Fields: UserId (FK), BlockedUserId (FK), CreatedAt
 
 **Canvases**
 Represents a shared drawing canvas.
-Fields: Id, OwnerId (FK → Users), SnapshotUrl (nullable), CreatedAt, LastModifiedAt
+Fields: Id, OwnerId (FK → Users), Name (nullable, max 50), SnapshotURL (nullable), SnapshotTakenAt (nullable), CreatedAt, LastModifiedAt
 
 **CanvasOperations**
 Append-only log of every drawing operation during a session.
@@ -243,9 +245,9 @@ These rules are fixed and enforced by `CanvasService` on every relevant operatio
 2. Frontend calls `stage.toBlob()` on the Konva stage to render the current canvas as a PNG blob
 3. Frontend POSTs the blob to `POST /api/canvases/{canvasId}/snapshot` as `multipart/form-data`
 4. `CanvasService` verifies the requester is the canvas owner
-5. `CanvasService` calls `IBlobStorageService.UploadSnapshotAsync`, which uploads the image to the `snapshots` Azure Blob container under the key `{canvasId}.png`
-6. `CanvasService` updates `Canvas.SnapshotUrl` with the returned blob URL
-7. When a new user joins an existing session, they receive the latest `SnapshotUrl` immediately so they see the current canvas state
+5. `CanvasService` calls `IBlobStorageService.UploadBlobAsync`, which overwrites `canvas/{canvasId}.png` in the private `inkboard-canvases` container
+6. `CanvasService` updates `Canvas.SnapshotURL` with the returned blob URL and stamps `Canvas.SnapshotTakenAt` (set to the client's render-start time, conservatively early)
+7. When a new user joins an existing session, they get a SAS URL for the latest snapshot and then apply every `CanvasOperation` recorded after `SnapshotTakenAt` on top (buffer-then-catch-up). See `Workflows/CanvasSessionLifecycle.md`.
 
 ---
 

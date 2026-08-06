@@ -35,7 +35,8 @@ Composite primary key (BlockedUserId, UserId).
 
 ### Canvases
 A shared drawing canvas.
-Fields: Id, OwnerId (FK to Users, cascade), Name, SnapshotURL (nullable), CreatedAt, LastModifiedAt.
+Fields: Id, OwnerId (FK to Users, cascade), Name, SnapshotURL (nullable), SnapshotTakenAt (nullable), CreatedAt, LastModifiedAt.
+SnapshotURL is the base blob URL of the latest snapshot (private container, served to clients via a SAS token). SnapshotTakenAt marks the render-start time of that snapshot; joiners catch up by applying every CanvasOperation with Timestamp > SnapshotTakenAt. See ../Services/AzureBlobStorage.md.
 
 ### CanvasOperations
 Append only log of drawing operations.
