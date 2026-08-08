@@ -17,6 +17,8 @@ public class Canvas
 
     public string? SnapshotURL { get; set; }
 
+    public DateTimeOffset SnapshotTakenAt { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset LastModifiedAt { get; set; }

@@ -1,5 +1,6 @@
 using Inkboard.Application.Common;
 using Inkboard.Application.Services;
+using Inkboard.Infra.Azure;
 using Inkboard.Infra.Db;
 
 namespace Inkboard.Tests.Parties;
@@ -9,7 +10,7 @@ public sealed class CanvasServiceTests : PartyTestBase
 {
     private CanvasService CreateCanvasService()
     {
-        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context));
+        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context), null, null);
     }
 
     [TestMethod]
