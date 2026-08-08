@@ -12,6 +12,8 @@ using Inkboard.Infra.Auth;
 using Inkboard.Infra.Azure;
 using Inkboard.Infra.Db;
 using Inkboard.Infra.DependencyInjection;
+using Inkboard.Infra.Imaging;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 
 
@@ -27,6 +29,16 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowCredentials();
     });
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 47_185_920; // Lmit body payload to 45 MB
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 52_428_800; // Limit form files to 50 MB
 });
 
 builder.Services.AddInfraServices(builder.Configuration, builder.Environment);
@@ -54,6 +66,7 @@ builder.Services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendsListService, FriendsListService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddSingleton<IImageValidator, SkiaSharpValidator>();
 
 builder.Services.AddSingleton<IConnectionStore, ConnectionStore>();
 
