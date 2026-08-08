@@ -3,7 +3,7 @@ import { HexColorPicker } from 'react-colorful'
 
 import { useCanvasUiStore } from '@/stores/canvasUiStore'
 
-const SWATCHES = ['#2d2926', '#ff7070', '#00c1fd', '#ffd23f', '#7bc86c']
+const SWATCHES = ['#2d2926', '#ff7070', '#ff9f43', '#ffd23f', '#7bc86c', '#00c1fd', '#a06cd5']
 
 export default function ColorPicker() {
   const color = useCanvasUiStore((s) => s.color)
@@ -49,7 +49,7 @@ export default function ColorPicker() {
           onClick={() => setOpen((prev) => !prev)}
           aria-label="Custom color"
           aria-expanded={open}
-          className="flex size-8 items-center justify-center rounded-full border-[3px] border-outline sticker-shadow-sm"
+          className="flex size-8 items-center justify-center rounded-full border-[3px] border-outline"
           style={{ backgroundColor: color }}
         >
           <span className="size-3 rounded-full border border-white/70 bg-[conic-gradient(red,orange,yellow,lime,cyan,blue,magenta,red)]" />

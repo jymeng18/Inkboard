@@ -39,8 +39,8 @@ const TOOLS: { tool: Tool; icon: LucideIcon; label: string }[] = [
  * Kept modest on purpose: the dock shifts its neighbours as it swells, and
  * these are targets people click mid-drawing, so a big pop makes them slippery.
  */
-const TOOL_SIZE = 40
-const TOOL_MAGNIFICATION = 54
+const TOOL_SIZE = 36
+const TOOL_MAGNIFICATION = 50
 
 const soon = () => toast.info('This action is coming soon.')
 
@@ -105,7 +105,7 @@ export default function CanvasToolbar({ party }: { party: Party }) {
           )}
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-2 sticker-shadow">
+        <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-1.5 sticker-shadow">
           <Dock
             items={TOOLS.map(({ tool: value, icon: Icon, label }) => ({
               label,
