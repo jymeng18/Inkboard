@@ -25,4 +25,5 @@
 - [ ] Globalexceptionhandler
 - [ ] Unblock user endpoint + fix bad business logic with blocking users
 - [x] Currently when a party dissovles, clients webscokets are not removed from the group
+- [ ] PartyService and CanvasService are tightly coupled, some methods write into each others states
 

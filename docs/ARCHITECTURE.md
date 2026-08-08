@@ -66,49 +66,28 @@ client/
 
 ## Architecture Layers
 
-### REST API (Minimal API Endpoints)
+### REST API
 
-Handles standard HTTP request/response for operations that do not need to be real time. Each endpoint maps to one feature domain.
-
-- **AuthEndpoint** — register, login, refresh token, logout
-- **UserEndpoint** — get user profile, search users by username
-- **CanvasEndpoint** — upload snapshot, end session
+Standard HTTP request/response for anything that isn't real-time — auth, user profile/search, and canvas management including snapshot upload and session end. Each route belongs to one feature domain.
 
 ### Real-Time Layer (SignalR Hubs)
 
-Handles all live communication between clients. Two hubs run alongside the REST API.
+All live communication runs over SignalR, alongside the REST API. Two concerns are kept on separate hubs:
 
-- **CanvasHub** — manages canvas sessions. Clients join a group by canvas ID. Drawing operations are broadcast to all other members of that group immediately. Cursor positions are broadcast as fire-and-forget (never persisted). Canvas snapshots are sent to a user when they first join a session. When the canvas owner disconnects unexpectedly, the hub detects this in `OnDisconnectedAsync` and notifies all group members to exit the session.
-- **PartyHub** — manages party notifications. Delivers real-time invite notifications to target users. Broadcasts member join/leave events to the party.
+- **Canvas sessions** — clients group by canvas id; drawing operations broadcast to the rest of the group immediately, cursor positions broadcast fire-and-forget (never persisted). An unexpected owner disconnect is detected here and force-ends the session for the group.
+- **Party notifications** — real-time invite delivery and member join/leave broadcasts.
+
+**Decision: real-time and REST are deliberately split.** Drawing and cursor data never touch REST; request/response operations never touch a hub. This keeps the latency-sensitive path off HTTP entirely.
 
 ### Services
 
-Contain all business logic. Controllers and Hubs call services, never the database directly.
-
-- **AuthService** — password hashing, JWT access token generation, refresh token rotation
-- **PartyService** — party creation rules, invite validation, membership cap enforcement, block list enforcement
-- **CanvasService** — snapshot upload, session termination, operation persistence, canvas ownership enforcement
+All business logic lives in services; the API and hubs call services, never the database. The boundaries: auth (hashing, token issuance and rotation), party (membership rules, invite validation, caps, block list), and canvas (snapshot handling, session termination, ownership enforcement).
 
 ### Blob Storage Layer
 
-Azure Blob Storage is used to persist canvas snapshots.
+Canvas snapshots are persisted to Azure Blob Storage, behind an abstraction: the application layer depends on a storage interface with no knowledge of Azure, and the Azure implementation lives in infrastructure. The canvas service is the only caller — the API and hubs are never aware of blob storage.
 
-- The interface `IBlobStorageService` lives in `Inkboard.Application/Interfaces/`. It has no knowledge of Azure — it is a pure abstraction.
-- The concrete implementation `BlobStorageService` lives in `Inkboard.Infra/Azure/` and uses the Azure SDK directly.
-- A single **private** blob container named `inkboard-canvases` is created once at application startup if it does not already exist.
-- One blob per canvas, overwritten each snapshot, keyed by canvas ID: `canvas/{canvasId}.png`. No timestamped history.
-- The container is private. Clients cannot read blobs directly; the server hands out a short-lived SAS URL on join, which every canvas member can use to download the snapshot straight from Azure.
-- `CanvasService` is the only caller of `IBlobStorageService`. The API layer and hubs are never aware of blob storage.
-
-```csharp
-public interface IBlobStorageService
-{
-    Task CreateBlobContainerAsync();
-    Task<string> UploadBlobAsync(Guid canvasId, Stream imageData, string contentType);
-}
-```
-
-`UploadBlobAsync` returns the blob URL so `CanvasService` can update `Canvas.SnapshotURL` and `Canvas.SnapshotTakenAt` immediately after. `SnapshotURL` is stored for the record but is not usable on its own — a SAS token is layered on top when serving a join. See `Services/AzureBlobStorage.md`.
+The container is **private**, one blob per canvas, overwritten each snapshot. Because a private container can't be read by a credential-less browser, **reads are proxied through the server** (which authenticates to Azure with Entra ID/RBAC) rather than via SAS tokens. The full rationale, storage shape, join catch-up, and upload validation are in `Services/AzureBlobStorage.md`.
 
 ### Data Layer
 
@@ -164,90 +143,22 @@ Fields: Id, CanvasId (FK), UserId (FK), Type, Data (JSON), Timestamp
 
 ---
 
-## Canvas Ownership Rules
+## Canvas Ownership and Sessions
 
-These rules are fixed and enforced by `CanvasService` on every relevant operation.
+**Ownership is fixed at creation and never transfers.** That single rule anchors the session model: only the owner ends a session or uploads the authoritative snapshot. A canvas is created first; a party (and the party↔canvas link) is initiated only when the owner starts collaborating.
 
-- **Canvas ownership is assigned at creation.** `Canvas.OwnerId` is set to creators userId. Inside each canvas, there is a start collab or 'invite' button, only when this is clicked will we initiate a Party, upon creation, Party.CanvasId -> Canvas.Id
-- **Canvas ownership cannot be transferred.** There is no operation that changes `Canvas.OwnerId`.
-- **Only the canvas owner can end the session.** Any end session request from a non-owner is rejected with `ErrorType.Forbidden`.
-- **Only the canvas owner can upload the authoritative snapshot.** Periodic snapshots and the final end-session snapshot both require the requester to be the canvas owner.
-- **If the canvas owner transfers party leadership mid-session**, every member is immediately ejected from the canvas session. The party itself remains alive. `Party.CanvasId` is set back to null. Members retain their party membership and can start a new canvas session under the new leader, who becomes the owner of that new canvas.
-- **If the canvas owner disconnects unexpectedly** (crash, closed tab, lost connection), `CanvasHub.OnDisconnectedAsync` detects that the disconnecting user is the canvas owner and broadcasts a forced exit event to all members in the canvas group. The session ends with the last periodic snapshot as the final state.
-
----
-
-## Canvas Session Lifecycle
-
-### Starting a Session
-
-1. Party leader creates a canvas via `POST /api/canvases`.
-2. `CanvasService` creates a `Canvas` record with `OwnerId = leaderId` and `SnapshotUrl = null`.
-3. `Party.CanvasId` is updated to the new canvas ID.
-4. All party members can now connect to the `CanvasHub` group for this canvas.
-
-### During a Session
-
-- Members draw, and operations are broadcast via `CanvasHub` and persisted asynchronously.
-- The frontend runs a 15-minute interval timer. On each tick, the canvas owner's client calls `stage.toBlob()` and POSTs the result to `POST /api/canvases/{canvasId}/snapshot`. This is a safety net against unexpected session termination.
-- Non-owner clients do not send periodic snapshots.
-
-### Ending a Session (Normal — Owner clicks "End Session")
-
-1. Frontend calls `stage.toBlob()` to render the current canvas state as a PNG.
-2. Frontend POSTs the blob to `POST /api/canvases/{canvasId}/snapshot` as `multipart/form-data`.
-3. Backend uploads the image to Azure Blob Storage and updates `Canvas.SnapshotUrl`.
-4. Frontend POSTs to `POST /api/canvases/{canvasId}/end`.
-5. `CanvasService` verifies `OwnerId == requesterId`, then notifies all canvas group members via `ICanvasNotifier` to disconnect.
-6. `Party.CanvasId` is set to null. The party remains alive.
-
-### Ending a Session (Leadership Transfer Mid-Session)
-
-1. Canvas owner transfers party leadership via the existing party leadership transfer flow.
-2. `PartyService` detects an active canvas on the party (`Party.CanvasId` is not null).
-3. `PartyService` calls `CanvasService.ForceEndSessionAsync(canvasId)`.
-4. `CanvasService` notifies all canvas group members to disconnect. No final snapshot is taken — the last periodic snapshot is the final state.
-5. `Party.CanvasId` is set to null. Party leadership is transferred as normal.
-
-### Ending a Session (Unexpected Owner Disconnect)
-
-1. `CanvasHub.OnDisconnectedAsync` fires for the disconnecting user.
-2. Hub checks if the disconnecting user is the canvas owner.
-3. If yes, hub calls `CanvasService.ForceEndSessionAsync(canvasId)`.
-4. All remaining group members receive a forced exit notification.
-5. No final snapshot is taken — the last periodic snapshot is the final state.
-6. `Party.CanvasId` is set to null. The party remains alive.
+Sessions end three ways, and the deliberate distinction is whether a final snapshot is taken: an owner ending deliberately captures one first; a leadership transfer or an unexpected owner disconnect force-ends with no final snapshot, letting the last periodic one stand. In all cases the party survives — only the canvas link is severed. Full lifecycle reasoning is in `Workflows/CanvasSessionLifecycle.md`; snapshot storage and join catch-up in `Services/AzureBlobStorage.md`.
 
 ---
 
 ## Real-Time Data Flow
 
-### Drawing Sync
+The latency-critical decisions (optimistic local rendering, delta-only messages, async persistence that never blocks a broadcast, throttled never-persisted cursors) are covered under Latency Minimization below and in the lifecycle doc. Two paths run over the canvas hub:
 
-1. User draws a stroke on the canvas
-2. Frontend renders it locally immediately (optimistic rendering — no waiting for the server)
-3. Frontend sends the stroke as a lightweight operation object to the CanvasHub via WebSocket
-4. CanvasHub broadcasts the operation to all other clients in the same canvas group
-5. Other clients receive the operation and render it on their canvas
-6. The operation is persisted to the database asynchronously — it does not block the broadcast
+- **Drawing** — rendered locally on sight, sent as a lightweight delta, broadcast to the group, persisted asynchronously.
+- **Cursors** — throttled client-side, broadcast to the group, never persisted.
 
-### Cursor Sync
-
-1. User moves their mouse on the canvas
-2. Frontend sends cursor position to CanvasHub at a throttled rate (approximately 30 events per second)
-3. CanvasHub broadcasts cursor position and userId to all other clients in the group
-4. Other clients render a labelled cursor for that user
-5. Cursor events are never persisted to the database
-
-### Canvas Snapshot Upload
-
-1. Triggered either by the 15-minute frontend interval timer or by the owner clicking "End Session"
-2. Frontend calls `stage.toBlob()` on the Konva stage to render the current canvas as a PNG blob
-3. Frontend POSTs the blob to `POST /api/canvases/{canvasId}/snapshot` as `multipart/form-data`
-4. `CanvasService` verifies the requester is the canvas owner
-5. `CanvasService` calls `IBlobStorageService.UploadBlobAsync`, which overwrites `canvas/{canvasId}.png` in the private `inkboard-canvases` container
-6. `CanvasService` updates `Canvas.SnapshotURL` with the returned blob URL and stamps `Canvas.SnapshotTakenAt` (set to the client's render-start time, conservatively early)
-7. When a new user joins an existing session, they get a SAS URL for the latest snapshot and then apply every `CanvasOperation` recorded after `SnapshotTakenAt` on top (buffer-then-catch-up). See `Workflows/CanvasSessionLifecycle.md`.
+Snapshots are the non-real-time path: uploaded over REST by the owner's client (periodically and on end), stored to blob, and served back on join via the server-proxied read. See `Services/AzureBlobStorage.md`.
 
 ---
 
