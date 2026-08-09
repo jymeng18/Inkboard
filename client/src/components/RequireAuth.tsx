@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
+import FollowCountdownOverlay from '@/components/canvas/FollowCountdownOverlay'
 import { useFriendRequestNotifications } from '@/hooks/useFriendRequestNotifications'
 import { usePartyCanvasNavigation } from '@/hooks/usePartyCanvasNavigation'
 import { usePartyHub } from '@/hooks/usePartyHub'
@@ -28,7 +29,7 @@ export default function RequireAuth() {
 
   // Members are usually on the dashboard when the leader opens a canvas, so the
   // listener that follows them in has to live above both pages.
-  usePartyCanvasNavigation()
+  const pendingFollow = usePartyCanvasNavigation()
 
   // Don't decide until the startup silent refresh resolves, or a reload would
   // bounce a signed-in user to /login before their session is restored.
@@ -44,5 +45,12 @@ export default function RequireAuth() {
     return <Navigate to="/login" replace />
   }
 
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      {pendingFollow && (
+        <FollowCountdownOverlay key={pendingFollow.path} onComplete={pendingFollow.follow} />
+      )}
+    </>
+  )
 }

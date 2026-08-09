@@ -87,7 +87,7 @@ export default function PartyPanel({ party }: { party: Party }) {
           </button>
         </div>
 
-        <ul className="flex-1 space-y-2 overflow-y-auto">
+        <ul className="flex-1 space-y-2 overflow-y-auto pr-1.5 pb-1">
           {displayMembers.map((member) => {
             const isYou = member.userId === currentUserId
             const isMemberLeader = member.role === 'Leader'
