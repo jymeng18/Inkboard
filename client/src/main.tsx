@@ -6,10 +6,14 @@ import './index.css'
 import App from './App'
 import RequireAuth from '@/components/RequireAuth'
 import { queryClient } from '@/lib/queryClient'
+import { bootstrapSession } from '@/lib/session'
 import AuthPage from './pages/AuthPage'
 import CanvasPage from './pages/CanvasPage'
 import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
+
+// Restore the session from the refresh cookie before the first paint decides routing.
+bootstrapSession()
 
 createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>

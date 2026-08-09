@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { loginUser, logoutUser, registerUser } from '@/api/auth'
 import { markMobileNoticePending } from '@/lib/firstRun'
-import { decodeClaims, getRefreshToken } from '@/lib/session'
+import { sessionFromToken } from '@/lib/session'
 import { useAuthStore } from '@/stores/authStore'
 import { usePartyStore } from '@/stores/partyStore'
 
@@ -26,22 +26,13 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null)
 
   /*
-   * Logs in and stores the session. Register reuses this because the register
-   * endpoint returns no tokens. we log the new user in right after to get them.
-   * The access token carries no display name, so on a plain login we fall back
-   * to the email; register passes the name the user just chose.
+   * Logs in and stores the session in memory. Register reuses this because the
+   * register endpoint returns no tokens, so we log the new user in right after.
+   * The display name rides in the access token's claims now.
    */
-  async function openSession(email: string, password: string, userName?: string) {
-    const tokens = await loginUser(email, password)
-    const claims = decodeClaims(tokens.access_token)
-    setSession(
-      {
-        userId: claims?.sub ?? '',
-        userName: userName ?? claims?.email ?? email,
-        accessToken: tokens.access_token,
-      },
-      tokens.refresh_token,
-    )
+  async function openSession(email: string, password: string) {
+    const { access_token } = await loginUser(email, password)
+    setSession(sessionFromToken(access_token))
   }
 
   async function login(email: string, password: string) {
@@ -69,7 +60,7 @@ export function useAuth() {
       // and they come back to log in by hand.
       markMobileNoticePending()
 
-      await openSession(email, password, userName)
+      await openSession(email, password)
       return true
     } catch (err) {
       setError(getErrorMessage(err, 'Could not create your account.'))
@@ -80,9 +71,8 @@ export function useAuth() {
   }
 
   async function logout() {
-    const refreshToken = getRefreshToken()
     try {
-      if (refreshToken) await logoutUser(refreshToken)
+      await logoutUser()
     } catch {
       //
     }

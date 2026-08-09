@@ -26,9 +26,9 @@ public abstract class TestBase
     protected static Mock<ITokenGenerator> CreateTokenGeneratorMock()
     {
         var mock = new Mock<ITokenGenerator>(MockBehavior.Strict);
-        mock.Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>()))
+        mock.Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns(
-                (Guid userId, string _) =>
+                (Guid userId, string _, string _) =>
                     $"test-access-token-{userId}-{Interlocked.Increment(ref _tokenCounter)}"
             );
         mock.Setup(t => t.GenerateRefreshToken())

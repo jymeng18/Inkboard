@@ -5,11 +5,28 @@ namespace Inkboard.API.Routes;
 
 public static class AuthEndpoint
 {
+    private const string RefreshCookie = "refreshToken";
+
+    private static CookieOptions RefreshCookieOptions(IWebHostEnvironment env) =>
+        new()
+        {
+            HttpOnly = true,
+            Secure = !env.IsDevelopment(),
+            SameSite = SameSiteMode.Strict,
+            Path = "/api/auth",
+            Expires = DateTimeOffset.UtcNow.AddDays(7),
+        };
+
     public static void MapAuthEndpoint(this IEndpointRouteBuilder endpoint)
     {
         endpoint.MapPost(
             "/api/auth/login",
-            async (LoginRequestModel request, IAuthService authService) =>
+            async (
+                LoginRequestModel request,
+                IAuthService authService,
+                HttpResponse response,
+                IWebHostEnvironment env
+            ) =>
             {
                 var result = await authService.LoginAsync(request);
                 if (result.ValidationErrors is not null)
@@ -19,11 +36,11 @@ public static class AuthEndpoint
 
                 if (!result.Success)
                 {
-                    return Results.Problem(detail: result.ErrorMessage, statusCode: 401); // 401 unauthorized
+                    return Results.Problem(detail: result.ErrorMessage, statusCode: 401);
                 }
-                return Results.Ok(
-                    new { access_token = result.AccessToken, refresh_token = result.RefreshToken }
-                );
+
+                response.Cookies.Append(RefreshCookie, result.RefreshToken!, RefreshCookieOptions(env));
+                return Results.Ok(new { access_token = result.AccessToken });
             }
         );
 
@@ -50,26 +67,43 @@ public static class AuthEndpoint
         endpoint
             .MapPost(
                 "/api/auth/logout",
-                async (RefreshRequestModel request, IAuthService authService) =>
+                async (HttpRequest httpRequest, HttpResponse response, IAuthService authService) =>
                 {
-                    var result = await authService.LogoutAsync(request.RefreshToken);
-                    return Results.Ok(result);
+                    var refreshToken = httpRequest.Cookies[RefreshCookie];
+                    if (!string.IsNullOrEmpty(refreshToken))
+                    {
+                        await authService.LogoutAsync(refreshToken);
+                    }
+
+                    response.Cookies.Delete(RefreshCookie, new CookieOptions { Path = "/api/auth" });
+                    return Results.Ok(new { success = true });
                 }
             )
             .RequireAuthorization();
 
         endpoint.MapPost(
             "/api/auth/refresh",
-            async (RefreshRequestModel request, IAuthService authService) =>
+            async (
+                HttpRequest httpRequest,
+                HttpResponse response,
+                IAuthService authService,
+                IWebHostEnvironment env
+            ) =>
             {
-                var result = await authService.RefreshAsync(request.RefreshToken);
+                var refreshToken = httpRequest.Cookies[RefreshCookie];
+                if (string.IsNullOrEmpty(refreshToken))
+                {
+                    return Results.Problem(detail: "Missing refresh token.", statusCode: 401);
+                }
+
+                var result = await authService.RefreshAsync(refreshToken);
                 if (!result.Success)
                 {
                     return Results.Problem(detail: result.ErrorMessage, statusCode: 401);
                 }
-                return Results.Ok(
-                    new { access_token = result.AccessToken, refresh_token = result.RefreshToken }
-                );
+
+                response.Cookies.Append(RefreshCookie, result.RefreshToken!, RefreshCookieOptions(env));
+                return Results.Ok(new { access_token = result.AccessToken });
             }
         );
     }

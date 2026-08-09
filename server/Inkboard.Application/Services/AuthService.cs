@@ -55,7 +55,7 @@ public class AuthService : IAuthService
             return new LoginResult { ErrorMessage = "Invalid email or password." };
         }
 
-        var token = _tokenGenerator.GenerateToken(user.Id, request.Email); // access token
+        var token = _tokenGenerator.GenerateToken(user.Id, user.Email, user.UserName); // access token
 
         var rawRefreshToken = _tokenGenerator.GenerateRefreshToken();
         var tokenHash = Convert.ToBase64String(
@@ -157,7 +157,7 @@ public class AuthService : IAuthService
             return new LoginResult { ErrorMessage = "User not found." };
         }
 
-        var newAccessToken = _tokenGenerator.GenerateToken(user.Id, user.Email);
+        var newAccessToken = _tokenGenerator.GenerateToken(user.Id, user.Email, user.UserName);
 
         var newRawRefresh = _tokenGenerator.GenerateRefreshToken();
         var newHash = Convert.ToBase64String(

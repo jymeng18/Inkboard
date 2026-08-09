@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore'
  */
 export default function RequireAuth() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isBootstrapping = useAuthStore((s) => s.isBootstrapping)
 
   // Hooks must run unconditionally; the hub no-ops until there's a token.
   usePartyHub()
@@ -28,6 +29,16 @@ export default function RequireAuth() {
   // Members are usually on the dashboard when the leader opens a canvas, so the
   // listener that follows them in has to live above both pages.
   usePartyCanvasNavigation()
+
+  // Don't decide until the startup silent refresh resolves, or a reload would
+  // bounce a signed-in user to /login before their session is restored.
+  if (isBootstrapping) {
+    return (
+      <div className="flex min-h-screen items-center justify-center font-label text-on-background/60">
+        Restoring your session…
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 
-import { clearSession, readSession, saveSession } from '@/lib/session'
 import type { SessionUser } from '@/types/auth'
 
 interface AuthState {
@@ -8,26 +7,25 @@ interface AuthState {
   userName: string
   accessToken: string
   isAuthenticated: boolean
+  isBootstrapping: boolean
 
-  login: (user: SessionUser, refreshToken: string) => void
+  login: (user: SessionUser) => void
   logout: () => void
+  finishBootstrap: () => void
 }
 
-const stored = readSession()
-
 export const useAuthStore = create<AuthState>((set) => ({
-  userId: stored?.userId ?? '',
-  userName: stored?.userName ?? '',
-  accessToken: stored?.accessToken ?? '',
-  isAuthenticated: stored !== null,
+  userId: '',
+  userName: '',
+  accessToken: '',
+  isAuthenticated: false,
+  // The access token lives only in memory, so a reload starts blank and the
+  // startup bootstrap tries a silent refresh before we decide anything.
+  isBootstrapping: true,
 
-  login: (user, refreshToken) => {
-    saveSession(user, refreshToken)
-    set({ ...user, isAuthenticated: true })
-  },
+  login: (user) => set({ ...user, isAuthenticated: true }),
 
-  logout: () => {
-    clearSession()
-    set({ userId: '', userName: '', accessToken: '', isAuthenticated: false })
-  },
+  logout: () => set({ userId: '', userName: '', accessToken: '', isAuthenticated: false }),
+
+  finishBootstrap: () => set({ isBootstrapping: false }),
 }))

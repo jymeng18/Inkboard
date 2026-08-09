@@ -172,17 +172,13 @@ public sealed class AuthEndpointTests
         );
         var loginBody = await loginRes.Content.ReadFromJsonAsync<JsonElement>();
 
-        var refreshRes = await _client.PostAsJsonAsync(
-            "/api/auth/refresh",
-            new { refreshToken = loginBody.GetProperty("refresh_token").GetString() }
-        );
+        // The refresh token rides in an httpOnly cookie the test client persists from login.
+        var refreshRes = await _client.PostAsync("/api/auth/refresh", null);
 
         Assert.AreEqual(HttpStatusCode.OK, refreshRes.StatusCode);
         var refreshBody = await refreshRes.Content.ReadFromJsonAsync<JsonElement>();
         Assert.IsTrue(refreshBody.TryGetProperty("access_token", out var newToken));
-        Assert.IsTrue(refreshBody.TryGetProperty("refresh_token", out var newRefresh));
         Assert.IsFalse(string.IsNullOrEmpty(newToken.GetString()));
-        Assert.IsFalse(string.IsNullOrEmpty(newRefresh.GetString()));
         Assert.AreNotEqual(loginBody.GetProperty("access_token").GetString(), newToken.GetString());
     }
 
@@ -211,10 +207,7 @@ public sealed class AuthEndpointTests
         _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-        var logoutRes = await _client.PostAsJsonAsync(
-            "/api/auth/logout",
-            new { refreshToken = loginBody.GetProperty("refresh_token").GetString() }
-        );
+        var logoutRes = await _client.PostAsync("/api/auth/logout", null);
 
         Assert.AreEqual(HttpStatusCode.OK, logoutRes.StatusCode);
         var logoutBody = await logoutRes.Content.ReadFromJsonAsync<JsonElement>();
