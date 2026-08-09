@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Inkboard.Application.Interfaces;
@@ -41,14 +42,44 @@ public class BlobStorageService : IBlobStorageService
 
         BlobClient blobClient = containerClient.GetBlobClient(filename);
 
-        // overwrite existing blob 
+        // overwrite existing blob
         var options = new BlobUploadOptions
         {
             HttpHeaders = new BlobHttpHeaders { ContentType = contentType },
         };
 
-        await blobClient.UploadAsync(imageData, options);
+        try
+        {
+            await blobClient.UploadAsync(imageData, options);
+            return blobClient.Uri.ToString();
+        }
+        catch (RequestFailedException)
+        {
+            return string.Empty;
+        }
+    }
 
-        return blobClient.Uri.ToString();
+    /// <summary>
+    /// Directly fetches the img blob file from azure storage container
+    /// Clientside request is proxied to server instead because only server has an Entra ID
+    /// </summary>
+    public async Task<Stream?> DownloadSnapshotAsync(Guid canvasId)
+    {
+        string filename = $"canvas/{canvasId}.png";
+
+        BlobClient blobClient = _blobServiceClient
+            .GetBlobContainerClient(ContainerName)
+            .GetBlobClient(filename);
+
+        // TODO: Maybe move to a exceptionhandler chain
+        try
+        {
+            Stream imgData = await blobClient.OpenReadAsync();
+            return imgData;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
     }
 }
