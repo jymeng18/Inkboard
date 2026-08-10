@@ -26,7 +26,7 @@ export default function CanvasPage() {
   const userId = useAuthStore((s) => s.userId)
   const { data: canvases } = useCanvases()
   const isOwner = !!canvasId && !!canvases?.some((c) => c.id === canvasId && c.ownerId === userId)
-  const captureSnapshot = useCanvasSnapshot(canvasId, isOwner)
+  const snapshot = useCanvasSnapshot(canvasId, isOwner)
 
   // Hub-driven exit: being kicked or a leadership transfer force-ends the canvas
   // session (link breaks) and bounces every affected member to the dashboard.
@@ -43,9 +43,9 @@ export default function CanvasPage() {
     <div className="relative h-screen w-screen overflow-hidden bg-background">
       <CanvasStage />
       <CursorLayer cursors={NO_CURSORS} />
-      <CanvasToolbar party={party} onExit={captureSnapshot} />
+      <CanvasToolbar party={party} snapshot={snapshot} />
       <ZoomControls />
-      <PartyPanel party={party} onExit={captureSnapshot} />
+      <PartyPanel party={party} snapshot={snapshot} />
       <CanvasFriendsPanel party={party} />
     </div>
   )

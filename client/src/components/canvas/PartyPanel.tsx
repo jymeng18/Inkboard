@@ -6,8 +6,9 @@ import { statusToast } from '@/lib/notify'
 import { ChevronRight, Crown, LogOut, ShieldBan, UserMinus, UserPlus, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import SaveExitDialog from '@/components/ui/SaveExitDialog'
 import { extractErrorMessage } from '@/api/party'
-import type { CaptureSnapshot } from '@/hooks/useCanvasSnapshot'
+import type { CanvasSnapshotApi } from '@/hooks/useCanvasSnapshot'
 import type { useCanvasParty } from '@/hooks/useCanvasParty'
 import type { PartyMember } from '@/stores/partyStore'
 import { useCanvasUiStore } from '@/stores/canvasUiStore'
@@ -24,10 +25,10 @@ function shortId(id: string) {
 
 export default function PartyPanel({
   party,
-  onExit,
+  snapshot,
 }: {
   party: Party
-  onExit?: CaptureSnapshot
+  snapshot?: CanvasSnapshotApi
 }) {
   const open = useCanvasUiStore((s) => s.panelOpen)
   const togglePanel = useCanvasUiStore((s) => s.togglePanel)
@@ -35,6 +36,8 @@ export default function PartyPanel({
   const navigate = useNavigate()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const { members, presence, currentUserId, isLeader } = party
 
@@ -53,6 +56,31 @@ export default function PartyPanel({
       if (thenExit) navigate('/dashboard', { replace: true })
     } catch (err) {
       toast.error(extractErrorMessage(err))
+    }
+  }
+
+  // Leaving is a canvas exit, so an owner with unsaved work is asked first;
+  // members (and an owner with nothing new) just leave.
+  function requestLeave() {
+    setOpenMenuId(null)
+    if (snapshot?.hasUnsavedChanges()) {
+      setConfirmLeave(true)
+    } else {
+      void leaveParty(false)
+    }
+  }
+
+  async function leaveParty(save: boolean) {
+    setLeaving(true)
+    try {
+      if (save) await snapshot?.save({ wait: true })
+      await party.leave()
+      statusToast.success('Left the party')
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+      setLeaving(false)
+      setConfirmLeave(false)
     }
   }
 
@@ -169,19 +197,7 @@ export default function PartyPanel({
                           icon={LogOut}
                           label="Leave party"
                           destructive
-                          onClick={() =>
-                            run(
-                              async () => {
-                                // Owner-only capture no-ops for members. Fire and
-                                // forget so leaving stays instant; the off-stage
-                                // render survives the page unmount.
-                                void onExit?.()
-                                await party.leave()
-                              },
-                              'Left the party',
-                              true,
-                            )
-                          }
+                          onClick={requestLeave}
                         />
                       )}
                     </div>
@@ -209,6 +225,19 @@ export default function PartyPanel({
           openFriends()
         }}
       />
+
+      {confirmLeave && (
+        <SaveExitDialog
+          title="Leave this canvas?"
+          description="You've made changes here. Save them before you leave the party?"
+          saveLabel="Save & leave"
+          discardLabel="Leave without saving"
+          saving={leaving}
+          onSave={() => leaveParty(true)}
+          onDiscard={() => leaveParty(false)}
+          onClose={() => setConfirmLeave(false)}
+        />
+      )}
     </>
   )
 }
