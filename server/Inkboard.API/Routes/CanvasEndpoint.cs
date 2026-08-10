@@ -164,7 +164,12 @@ public static class CanvasEndpoint
         endpoint
             .MapGet(
                 "/api/canvas/{canvasId}/snapshot-preview",
-                async (Guid canvasId, ClaimsPrincipal user, ICanvasService canvasService) =>
+                async (
+                    Guid canvasId,
+                    HttpContext context,
+                    ClaimsPrincipal user,
+                    ICanvasService canvasService
+                ) =>
                 {
                     var userId = user.GetUserId();
                     if (userId == Guid.Empty)
@@ -174,6 +179,8 @@ public static class CanvasEndpoint
                     if (!result.IsSuccess)
                         return ToErrorResult(result.Error, result.ErrorType);
 
+                    // * cache previews in user RAM, no Azure 
+                    context.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
                     return Results.Stream(result.Data!, "image/png");
                 }
             )

@@ -8,6 +8,9 @@ namespace Inkboard.Application.Services;
 
 public class CanvasService : ICanvasService
 {
+    // Longest edge of a dashboard preview thumbnail, in pixels.
+    private const int PreviewMaxDimension = 400;
+
     private readonly ICanvasRepository _canvasRepository;
     private readonly IPartyRepository _partyRepository;
     private readonly IBlobStorageService _blobStorageService;
@@ -168,6 +171,25 @@ public class CanvasService : ICanvasService
             );
         }
 
+        // Render and store the dashboard thumbnail once, here on the write path, so
+        // gallery reads never re-download and re-scale the full image. Best effort:
+        // the snapshot is the source of truth, and a missing preview falls back
+        if (imageData.CanSeek)
+        {
+            imageData.Position = 0;
+            var preview = await _imageValidator.CreatePngThumbnailAsync(
+                imageData,
+                PreviewMaxDimension
+            );
+            if (preview is not null)
+            {
+                await using (preview)
+                {
+                    await _blobStorageService.UploadPreviewAsync(canvasId, preview, expectedContentType);
+                }
+            }
+        }
+
         // Update canvas properties
         canvas.LastModifiedAt = DateTimeOffset.UtcNow;
         canvas.SnapshotTakenAt = DateTimeOffset.UtcNow;
@@ -190,16 +212,28 @@ public class CanvasService : ICanvasService
             return Result<Stream>.Fail(ErrorType.NotFound, "Snapshot not found.");
         }
 
-        var activeParty = await _partyRepository.GetActivePartyForUserAsync(requesterId);
-        if (activeParty is null)
+        // * Only owner in the session
+        bool isValidMember = false;
+        if (canvas.OwnerId != requesterId)
         {
-            return Result<Stream>.Fail(ErrorType.Forbidden, "User is not in a Party.");
+            var activeParty = await _partyRepository.GetActivePartyForUserAsync(requesterId);
+            if (activeParty is null)
+            {
+                return Result<Stream>.Fail(ErrorType.Forbidden, "User is not in a Party.");
+            }
+
+            // * Ensure that a user cant grab someone elses snapshot just bc they are in an ActiveParty
+            if (activeParty.CanvasId != canvasId)
+            {
+                return Result<Stream>.Fail(ErrorType.Forbidden, "Canvas does not belong to party.");
+            }
+            isValidMember = true;
         }
 
-        // * Ensure that a user cant grab someone elses snapshot just bc they are in an ActiveParty
-        if (activeParty.CanvasId != canvasId)
+        // ! If your not owner, and your not a valid member in the party
+        if (canvas.OwnerId != requesterId && !isValidMember)
         {
-            return Result<Stream>.Fail(ErrorType.Forbidden, "Canvas does not belong to party.");
+            return Result<Stream>.Fail(ErrorType.Forbidden, "Canvas does not belong to you.");
         }
 
         Stream imgData = await _blobStorageService.DownloadSnapshotAsync(canvasId);
@@ -229,13 +263,39 @@ public class CanvasService : ICanvasService
             return Result<Stream>.Fail(ErrorType.Forbidden, "Canvas does not belong to you.");
         }
 
-        Stream imgData = await _blobStorageService.DownloadSnapshotAsync(canvasId);
-        if (imgData is null)
+        // Fast path: stream the thumbnail rendered once at upload time. No blob
+        // re-download of the full image, no per-request decode or resize.
+        var preview = await _blobStorageService.DownloadPreviewAsync(canvasId);
+        if (preview is not null)
+        {
+            return Result<Stream>.Ok(preview);
+        }
+
+        // Fallback for snapshots stored before previews existed, or a preview whose
+        // write failed. Downscale once now; the next snapshot repopulates the blob.
+        // ! Usually used for Canvases on initial save
+        var snapshot = await _blobStorageService.DownloadSnapshotAsync(canvasId);
+        if (snapshot is null)
         {
             return Result<Stream>.Fail(ErrorType.NotFound, "Failed to load snapshot.");
         }
 
-        return Result<Stream>.Ok(imgData);
+        await using (snapshot)
+        {
+            var thumbnail = await _imageValidator.CreatePngThumbnailAsync(
+                snapshot,
+                PreviewMaxDimension
+            );
+            if (thumbnail is null)
+            {
+                return Result<Stream>.Fail(
+                    ErrorType.Unexpected,
+                    "Failed to render snapshot preview."
+                );
+            }
+
+            return Result<Stream>.Ok(thumbnail);
+        }
     }
 
     public static async Task<Result> ImageDataValidator(Stream imageData)
@@ -278,7 +338,7 @@ public class CanvasService : ICanvasService
         byte[] pngSignatureBytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
         // * Verify & Read the first 8 bytes(PNG signature) it is always the same
-        bool areEqual = pngHeaderBuf.AsSpan().SequenceEqual(pngSignatureBytes);
+        bool areEqual = pngHeaderBuf.AsSpan(0, 8).SequenceEqual(pngSignatureBytes);
         if (!areEqual)
         {
             return Result.Fail(ErrorType.Validation, "File payload is not a valid PNG image.");

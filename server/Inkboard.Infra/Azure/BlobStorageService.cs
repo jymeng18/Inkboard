@@ -16,6 +16,10 @@ public class BlobStorageService : IBlobStorageService
         _blobServiceClient = blobServiceClient;
     }
 
+    private static string SnapshotName(Guid canvasId) => $"canvas/{canvasId}.png";
+
+    private static string PreviewName(Guid canvasId) => $"canvas/{canvasId}-preview.png";
+
     // Called once on startup
     public async Task CreateBlobContainerAsync()
     {
@@ -26,21 +30,23 @@ public class BlobStorageService : IBlobStorageService
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.None);
     }
 
-    /// <summary>
-    /// This helper method is intended to be called when the Canvas decides it
-    /// wants to create a save/snapshot (eg. Canvas session ends, a new User joins the session
-    /// , or maybe in a n-time interval)
-    /// </summary>
-    public async Task<string> UploadBlobAsync(Guid canvasId, Stream imageData, string contentType)
+    public Task<string> UploadBlobAsync(Guid canvasId, Stream imageData, string contentType) =>
+        UploadAsync(SnapshotName(canvasId), imageData, contentType);
+
+    public Task<Stream?> DownloadSnapshotAsync(Guid canvasId) =>
+        DownloadAsync(SnapshotName(canvasId));
+
+    public Task<string> UploadPreviewAsync(Guid canvasId, Stream imageData, string contentType) =>
+        UploadAsync(PreviewName(canvasId), imageData, contentType);
+
+    public Task<Stream?> DownloadPreviewAsync(Guid canvasId) =>
+        DownloadAsync(PreviewName(canvasId));
+
+    private async Task<string> UploadAsync(string filename, Stream imageData, string contentType)
     {
-        BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(
-            ContainerName
-        );
-
-        // * will automatically insert blob into canvas/ virtual folder
-        string filename = $"canvas/{canvasId}.png";
-
-        BlobClient blobClient = containerClient.GetBlobClient(filename);
+        BlobClient blobClient = _blobServiceClient
+            .GetBlobContainerClient(ContainerName)
+            .GetBlobClient(filename);
 
         // overwrite existing blob
         var options = new BlobUploadOptions
@@ -59,14 +65,8 @@ public class BlobStorageService : IBlobStorageService
         }
     }
 
-    /// <summary>
-    /// Directly fetches the img blob file from azure storage container
-    /// Clientside request is proxied to server instead because only server has an Entra ID
-    /// </summary>
-    public async Task<Stream?> DownloadSnapshotAsync(Guid canvasId)
+    private async Task<Stream?> DownloadAsync(string filename)
     {
-        string filename = $"canvas/{canvasId}.png";
-
         BlobClient blobClient = _blobServiceClient
             .GetBlobContainerClient(ContainerName)
             .GetBlobClient(filename);
