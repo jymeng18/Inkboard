@@ -6,9 +6,6 @@ import { Button } from '@/components/ui/button'
 interface SaveExitDialogProps {
   title: string
   description: string
-  saveLabel: string
-  discardLabel: string
-  cancelLabel?: string
   /** True while the save is running, so the buttons lock and show progress. */
   saving?: boolean
   onSave: () => void
@@ -17,17 +14,15 @@ interface SaveExitDialogProps {
 }
 
 /*
- * Three-way save gate for leaving a canvas: keep the changes, drop them, or stay.
+ * Three-way save gate for leaving a canvas, laid out the way these prompts
+ * conventionally are: the safe pair (Save + Cancel) grouped together, and the
+ * destructive Don't Save set apart across a gap so it's hard to hit by reflex.
  * Mirrors ConfirmDialog's theme and its pointer-events-auto note (the canvas
  * toolbar that opens this is pointer-events-none, so the modal must re-enable it).
- * Mount it only while it should be open.
  */
 export default function SaveExitDialog({
   title,
   description,
-  saveLabel,
-  discardLabel,
-  cancelLabel = 'Keep drawing',
   saving = false,
   onSave,
   onDiscard,
@@ -72,39 +67,38 @@ export default function SaveExitDialog({
         <h2 className="font-display text-3xl leading-none">{title}</h2>
         <p className="mt-2 font-body text-sm text-on-background/70">{description}</p>
 
-        {/* Full-width stack: the labels are long enough that a row wraps ragged,
-            so stacking keeps every button the same width and border weight, with
-            the filled button carrying the emphasis. */}
-        <div className="mt-6 flex flex-col gap-2.5">
-          <Button
-            type="button"
-            variant="accent"
-            size="sm"
-            className="w-full"
-            onClick={onSave}
-            disabled={saving}
-          >
-            {saving ? 'Saving…' : saveLabel}
-          </Button>
+        {/* Save + Cancel grouped, Don't Save split off across the gap. */}
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Button
+              type="button"
+              variant="surface"
+              size="sm"
+              className="bg-secondary text-white"
+              onClick={onSave}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+            <Button
+              type="button"
+              variant="surface"
+              size="sm"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+          </div>
           <Button
             type="button"
             variant="surface"
             size="sm"
-            className="w-full"
+            className="border-primary text-primary"
             onClick={onDiscard}
             disabled={saving}
           >
-            {discardLabel}
-          </Button>
-          <Button
-            type="button"
-            variant="surface"
-            size="sm"
-            className="w-full"
-            onClick={onClose}
-            disabled={saving}
-          >
-            {cancelLabel}
+            Don't Save
           </Button>
         </div>
       </div>

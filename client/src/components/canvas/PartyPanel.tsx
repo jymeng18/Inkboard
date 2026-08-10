@@ -229,9 +229,7 @@ export default function PartyPanel({
       {confirmLeave && (
         <SaveExitDialog
           title="Leave this canvas?"
-          description="You've made changes here. Save them before you leave the party?"
-          saveLabel="Save & leave"
-          discardLabel="Leave without saving"
+          description="You have unsaved changes here. If you leave the party without saving, they'll be lost."
           saving={leaving}
           onSave={() => leaveParty(true)}
           onDiscard={() => leaveParty(false)}

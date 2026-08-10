@@ -205,9 +205,7 @@ export default function CanvasToolbar({
       {endMode === 'save' && (
         <SaveExitDialog
           title="End this session?"
-          description={`${endDescription} Save your drawing before it closes?`}
-          saveLabel="Save & end"
-          discardLabel="End without saving"
+          description={`${endDescription} You have unsaved changes that will be lost unless you save them first.`}
           saving={ending}
           onSave={() => runEnd(true)}
           onDiscard={() => runEnd(false)}
@@ -231,9 +229,7 @@ export default function CanvasToolbar({
       {confirmLeave && (
         <SaveExitDialog
           title="Leave this canvas?"
-          description="You've made changes here. Save them before heading back to your dashboard?"
-          saveLabel="Save & leave"
-          discardLabel="Leave without saving"
+          description="You have unsaved changes here. If you head back without saving, they'll be lost."
           saving={leaving}
           onSave={() => runLeave(true)}
           onDiscard={() => runLeave(false)}
