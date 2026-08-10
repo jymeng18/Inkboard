@@ -40,3 +40,34 @@ export async function deleteCanvas(canvasId: string) {
 export async function renameCanvas(canvasId: string, name: string) {
   await api.put(`/canvas/${canvasId}`, { name })
 }
+
+/*
+ * Uploads a PNG snapshot of the canvas. The endpoint binds an IFormFile named
+ * `file`, so this must be multipart. Setting the content type to
+ * multipart/form-data keeps axios from JSON-stringifying the FormData; axios then
+ * strips it back off so the browser can fill in the real boundary.
+ */
+export async function uploadSnapshot(canvasId: string, blob: Blob) {
+  const form = new FormData()
+  form.append('file', blob, `${canvasId}.png`)
+  await api.post(`/canvas/${canvasId}/snapshot`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+/*
+ * Fetches the server-rendered preview thumbnail as raw bytes. The blob container
+ * is private, so this read is proxied through our API rather than hitting Azure
+ * directly; the caller turns the Blob into an object URL for an <img>.
+ *
+ * `version` (the canvas' lastModifiedAt) makes the URL change whenever the
+ * snapshot does, so the long-lived browser cache the endpoint sets stays fresh
+ * without ever re-hitting the backend for an unchanged preview.
+ */
+export async function getSnapshotPreview(canvasId: string, version: string): Promise<Blob> {
+  const { data } = await api.get(`/canvas/${canvasId}/snapshot-preview`, {
+    params: { v: version },
+    responseType: 'blob',
+  })
+  return data as Blob
+}

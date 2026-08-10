@@ -7,6 +7,7 @@ import { ChevronRight, Crown, LogOut, ShieldBan, UserMinus, UserPlus, Users } fr
 
 import { Button } from '@/components/ui/button'
 import { extractErrorMessage } from '@/api/party'
+import type { CaptureSnapshot } from '@/hooks/useCanvasSnapshot'
 import type { useCanvasParty } from '@/hooks/useCanvasParty'
 import type { PartyMember } from '@/stores/partyStore'
 import { useCanvasUiStore } from '@/stores/canvasUiStore'
@@ -21,7 +22,13 @@ function shortId(id: string) {
   return `${id.slice(0, 8)}…`
 }
 
-export default function PartyPanel({ party }: { party: Party }) {
+export default function PartyPanel({
+  party,
+  onExit,
+}: {
+  party: Party
+  onExit?: CaptureSnapshot
+}) {
   const open = useCanvasUiStore((s) => s.panelOpen)
   const togglePanel = useCanvasUiStore((s) => s.togglePanel)
   const openFriends = useCanvasUiStore((s) => s.openFriends)
@@ -162,7 +169,19 @@ export default function PartyPanel({ party }: { party: Party }) {
                           icon={LogOut}
                           label="Leave party"
                           destructive
-                          onClick={() => run(() => party.leave(), 'Left the party', true)}
+                          onClick={() =>
+                            run(
+                              async () => {
+                                // Owner-only capture no-ops for members. Fire and
+                                // forget so leaving stays instant; the off-stage
+                                // render survives the page unmount.
+                                void onExit?.()
+                                await party.leave()
+                              },
+                              'Left the party',
+                              true,
+                            )
+                          }
                         />
                       )}
                     </div>

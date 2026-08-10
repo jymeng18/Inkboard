@@ -8,6 +8,9 @@ import CursorLayer, { type RemoteCursor } from '@/components/canvas/CursorLayer'
 import PartyPanel from '@/components/canvas/PartyPanel'
 import ZoomControls from '@/components/canvas/ZoomControls'
 import { useCanvasParty } from '@/hooks/useCanvasParty'
+import { useCanvases } from '@/hooks/useCanvases'
+import { useCanvasSnapshot } from '@/hooks/useCanvasSnapshot'
+import { useAuthStore } from '@/stores/authStore'
 import { useConnectionStore } from '@/stores/connectionStore'
 
 // TODO: This is for all the other users cursors in the party, (CanvasHub doesn't work yet)
@@ -17,6 +20,13 @@ export default function CanvasPage() {
   const { canvasId } = useParams()
   const navigate = useNavigate()
   const party = useCanvasParty(canvasId)
+
+  // Only the canvas owner uploads snapshots. getCanvases returns solely the
+  // caller's own canvases, so finding it here is the ownership check.
+  const userId = useAuthStore((s) => s.userId)
+  const { data: canvases } = useCanvases()
+  const isOwner = !!canvasId && !!canvases?.some((c) => c.id === canvasId && c.ownerId === userId)
+  const captureSnapshot = useCanvasSnapshot(canvasId, isOwner)
 
   // Hub-driven exit: being kicked or a leadership transfer force-ends the canvas
   // session (link breaks) and bounces every affected member to the dashboard.
@@ -33,9 +43,9 @@ export default function CanvasPage() {
     <div className="relative h-screen w-screen overflow-hidden bg-background">
       <CanvasStage />
       <CursorLayer cursors={NO_CURSORS} />
-      <CanvasToolbar party={party} />
+      <CanvasToolbar party={party} onExit={captureSnapshot} />
       <ZoomControls />
-      <PartyPanel party={party} />
+      <PartyPanel party={party} onExit={captureSnapshot} />
       <CanvasFriendsPanel party={party} />
     </div>
   )

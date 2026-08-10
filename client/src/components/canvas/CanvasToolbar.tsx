@@ -19,6 +19,7 @@ import { extractErrorMessage } from '@/api/party'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Dock from '@/components/dashboard/Dock'
+import type { CaptureSnapshot } from '@/hooks/useCanvasSnapshot'
 import type { useCanvasParty } from '@/hooks/useCanvasParty'
 import { useAuthStore } from '@/stores/authStore'
 import { useCanvasUiStore, type Tool } from '@/stores/canvasUiStore'
@@ -44,7 +45,13 @@ const TOOL_MAGNIFICATION = 50
 
 const soon = () => toast.info('This action is coming soon.')
 
-export default function CanvasToolbar({ party }: { party: Party }) {
+export default function CanvasToolbar({
+  party,
+  onExit,
+}: {
+  party: Party
+  onExit?: CaptureSnapshot
+}) {
   const tool = useCanvasUiStore((s) => s.tool)
   const setTool = useCanvasUiStore((s) => s.setTool)
   const undo = useSceneStore((s) => s.undo)
@@ -68,6 +75,9 @@ export default function CanvasToolbar({ party }: { party: Party }) {
   async function handleEndSession() {
     setEnding(true)
     try {
+      // Capture the final snapshot before the session tears down, so it reflects
+      // the last state the owner saw.
+      await onExit?.({ wait: true })
       await party.endSession()
       navigate('/dashboard', { replace: true })
     } catch (err) {
@@ -83,6 +93,7 @@ export default function CanvasToolbar({ party }: { party: Party }) {
         <div className="pointer-events-auto flex items-center gap-2">
           <Link
             to="/dashboard"
+            onClick={() => void onExit?.()}
             className="flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2 sticker-shadow-sm transition-transform hover:-translate-y-0.5"
             title="Back to dashboard"
           >
