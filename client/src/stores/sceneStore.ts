@@ -2,15 +2,17 @@ import { create } from 'zustand'
 
 /*
  * Committed canvas content. Kept deliberately flat and serialisable so it can be
- * broadcast/persisted later without reshaping. Strokes store their precomputed
- * perfect-freehand outline (a closed polygon) so re-renders never recompute it.
+ * broadcast/persisted as-is. Strokes store the raw [x, y, pressure] input, which
+ * is the canonical operation: small, resolution-independent, and re-renderable
+ * with any brush tuning. The perfect-freehand outline is computed (and memoized)
+ * at render time rather than baked in here.
  */
 export type StrokeItem = {
   id: string
   kind: 'stroke'
   tool: 'pencil' | 'brush' | 'eraser'
   color: string
-  outline: number[]
+  points: number[][]
 }
 
 export type RectItem = {

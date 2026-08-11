@@ -1,5 +1,6 @@
 import Konva from 'konva'
 
+import { strokeOutline } from '@/components/canvas/strokeGeometry'
 import type { SceneItem } from '@/stores/sceneStore'
 
 /*
@@ -43,9 +44,9 @@ export function contentBounds(items: SceneItem[]): Bounds | null {
   for (const item of items) {
     if (item.kind === 'stroke') {
       if (item.tool === 'eraser') continue
-      const points = item.outline
-      for (let i = 0; i + 1 < points.length; i += 2) {
-        bounds = expand(bounds, points[i], points[i + 1])
+      const outline = strokeOutline(item.points, item.tool, true)
+      for (let i = 0; i + 1 < outline.length; i += 2) {
+        bounds = expand(bounds, outline[i], outline[i + 1])
       }
     } else {
       const half = item.strokeWidth / 2
@@ -61,7 +62,7 @@ function addItem(layer: Konva.Layer, item: SceneItem, offsetX: number, offsetY: 
   if (item.kind === 'stroke') {
     layer.add(
       new Konva.Line({
-        points: item.outline,
+        points: strokeOutline(item.points, item.tool, true),
         x: offsetX,
         y: offsetY,
         closed: true,

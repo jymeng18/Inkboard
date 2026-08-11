@@ -9,7 +9,7 @@ import { useSceneStore } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 import CurrentStroke from './CurrentStroke'
 import SceneShapes from './SceneShapes'
-import { strokeOutline, type StrokeTool } from './strokeGeometry'
+import type { StrokeTool } from './strokeGeometry'
 
 const SHAPE_STROKE_WIDTH = 3
 const GRID = 24
@@ -121,17 +121,15 @@ export default function CanvasStage() {
     const scene = useSceneStore.getState()
 
     if (ds.mode === 'stroke' && pointsRef.current.length > 0) {
-      const strokeTool = ds.tool as StrokeTool
-      const outline = strokeOutline(pointsRef.current, strokeTool, true)
-      if (outline.length >= 6) {
-        scene.add({
-          id: crypto.randomUUID(),
-          kind: 'stroke',
-          tool: strokeTool,
-          color: ds.color,
-          outline,
-        })
-      }
+      // Store the raw input, not the outline: this is the operation we'll
+      // broadcast and persist, and each client renders its own outline from it.
+      scene.add({
+        id: crypto.randomUUID(),
+        kind: 'stroke',
+        tool: ds.tool as StrokeTool,
+        color: ds.color,
+        points: pointsRef.current.slice(),
+      })
     } else if (ds.mode === 'shape' && shapeStart.current && shapeHead.current) {
       const [sx, sy] = shapeStart.current
       const [hx, hy] = shapeHead.current

@@ -1,7 +1,34 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { Line, Rect } from 'react-konva'
 
-import { useSceneStore } from '@/stores/sceneStore'
+import { useSceneStore, type StrokeItem } from '@/stores/sceneStore'
+import { strokeOutline } from './strokeGeometry'
+
+/*
+ * One committed stroke. The perfect-freehand outline is derived from the stored
+ * raw points here, memoized on the item so it computes once, and the whole
+ * component is memoized so an unchanged stroke never recomputes when the scene
+ * changes around it (committed item objects keep a stable reference).
+ */
+const StrokeShape = memo(function StrokeShape({ item }: { item: StrokeItem }) {
+  const outline = useMemo(
+    () => strokeOutline(item.points, item.tool, true),
+    [item.points, item.tool],
+  )
+  const erase = item.tool === 'eraser'
+
+  return (
+    <Line
+      points={outline}
+      closed
+      fill={erase ? '#000' : item.color}
+      globalCompositeOperation={erase ? 'destination-out' : undefined}
+      lineJoin="round"
+      listening={false}
+      perfectDrawEnabled={false}
+    />
+  )
+})
 
 /*
  * Every committed item. Memoized and self-subscribed, so it only re-renders when
@@ -15,16 +42,7 @@ function SceneShapes() {
     <>
       {items.map((item) =>
         item.kind === 'stroke' ? (
-          <Line
-            key={item.id}
-            points={item.outline}
-            closed
-            fill={item.tool === 'eraser' ? '#000' : item.color}
-            globalCompositeOperation={item.tool === 'eraser' ? 'destination-out' : undefined}
-            lineJoin="round"
-            listening={false}
-            perfectDrawEnabled={false}
-          />
+          <StrokeShape key={item.id} item={item} />
         ) : (
           <Rect
             key={item.id}
