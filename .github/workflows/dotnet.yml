@@ -29,3 +29,7 @@ jobs:
     - name: Test Backend 
       run: dotnet test --no-build --verbosity normal
       working-directory: ./server
+      env:
+        AZURE_TENANT_ID: "00000000-0000-0000-0000-000000000000"
+        AZURE_CLIENT_ID: "00000000-0000-0000-0000-000000000000"
+        AZURE_CLIENT_SECRET: "dummy-secret-for-tests"
