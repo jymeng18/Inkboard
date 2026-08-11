@@ -11,6 +11,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
+
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -30,6 +31,4 @@ jobs:
       run: dotnet test --no-build --verbosity normal
       working-directory: ./server
       env:
-        AZURE_TENANT_ID: "00000000-0000-0000-0000-000000000000"
-        AZURE_CLIENT_ID: "00000000-0000-0000-0000-000000000000"
-        AZURE_CLIENT_SECRET: "dummy-secret-for-tests"
+        ASPNETCORE_ENVIRONMENT: Testing

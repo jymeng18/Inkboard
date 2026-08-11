@@ -11,7 +11,7 @@ public static class AuthEndpoint
         new()
         {
             HttpOnly = true,
-            Secure = !env.IsDevelopment(),
+            Secure = !(env.IsDevelopment() || env.IsEnvironment("Testing")),
             SameSite = SameSiteMode.Strict,
             Path = "/api/auth",
             Expires = DateTimeOffset.UtcNow.AddDays(7),
