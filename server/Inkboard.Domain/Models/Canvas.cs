@@ -17,9 +17,11 @@ public class Canvas
 
     public string? SnapshotURL { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset SnapshotTakenAt { get; set; }
 
-    public DateTime LastModifiedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset LastModifiedAt { get; set; }
 
     // nav props
     public User Owner { get; set; } = null!;

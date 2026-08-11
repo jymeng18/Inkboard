@@ -143,8 +143,8 @@ public sealed class LoginTests : TestBase
         var context = CreateDbContext();
         var tokenGenMock = CreateTokenGeneratorMock();
         tokenGenMock
-            .Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>()))
-            .Returns((Guid userId, string email) => $"token-{userId}-{email}")
+            .Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((Guid userId, string email, string _) => $"token-{userId}-{email}")
             .Verifiable();
         var service = CreateAuthService(context, tokenGenMock);
 
@@ -164,7 +164,10 @@ public sealed class LoginTests : TestBase
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(regResult.UserId);
         Assert.AreEqual($"token-{regResult.UserId}-{ValidEmail}", result.AccessToken);
-        tokenGenMock.Verify(t => t.GenerateToken(regResult.UserId.Value, ValidEmail), Times.Once);
+        tokenGenMock.Verify(
+            t => t.GenerateToken(regResult.UserId.Value, ValidEmail, It.IsAny<string>()),
+            Times.Once
+        );
     }
 
     [TestMethod]
@@ -202,7 +205,7 @@ public sealed class LoginTests : TestBase
 
         var tokens = await context.RefreshTokens.ToListAsync();
         Assert.HasCount(1, tokens);
-        var expectedExpiry = DateTime.UtcNow.AddDays(7);
+        var expectedExpiry = DateTimeOffset.UtcNow.AddDays(7);
         Assert.IsTrue(tokens[0].ExpiresAt <= expectedExpiry.AddMinutes(1));
         Assert.IsTrue(tokens[0].ExpiresAt >= expectedExpiry.AddMinutes(-1));
     }

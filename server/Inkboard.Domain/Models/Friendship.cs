@@ -16,7 +16,7 @@ public class Friendship
 
     public Guid UserId2 { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     // nav prop
     public User User1 { get; set; } = null!;

@@ -15,7 +15,7 @@ public class FriendRequest
 
     public RequestStatus Status { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     // Nav prop
     public User Requester { get; set; } = null!;

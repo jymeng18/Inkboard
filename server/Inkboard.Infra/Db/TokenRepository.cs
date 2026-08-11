@@ -21,7 +21,7 @@ public class TokenRepository : ITokenRepository
 
     public Task DeleteExpiredAsync()
     {
-        return _context.RefreshTokens.Where(t => t.ExpiresAt < DateTime.UtcNow).ExecuteDeleteAsync();
+        return _context.RefreshTokens.Where(t => t.ExpiresAt < DateTimeOffset.UtcNow).ExecuteDeleteAsync();
     }
 
     public Task<RefreshToken?> FindByTokenHashAsync(string tokenHash)
@@ -33,7 +33,7 @@ public class TokenRepository : ITokenRepository
     {
         return _context
             .RefreshTokens.Where(t =>
-                t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow
+                t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTimeOffset.UtcNow
             )
             .ToListAsync();
     }

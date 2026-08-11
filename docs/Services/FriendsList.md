@@ -6,20 +6,7 @@ Two people become friends by request and acceptance, then show up on each other'
 
 ## Domain Models
 
-```
-Friend_Requests                 Friendships
-Id (Guid) [PK]                  UserId1 (Guid) [PK]
-RequesterId (Guid) [FK]         UserId2 (Guid) [PK]
-RequesteeId (Guid) [FK]         CreatedAt (DateTime)
-Status (enum)
-CreatedAt (DateTime)
-
-FriendRequest.RequesterId Ref. User.Id
-FriendRequest.RequesteeId Ref. User.Id
-
-Friendship.UserId1 Ref. User.Id
-Friendship.UserId2 Ref. User.Id
-```
+Two tables: FriendRequest (the request lifecycle) and Friendship (a confirmed pair). Field-level schema lives in `../Backend/DatabaseSchema.md`; the modelling decisions are below.
 
 ### FriendRequest
 Tracks the lifecycle of one request from one user to another. Four statuses:

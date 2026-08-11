@@ -12,7 +12,7 @@ public class CanvasOperation
 
     public string OperationData { get; set; } = ""; // * This is jsondata but BE never reads/writes/parse ret. JsonData, just broadcasts to other clients
 
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
     public Guid CanvasId { get; set; }
 

@@ -11,6 +11,15 @@ interface PreferencesState {
    */
   statusNotifications: boolean
   setStatusNotifications: (enabled: boolean) => void
+
+  /*
+   * Owner-only background fallback: periodically snapshot the canvas while it is
+   * open, so a crash or closed tab doesn't lose work. Off by default because
+   * saving is otherwise the owner's explicit choice on exit; this is opt-in for
+   * people who want the safety net.
+   */
+  autosaveSnapshots: boolean
+  setAutosaveSnapshots: (enabled: boolean) => void
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -18,6 +27,9 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set) => ({
       statusNotifications: true,
       setStatusNotifications: (statusNotifications) => set({ statusNotifications }),
+
+      autosaveSnapshots: false,
+      setAutosaveSnapshots: (autosaveSnapshots) => set({ autosaveSnapshots }),
     }),
     { name: 'inkboard:preferences' },
   ),

@@ -55,7 +55,7 @@ public class AuthService : IAuthService
             return new LoginResult { ErrorMessage = "Invalid email or password." };
         }
 
-        var token = _tokenGenerator.GenerateToken(user.Id, request.Email); // access token
+        var token = _tokenGenerator.GenerateToken(user.Id, user.Email, user.UserName); // access token
 
         var rawRefreshToken = _tokenGenerator.GenerateRefreshToken();
         var tokenHash = Convert.ToBase64String(
@@ -66,8 +66,8 @@ public class AuthService : IAuthService
         {
             TokenHash = tokenHash,
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         await _tokenRepository.CreateAsync(refreshToken);
@@ -139,7 +139,7 @@ public class AuthService : IAuthService
         );
 
         var storedToken = await _tokenRepository.FindByTokenHashAsync(tokenHash);
-        if (storedToken is null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTime.UtcNow)
+        if (storedToken is null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTimeOffset.UtcNow)
         {
             return new LoginResult { ErrorMessage = "Invalid or expired refresh token." };
         }
@@ -157,7 +157,7 @@ public class AuthService : IAuthService
             return new LoginResult { ErrorMessage = "User not found." };
         }
 
-        var newAccessToken = _tokenGenerator.GenerateToken(user.Id, user.Email);
+        var newAccessToken = _tokenGenerator.GenerateToken(user.Id, user.Email, user.UserName);
 
         var newRawRefresh = _tokenGenerator.GenerateRefreshToken();
         var newHash = Convert.ToBase64String(
@@ -168,7 +168,7 @@ public class AuthService : IAuthService
         {
             TokenHash = newHash,
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
         };
 
         await _tokenRepository.CreateAsync(newRefreshToken);

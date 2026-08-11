@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -18,7 +18,9 @@ import type { LucideIcon } from 'lucide-react'
 import { extractErrorMessage } from '@/api/party'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import SaveExitDialog from '@/components/ui/SaveExitDialog'
 import Dock from '@/components/dashboard/Dock'
+import type { CanvasSnapshotApi } from '@/hooks/useCanvasSnapshot'
 import type { useCanvasParty } from '@/hooks/useCanvasParty'
 import { useAuthStore } from '@/stores/authStore'
 import { useCanvasUiStore, type Tool } from '@/stores/canvasUiStore'
@@ -39,12 +41,18 @@ const TOOLS: { tool: Tool; icon: LucideIcon; label: string }[] = [
  * Kept modest on purpose: the dock shifts its neighbours as it swells, and
  * these are targets people click mid-drawing, so a big pop makes them slippery.
  */
-const TOOL_SIZE = 40
-const TOOL_MAGNIFICATION = 54
+const TOOL_SIZE = 36
+const TOOL_MAGNIFICATION = 50
 
 const soon = () => toast.info('This action is coming soon.')
 
-export default function CanvasToolbar({ party }: { party: Party }) {
+export default function CanvasToolbar({
+  party,
+  snapshot,
+}: {
+  party: Party
+  snapshot?: CanvasSnapshotApi
+}) {
   const tool = useCanvasUiStore((s) => s.tool)
   const setTool = useCanvasUiStore((s) => s.setTool)
   const undo = useSceneStore((s) => s.undo)
@@ -55,8 +63,13 @@ export default function CanvasToolbar({ party }: { party: Party }) {
   const initial = userName.trim().charAt(0).toUpperCase() || '?'
 
   const navigate = useNavigate()
-  const [confirmEnd, setConfirmEnd] = useState(false)
+
+  // 'save' when there is unsaved work to ask about, 'plain' for a bare end
+  // confirmation, null when the end dialog is closed.
+  const [endMode, setEndMode] = useState<null | 'save' | 'plain'>(null)
   const [ending, setEnding] = useState(false)
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   /*
    * Only the leader can tear a session down. Everyone else leaves through the
@@ -65,15 +78,48 @@ export default function CanvasToolbar({ party }: { party: Party }) {
   const canEndSession = party.partyId !== null && party.isLeader
   const otherMembers = party.members.filter((m) => m.userId !== party.currentUserId).length
 
-  async function handleEndSession() {
+  const endDescription =
+    otherMembers > 0
+      ? `This closes the canvas for everyone and disbands the party. ${otherMembers} other ${
+          otherMembers === 1 ? 'person' : 'people'
+        } will be sent back to their dashboard.`
+      : 'This closes the canvas and disbands your party.'
+
+  function requestEnd() {
+    setEndMode(snapshot?.hasUnsavedChanges() ? 'save' : 'plain')
+  }
+
+  async function runEnd(save: boolean) {
     setEnding(true)
     try {
+      if (save) await snapshot?.save({ wait: true })
       await party.endSession()
       navigate('/dashboard', { replace: true })
     } catch (err) {
       toast.error(extractErrorMessage(err))
       setEnding(false)
-      setConfirmEnd(false)
+      setEndMode(null)
+    }
+  }
+
+  // Only intercept the dashboard link when there is work to save; otherwise let
+  // the plain navigation through untouched.
+  function handleBack(event: MouseEvent<HTMLAnchorElement>) {
+    if (snapshot?.hasUnsavedChanges()) {
+      event.preventDefault()
+      setConfirmLeave(true)
+    }
+  }
+
+  async function runLeave(save: boolean) {
+    setLeaving(true)
+    try {
+      if (save) await snapshot?.save({ wait: true })
+      navigate('/dashboard')
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+      setLeaving(false)
+      setConfirmLeave(false)
     }
   }
 
@@ -83,6 +129,7 @@ export default function CanvasToolbar({ party }: { party: Party }) {
         <div className="pointer-events-auto flex items-center gap-2">
           <Link
             to="/dashboard"
+            onClick={handleBack}
             className="flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2 sticker-shadow-sm transition-transform hover:-translate-y-0.5"
             title="Back to dashboard"
           >
@@ -95,7 +142,7 @@ export default function CanvasToolbar({ party }: { party: Party }) {
           {canEndSession && (
             <button
               type="button"
-              onClick={() => setConfirmEnd(true)}
+              onClick={requestEnd}
               title="End session"
               className="flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2 sticker-shadow-sm transition-transform hover:-translate-y-0.5 hover:text-primary"
             >
@@ -105,7 +152,7 @@ export default function CanvasToolbar({ party }: { party: Party }) {
           )}
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-2 sticker-shadow">
+        <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-1.5 sticker-shadow">
           <Dock
             items={TOOLS.map(({ tool: value, icon: Icon, label }) => ({
               label,
@@ -155,22 +202,38 @@ export default function CanvasToolbar({ party }: { party: Party }) {
        * its z-20 opens a stacking context, either of which would leave a modal
        * nested inside it unclickable or painted under the side panels.
        */}
-      {confirmEnd && (
+      {endMode === 'save' && (
+        <SaveExitDialog
+          title="End this session?"
+          description={`${endDescription} You have unsaved changes that will be lost unless you save them first.`}
+          saving={ending}
+          onSave={() => runEnd(true)}
+          onDiscard={() => runEnd(false)}
+          onClose={() => setEndMode(null)}
+        />
+      )}
+
+      {endMode === 'plain' && (
         <ConfirmDialog
           title="End this session?"
-          description={
-            otherMembers > 0
-              ? `This closes the canvas for everyone and disbands the party. ${otherMembers} other ${
-                  otherMembers === 1 ? 'person' : 'people'
-                } will be sent back to their dashboard. Your drawing is kept.`
-              : 'This closes the canvas and disbands your party. Your drawing is kept.'
-          }
+          description={endDescription}
           confirmLabel="End session"
           cancelLabel="Keep drawing"
           destructive
           pending={ending}
-          onConfirm={handleEndSession}
-          onClose={() => setConfirmEnd(false)}
+          onConfirm={() => runEnd(false)}
+          onClose={() => setEndMode(null)}
+        />
+      )}
+
+      {confirmLeave && (
+        <SaveExitDialog
+          title="Leave this canvas?"
+          description="You have unsaved changes here. If you head back without saving, they'll be lost."
+          saving={leaving}
+          onSave={() => runLeave(true)}
+          onDiscard={() => runLeave(false)}
+          onClose={() => setConfirmLeave(false)}
         />
       )}
     </>

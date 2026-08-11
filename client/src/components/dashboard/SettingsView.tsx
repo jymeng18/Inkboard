@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Bell, Check, Copy, LogOut, Palette, UserCog } from 'lucide-react'
+import { Bell, Check, Copy, LogOut, Palette, Save, UserCog } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,8 @@ export default function SettingsView({ userId, userName, onLogout }: SettingsVie
       <UserIdCard userId={userId} />
 
       <NotificationsCard />
+
+      <AutosaveCard />
 
       <ul className="flex flex-col gap-3">
         {SETTINGS.map(({ icon: Icon, title, description }) => (
@@ -81,6 +83,36 @@ function NotificationsCard() {
         checked={enabled}
         onToggle={() => setEnabled(!enabled)}
         label="Status notifications"
+      />
+    </div>
+  )
+}
+
+/*
+ * Opt-in safety net: periodically snapshot the canvas you own while it's open.
+ * Off by default, since leaving a canvas already asks whether to save. This is
+ * for people who'd rather not risk a crash between saves.
+ */
+function AutosaveCard() {
+  const enabled = usePreferencesStore((s) => s.autosaveSnapshots)
+  const setEnabled = usePreferencesStore((s) => s.setAutosaveSnapshots)
+
+  return (
+    <div className="mb-3 flex items-center gap-4 rounded-2xl border-[3px] border-outline bg-surface p-4 sticker-shadow-sm">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-primary-container">
+        <Save className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-label font-bold">Auto-save snapshots</p>
+        <p className="font-body text-xs text-on-background/60">
+          Every 15 minutes, quietly save a snapshot of a canvas you own as a
+          fallback. You're still asked whether to save when you leave.
+        </p>
+      </div>
+      <Switch
+        checked={enabled}
+        onToggle={() => setEnabled(!enabled)}
+        label="Auto-save snapshots"
       />
     </div>
   )

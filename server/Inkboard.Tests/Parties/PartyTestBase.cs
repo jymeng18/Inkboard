@@ -28,7 +28,7 @@ public abstract class PartyTestBase : TestBase
     {
         var notifierMock = new Mock<IPartyNotifier>(MockBehavior.Loose);
         var canvasRepository = new CanvasRepository(context);
-        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context));
+        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context), null, null);
         return new PartyService(
             new PartyRepository(context),
             new PartyInviteRepository(context),
@@ -46,7 +46,7 @@ public abstract class PartyTestBase : TestBase
     {
         notifierMock = new Mock<IPartyNotifier>(MockBehavior.Loose);
         var canvasRepository = new CanvasRepository(context);
-        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context));
+        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context), null, null);
         return new PartyService(
             new PartyRepository(context),
             new PartyInviteRepository(context),
@@ -80,7 +80,7 @@ public abstract class PartyTestBase : TestBase
         {
             OwnerId = ownerId,
             Name = name,
-            LastModifiedAt = DateTime.UtcNow,
+            LastModifiedAt = DateTimeOffset.UtcNow,
         };
         context.Canvas.Add(canvas);
         await context.SaveChangesAsync();
@@ -99,7 +99,7 @@ public abstract class PartyTestBase : TestBase
         {
             LeaderId = leaderId,
             CanvasId = canvas.Id,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
         await partyRepo.CreatePartyAsync(party);
         var member = new PartyMember

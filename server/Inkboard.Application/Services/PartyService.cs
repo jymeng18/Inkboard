@@ -59,7 +59,7 @@ namespace Inkboard.Application.Services
             {
                 LeaderId = leaderId,
                 CanvasId = canvasId,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
             };
 
             var existingParty = await _partyRepository.GetActivePartyForUserAsync(leaderId);
@@ -161,7 +161,7 @@ namespace Inkboard.Application.Services
             if (existingInvite is not null)
             {
                 // If inv not expired, then its an active invite, reject ops
-                if (existingInvite.ExpiresAt > DateTime.UtcNow)
+                if (existingInvite.ExpiresAt > DateTimeOffset.UtcNow)
                 {
                     return Result<PartyInvite>.Fail(
                         ErrorType.Conflict,
@@ -178,7 +178,7 @@ namespace Inkboard.Application.Services
                 InvitedByUserId = leaderId,
                 InvitedUserId = invitedUserId,
                 InviteStatus = InviteStatus.Pending,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5),
             };
 
             await _partyInviteRepository.CreateInviteAsync(partyInvite);
@@ -354,7 +354,7 @@ namespace Inkboard.Application.Services
                 );
             }
 
-            if (invite.ExpiresAt < DateTime.UtcNow)
+            if (invite.ExpiresAt < DateTimeOffset.UtcNow)
                 return Result<PartyInvite>.Fail(ErrorType.Validation, "This invite has expired.");
 
             // Check if user alr in a Party

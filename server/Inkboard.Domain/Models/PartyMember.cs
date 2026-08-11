@@ -13,7 +13,7 @@ public class PartyMember
 
     public UserRole Role { get; set; }
 
-    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset JoinedAt { get; set; } = DateTimeOffset.UtcNow;
 
     // nav props
     public Party Party { get; set; }

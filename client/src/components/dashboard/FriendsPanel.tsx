@@ -104,7 +104,7 @@ export default function FriendsPanel({ open, onClose }: FriendsPanelProps) {
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between border-b-4 border-outline px-5 py-4">
+        <div className="flex items-center justify-between border-b-4 border-outline px-5 py-3 ">
           <h2 className="font-display text-2xl">Friends</h2>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close friends panel">
             <X />

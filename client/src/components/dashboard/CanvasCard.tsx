@@ -1,6 +1,8 @@
+import { useEffect, useMemo } from 'react'
 import { ImageIcon, Pencil } from 'lucide-react'
 
 import { canvasDisplayName, type CanvasDto } from '@/api/canvas'
+import { useSnapshotPreview } from '@/hooks/useSnapshotPreview'
 
 /** Formats an ISO timestamp as a short relative string like "3d ago". */
 function timeAgo(iso: string): string {
@@ -34,6 +36,27 @@ export default function CanvasCard({
 }: CanvasCardProps) {
   const name = canvasDisplayName(canvas)
 
+  /*
+   * snapshotURL is the private blob URI and is never browser-usable, so we treat
+   * it only as a flag that a snapshot exists and fetch the bytes through the
+   * proxy. The object URL is revoked when the blob changes or the card unmounts.
+   */
+  const hasSnapshot = !!canvas.snapshotURL
+  const { data: previewBlob } = useSnapshotPreview(
+    canvas.id,
+    canvas.lastModifiedAt,
+    hasSnapshot,
+  )
+  const previewUrl = useMemo(
+    () => (previewBlob ? URL.createObjectURL(previewBlob) : null),
+    [previewBlob],
+  )
+
+  useEffect(() => {
+    if (!previewUrl) return
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [previewUrl])
+
   return (
     /*
      * The rename control is a sibling of the open button rather than a child:
@@ -48,9 +71,9 @@ export default function CanvasCard({
         className="flex w-full flex-col text-left"
       >
         <div className="relative aspect-4/3 w-full overflow-hidden border-b-[3px] border-outline bg-background canvas-bg">
-          {canvas.snapshotURL ? (
+          {previewUrl ? (
             <img
-              src={canvas.snapshotURL}
+              src={previewUrl}
               alt=""
               className="size-full object-cover"
               loading="lazy"

@@ -14,7 +14,7 @@ public class Party
 
     public Guid? CanvasId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
     // Navigation props
     public User Leader { get; set; } = null!;

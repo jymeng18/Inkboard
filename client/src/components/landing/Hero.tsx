@@ -1,8 +1,5 @@
-import RemoteImage from "./RemoteImage";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "./placeholders";
-import { AVATAR_IMAGES } from "./media";
-import { LiveCounter } from "./CountUp";
+import LivingBoard from "./living-board/LivingBoard";
 
 interface HeroProps {
   onStart: () => void;
@@ -10,57 +7,43 @@ interface HeroProps {
 
 export default function Hero({ onStart }: HeroProps) {
   return (
-    <section className="relative mb-20 text-center">
-      <h1 className="relative mb-6 font-display text-5xl leading-[0.95] sm:text-6xl md:text-7xl">
-        Unleash the{" "}
-        <span className="inline-block rotate-2 text-primary italic">kaos.</span>
-        <br />
-        Sync <span className="highlight-blob">the Art.</span>
-      </h1>
+    <section className="relative mb-24 w-full max-w-7xl pt-6 lg:pt-10">
+      <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-6">
+        {/* Copy */}
+        <div className="text-center lg:col-span-5 lg:text-left">
+          <h1 className="mb-6 font-display text-6xl leading-[0.9] sm:text-7xl xl:text-8xl">
+            Draw dumb{" "}
+            <span className="highlight-blob">stuff,</span>
+            <br />
+            <span className="inline-block rotate-3 text-primary italic">
+              together.
+            </span>
+          </h1>
 
-      <p className="mx-auto mb-9 max-w-xl font-body text-base text-on-background/70 md:text-lg">
-        A collaborative infinity canvas powered by{" "}
-        <span className="font-bold text-on-background">
-          SignalR WebSockets & KonvaJS
-        </span>
-        . No conflicts, just pure creative flow.
-      </p>
+          <p className="mx-auto mb-8 max-w-md font-body text-base text-on-background/70 md:text-lg lg:mx-0">
+            A shared canvas where you and your friends scribble at the same time.
+            No sign-ups, no lag, no rules. Just grab a marker and make a
+            beautiful mess.
+          </p>
 
-      <div className="flex flex-col items-center justify-center gap-5 sm:flex-row">
-        <div className="relative">
-          <Button size="lg" onClick={onStart}>
-            Grab a Marker
-          </Button>
-          <span className="pointer-events-none absolute -top-3 -right-4 rotate-12 rounded-sm border-2 border-outline bg-primary-container px-1.5 py-0.5 font-label text-[10px] font-bold">
-            FREE FOREVER
-          </span>
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
+            <Button size="lg" onClick={onStart}>
+              Grab a Marker
+            </Button>
+            <Button variant="surface" size="lg" onClick={scrollToCanvas}>
+              Peek at the mess ↓
+            </Button>
+          </div>
+
+          <p className="mt-6 font-label text-[11px] font-bold tracking-wider text-on-background/45 uppercase">
+            Free · no account · works in your browser
+          </p>
         </div>
 
-        <Button variant="surface" size="lg" onClick={scrollToCanvas}>
-          View the Architecture ↓
-        </Button>
-      </div>
-
-      <div className="mt-12 flex items-center justify-center gap-3">
-        <div className="flex -space-x-3">
-          {AVATAR_IMAGES.map((src, i) => (
-            <RemoteImage
-              key={src}
-              src={src}
-              alt=""
-              className="size-10 rounded-full border-[3px] border-outline object-cover"
-              fallback={
-                <Avatar
-                  index={i}
-                  className="size-10 rounded-full border-[3px] border-outline"
-                />
-              }
-            />
-          ))}
+        {/* Live board */}
+        <div className="relative lg:col-span-7">
+          <LivingBoard className="relative aspect-video w-full lg:aspect-[3/2]" />
         </div>
-        <p className="font-handwriting text-base text-on-background/60">
-          <span className="font-bold text-primary">Rin</span> and<LiveCounter />others are sketching now.
-        </p>
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import { MousePointer2, Pencil } from 'lucide-react'
 import {
   motion,
   useAnimationFrame,
+  useInView,
   useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
@@ -112,12 +113,15 @@ const CYCLE = DRAW_END + HOLD
  */
 function SelfDrawingSketch() {
   const reducedMotion = useReducedMotion()
+  const svgRef = useRef<SVGSVGElement>(null)
+  // No point burning frames redrawing the sketch while it is scrolled away.
+  const inView = useInView(svgRef, { amount: 0 })
   const clock = useMotionValue(0)
   const penX = useMotionValue(200)
   const penY = useMotionValue(42)
 
   useAnimationFrame((elapsed) => {
-    if (reducedMotion) return
+    if (reducedMotion || !inView) return
     clock.set((elapsed / 1000) % CYCLE)
   })
 
@@ -126,6 +130,7 @@ function SelfDrawingSketch() {
 
   return (
     <svg
+      ref={svgRef}
       viewBox="0 0 400 300"
       aria-hidden
       className="pointer-events-none absolute inset-0 z-10 size-full p-6 opacity-90"

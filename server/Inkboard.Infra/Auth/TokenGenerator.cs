@@ -17,7 +17,7 @@ public class TokenGenerator : ITokenGenerator
         Configuration = configuration;
     }
 
-    public string GenerateToken(Guid userId, string email)
+    public string GenerateToken(Guid userId, string email, string userName)
     {
         var tokenHandler = new JsonWebTokenHandler();
 
@@ -36,6 +36,7 @@ public class TokenGenerator : ITokenGenerator
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Email, email),
+            new(JwtRegisteredClaimNames.Name, userName ?? string.Empty),
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

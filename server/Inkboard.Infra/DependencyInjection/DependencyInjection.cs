@@ -19,7 +19,7 @@ public static class DependencyInjection
         IHostEnvironment env
     )
     {
-        if (env.IsDevelopment())
+        if (env.IsDevelopment() || env.IsEnvironment("Testing"))
         {
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase("InkboardDb")

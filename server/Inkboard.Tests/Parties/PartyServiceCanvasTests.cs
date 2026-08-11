@@ -11,7 +11,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
 {
     private CanvasService CreateCanvasService()
     {
-        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context));
+        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context), null, null);
     }
 
     [TestMethod]
@@ -100,7 +100,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
         {
             LeaderId = otherUser.Id,
             CanvasId = otherCanvas.Id,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
         await partyRepo.CreatePartyAsync(otherParty);
 

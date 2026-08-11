@@ -40,7 +40,7 @@ public sealed class PartyServiceInviteTests : PartyTestBase
         Assert.IsTrue(result.IsSuccess);
         var invite = result.Data!;
 
-        var expectedExpiry = DateTime.UtcNow.AddMinutes(5);
+        var expectedExpiry = DateTimeOffset.UtcNow.AddMinutes(5);
         Assert.IsTrue(invite.ExpiresAt <= expectedExpiry.AddSeconds(1));
         Assert.IsTrue(invite.ExpiresAt >= expectedExpiry.AddSeconds(-1));
     }

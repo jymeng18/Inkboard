@@ -8,6 +8,6 @@ public record FriendRequestDto(
     Guid Id,
     Guid UserId,
     string UserName,
-    DateTime CreatedAt,
+    DateTimeOffset CreatedAt,
     RequestStatus? Status = RequestStatus.Pending
 );

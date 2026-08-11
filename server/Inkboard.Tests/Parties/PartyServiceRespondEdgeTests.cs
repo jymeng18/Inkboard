@@ -21,7 +21,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         Guid leaderId,
         Guid invitedUserId,
         InviteStatus status,
-        DateTime expiresAt
+        DateTimeOffset expiresAt
     )
     {
         var invite = new PartyInvite
@@ -48,7 +48,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
             leader.Id,
             invited.Id,
             InviteStatus.Pending,
-            DateTime.UtcNow.AddMinutes(-1)
+            DateTimeOffset.UtcNow.AddMinutes(-1)
         );
 
         var result = await Service.RespondToUserInviteAsync(invite.Id, invited.Id, false);
@@ -240,7 +240,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
             leader.Id,
             invited.Id,
             InviteStatus.Pending,
-            DateTime.UtcNow.AddSeconds(-1)
+            DateTimeOffset.UtcNow.AddSeconds(-1)
         );
 
         var result = await Service.RespondToUserInviteAsync(invite.Id, invited.Id, true);

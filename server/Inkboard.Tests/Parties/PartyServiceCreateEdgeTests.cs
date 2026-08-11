@@ -47,11 +47,11 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     {
         var leader = await SeedUserAsync(Context, "leader");
         var canvas = await SeedCanvasAsync(Context, leader.Id);
-        var before = DateTime.UtcNow.AddSeconds(-1);
+        var before = DateTimeOffset.UtcNow.AddSeconds(-1);
 
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
-        var after = DateTime.UtcNow.AddSeconds(1);
+        var after = DateTimeOffset.UtcNow.AddSeconds(1);
 
         Assert.IsTrue(result.Data!.CreatedAt >= before);
         Assert.IsTrue(result.Data.CreatedAt <= after);

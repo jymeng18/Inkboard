@@ -10,5 +10,5 @@ public record PartyDetailDto(
 public record PartyMemberDto(
     Guid UserId,
     string Role,
-    DateTime JoinedAt
+    DateTimeOffset JoinedAt
 );

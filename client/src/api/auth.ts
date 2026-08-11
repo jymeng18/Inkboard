@@ -19,6 +19,6 @@ export async function loginUser(email: string, password: string) {
   return res.data
 }
 
-export function logoutUser(refreshToken: string) {
-  return api.post('/auth/logout', { refreshToken })
+export function logoutUser() {
+  return api.post('/auth/logout')
 }

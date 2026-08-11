@@ -108,5 +108,82 @@ public static class CanvasEndpoint
                 }
             )
             .RequireAuthorization();
+
+        endpoint
+            .MapPost(
+                "/api/canvas/{canvasId}/snapshot",
+                async (
+                    Guid canvasId,
+                    IFormFile file,
+                    ClaimsPrincipal user,
+                    ICanvasService canvasService
+                ) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    if (file is null || file.Length == 0)
+                        return Results.BadRequest("Snapshot file is missing.");
+
+                    await using var stream = file.OpenReadStream();
+                    var result = await canvasService.UploadSnapshotAsync(
+                        canvasId,
+                        userId,
+                        stream,
+                        file.ContentType
+                    );
+                    if (!result.IsSuccess)
+                        return ToErrorResult(result.Error, result.ErrorType);
+
+                    return Results.NoContent();
+                }
+            )
+            // ! in .net8, minimal apis only; endpoints that bind IFormFile enforces CSRF validation, we don't include it in frontend code, nor do we even need it
+            .DisableAntiforgery()
+            .RequireAuthorization();
+
+        endpoint
+            .MapGet(
+                "/api/canvas/{canvasId}/snapshot",
+                async (Guid canvasId, ClaimsPrincipal user, ICanvasService canvasService) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await canvasService.GetSnapshotAsync(canvasId, userId);
+                    if (!result.IsSuccess)
+                        return ToErrorResult(result.Error, result.ErrorType);
+
+                    return Results.Stream(result.Data!, "image/png");
+                }
+            )
+            .RequireAuthorization();
+
+        endpoint
+            .MapGet(
+                "/api/canvas/{canvasId}/snapshot-preview",
+                async (
+                    Guid canvasId,
+                    HttpContext context,
+                    ClaimsPrincipal user,
+                    ICanvasService canvasService
+                ) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await canvasService.GetSnapshotPreviewAsync(canvasId, userId);
+                    if (!result.IsSuccess)
+                        return ToErrorResult(result.Error, result.ErrorType);
+
+                    // * cache previews in user RAM, no Azure 
+                    context.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+                    return Results.Stream(result.Data!, "image/png");
+                }
+            )
+            .RequireAuthorization();
     }
 }

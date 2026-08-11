@@ -18,9 +18,9 @@ public class PartyInvite
 
   public InviteStatus InviteStatus { get; set; }
 
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+  public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-  public DateTime ExpiresAt { get; set; }
+  public DateTimeOffset ExpiresAt { get; set; }
 
   // FK: InvitedByUserId -> Users.Id 
   public User InvitedBy { get; set; } = null!;

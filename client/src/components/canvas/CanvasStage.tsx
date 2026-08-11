@@ -34,6 +34,8 @@ export default function CanvasStage() {
   const shapeStart = useRef<[number, number] | null>(null)
   const shapeHead = useRef<[number, number] | null>(null)
   const rafRef = useRef<number | null>(null)
+  const panning = useRef(false)
+  const lastPan = useRef<[number, number] | null>(null)
 
   useEffect(() => {
     const onResize = () => setDims({ w: window.innerWidth, h: window.innerHeight })
@@ -63,6 +65,16 @@ export default function CanvasStage() {
 
   const handleDown = useCallback((e: Konva.KonvaEventObject<PointerEvent>) => {
     const ui = useCanvasUiStore.getState()
+
+    // Middle mouse button pans, whatever tool is active.
+    if (e.evt.button === 1) {
+      e.evt.preventDefault()
+      panning.current = true
+      lastPan.current = [e.evt.clientX, e.evt.clientY]
+      if (containerRef.current) containerRef.current.style.cursor = 'grabbing'
+      return
+    }
+
     if (ui.tool === 'hand') return
     const stage = e.target.getStage()
     if (!stage) return
@@ -83,6 +95,12 @@ export default function CanvasStage() {
 
   const handleMove = useCallback(
     (e: Konva.KonvaEventObject<PointerEvent>) => {
+      if (panning.current) {
+        const last = lastPan.current
+        if (last) useViewportStore.getState().panBy(e.evt.clientX - last[0], e.evt.clientY - last[1])
+        lastPan.current = [e.evt.clientX, e.evt.clientY]
+        return
+      }
       if (!drawing.current) return
       const stage = e.target.getStage()
       if (!stage) return
@@ -140,6 +158,15 @@ export default function CanvasStage() {
   }, [])
 
   const handleUp = useCallback(() => {
+    if (panning.current) {
+      panning.current = false
+      lastPan.current = null
+      if (containerRef.current) {
+        containerRef.current.style.cursor =
+          useCanvasUiStore.getState().tool === 'hand' ? 'grab' : 'crosshair'
+      }
+      return
+    }
     if (!drawing.current) return
     drawing.current = false
     if (rafRef.current !== null) {
@@ -187,6 +214,9 @@ export default function CanvasStage() {
     <div
       ref={containerRef}
       className="absolute inset-0 z-0 bg-surface canvas-bg"
+      onMouseDown={(e) => {
+        if (e.button === 1) e.preventDefault()
+      }}
       style={{
         touchAction: 'none',
         cursor: tool === 'hand' ? 'grab' : 'crosshair',
