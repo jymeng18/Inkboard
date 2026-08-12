@@ -12,6 +12,8 @@ import { useCanvases } from '@/hooks/useCanvases'
 import { useCanvasSnapshot } from '@/hooks/useCanvasSnapshot'
 import { useAuthStore } from '@/stores/authStore'
 import { useConnectionStore } from '@/stores/connectionStore'
+import { useSceneStore } from '@/stores/sceneStore'
+import { useViewportStore } from '@/stores/viewportStore'
 
 // TODO: This is for all the other users cursors in the party, (CanvasHub doesn't work yet)
 const NO_CURSORS: RemoteCursor[] = []
@@ -27,6 +29,14 @@ export default function CanvasPage() {
   const { data: canvases } = useCanvases()
   const isOwner = !!canvasId && !!canvases?.some((c) => c.id === canvasId && c.ownerId === userId)
   const snapshot = useCanvasSnapshot(canvasId, isOwner)
+
+  // The scene and viewport stores are app-wide singletons, so without this a
+  // client-side move to another canvas would inherit the previous one's strokes
+  // and pan/zoom. Start each canvas clean. (Snapshot/op hydration lands here later.)
+  useEffect(() => {
+    useSceneStore.getState().clear()
+    useViewportStore.getState().reset()
+  }, [canvasId])
 
   // Hub-driven exit: being kicked or a leadership transfer force-ends the canvas
   // session (link breaks) and bounces every affected member to the dashboard.
