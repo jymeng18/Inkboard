@@ -42,10 +42,9 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 builder.Services.AddInfraServices(builder.Configuration, builder.Environment);
-builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddAuthenticationServices(builder.Configuration);
 builder.Services.AddAzureServices(builder.Configuration);
 
-builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
 builder.Services.AddSignalR();

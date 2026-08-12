@@ -12,6 +12,8 @@ public sealed class PartyHub : Hub<IPartyHubClient>
     private readonly IPartyRepository _partyRepository;
     private readonly IConnectionStore _connectionStore;
 
+    public static readonly string HubName = "PartyHub";
+
     public PartyHub(IPartyRepository partyRepository, IConnectionStore connectionStore)
     {
         _partyRepository = partyRepository;
@@ -20,14 +22,14 @@ public sealed class PartyHub : Hub<IPartyHubClient>
 
     public override async Task OnConnectedAsync()
     {
-        var userIdStr = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var userIdStr = Context.UserIdentifier;
         if (!Guid.TryParse(userIdStr, out var userId))
         {
             Context.Abort();
             return;
         }
 
-        _connectionStore.Add(Context.ConnectionId, userId);
+        _connectionStore.Add(Context.ConnectionId, userId, HubName);
 
         /// <summary>
         // Re-join a (re)connecting member to their party's group, so group
@@ -48,13 +50,13 @@ public sealed class PartyHub : Hub<IPartyHubClient>
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userIdStr = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var userIdStr = Context.UserIdentifier;
         if (!Guid.TryParse(userIdStr, out var userId))
         {
             Context.Abort();
             return;
         }
-        _connectionStore.Remove(userId);
+        _connectionStore.Remove(userId, HubName);
 
         var party = await _partyRepository.GetActivePartyForUserAsync(userId);
         if (party is null)
