@@ -9,6 +9,7 @@ import { useSceneStore } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 import CurrentStroke from './CurrentStroke'
 import SceneShapes from './SceneShapes'
+import { cursorForTool } from './cursors'
 import type { StrokeTool } from './strokeGeometry'
 
 const SHAPE_STROKE_WIDTH = 3
@@ -24,6 +25,7 @@ export default function CanvasStage() {
   const [dims, setDims] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
 
   const tool = useCanvasUiStore((s) => s.tool)
+  const size = useCanvasUiStore((s) => s.size)
   const x = useViewportStore((s) => s.x)
   const y = useViewportStore((s) => s.y)
   const scale = useViewportStore((s) => s.scale)
@@ -89,7 +91,7 @@ export default function CanvasStage() {
     } else {
       const pressure = e.evt.pressure || 0.5
       pointsRef.current = [[wx, wy, pressure]]
-      useDrawingStore.getState().beginStroke(ui.tool, ui.color, [wx, wy, pressure])
+      useDrawingStore.getState().beginStroke(ui.tool, ui.color, ui.size, [wx, wy, pressure])
     }
   }, [])
 
@@ -128,6 +130,7 @@ export default function CanvasStage() {
         kind: 'stroke',
         tool: ds.tool as StrokeTool,
         color: ds.color,
+        size: ds.size,
         points: pointsRef.current.slice(),
       })
     } else if (ds.mode === 'shape' && shapeStart.current && shapeHead.current) {
@@ -160,8 +163,8 @@ export default function CanvasStage() {
       panning.current = false
       lastPan.current = null
       if (containerRef.current) {
-        containerRef.current.style.cursor =
-          useCanvasUiStore.getState().tool === 'hand' ? 'grab' : 'crosshair'
+        const ui = useCanvasUiStore.getState()
+        containerRef.current.style.cursor = cursorForTool(ui.tool, ui.size)
       }
       return
     }
@@ -217,7 +220,7 @@ export default function CanvasStage() {
       }}
       style={{
         touchAction: 'none',
-        cursor: tool === 'hand' ? 'grab' : 'crosshair',
+        cursor: cursorForTool(tool, size),
         backgroundPosition: `${x}px ${y}px`,
         backgroundSize: `${GRID * scale}px ${GRID * scale}px`,
       }}

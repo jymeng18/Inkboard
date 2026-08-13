@@ -12,6 +12,7 @@ export type StrokeItem = {
   kind: 'stroke'
   tool: 'pencil' | 'brush' | 'eraser'
   color: string
+  size: number
   points: number[][]
 }
 

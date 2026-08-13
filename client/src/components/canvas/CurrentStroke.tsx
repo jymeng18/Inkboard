@@ -14,6 +14,7 @@ function CurrentStroke() {
   const mode = useDrawingStore((s) => s.mode)
   const tool = useDrawingStore((s) => s.tool)
   const color = useDrawingStore((s) => s.color)
+  const size = useDrawingStore((s) => s.size)
   const points = useDrawingStore((s) => s.points)
   const start = useDrawingStore((s) => s.start)
   const head = useDrawingStore((s) => s.head)
@@ -23,7 +24,7 @@ function CurrentStroke() {
     const erase = strokeTool === 'eraser'
     return (
       <Line
-        points={strokeOutline(points, strokeTool, false)}
+        points={strokeOutline(points, strokeTool, size, false)}
         closed
         fill={erase ? '#000' : color}
         globalCompositeOperation={erase ? 'destination-out' : undefined}

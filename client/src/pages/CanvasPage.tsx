@@ -6,6 +6,7 @@ import CanvasStage from '@/components/canvas/CanvasStage'
 import CanvasToolbar from '@/components/canvas/CanvasToolbar'
 import CursorLayer from '@/components/canvas/CursorLayer'
 import PartyPanel from '@/components/canvas/PartyPanel'
+import SizeSlider from '@/components/canvas/SizeSlider'
 import ZoomControls from '@/components/canvas/ZoomControls'
 import { useCanvasHub } from '@/hooks/useCanvasHub'
 import { useCanvasParty } from '@/hooks/useCanvasParty'
@@ -55,6 +56,7 @@ export default function CanvasPage() {
       <CanvasStage />
       <CursorLayer />
       <CanvasToolbar party={party} snapshot={snapshot} />
+      <SizeSlider />
       <ZoomControls />
       <PartyPanel party={party} snapshot={snapshot} />
       <CanvasFriendsPanel party={party} />

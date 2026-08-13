@@ -12,8 +12,8 @@ import { strokeOutline } from './strokeGeometry'
  */
 const StrokeShape = memo(function StrokeShape({ item }: { item: StrokeItem }) {
   const outline = useMemo(
-    () => strokeOutline(item.points, item.tool, true),
-    [item.points, item.tool],
+    () => strokeOutline(item.points, item.tool, item.size, true),
+    [item.points, item.tool, item.size],
   )
   const erase = item.tool === 'eraser'
 

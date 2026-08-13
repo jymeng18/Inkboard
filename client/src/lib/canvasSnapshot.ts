@@ -44,7 +44,7 @@ export function contentBounds(items: SceneItem[]): Bounds | null {
   for (const item of items) {
     if (item.kind === 'stroke') {
       if (item.tool === 'eraser') continue
-      const outline = strokeOutline(item.points, item.tool, true)
+      const outline = strokeOutline(item.points, item.tool, item.size, true)
       for (let i = 0; i + 1 < outline.length; i += 2) {
         bounds = expand(bounds, outline[i], outline[i + 1])
       }
@@ -62,7 +62,7 @@ function addItem(layer: Konva.Layer, item: SceneItem, offsetX: number, offsetY: 
   if (item.kind === 'stroke') {
     layer.add(
       new Konva.Line({
-        points: strokeOutline(item.points, item.tool, true),
+        points: strokeOutline(item.points, item.tool, item.size, true),
         x: offsetX,
         y: offsetY,
         closed: true,
