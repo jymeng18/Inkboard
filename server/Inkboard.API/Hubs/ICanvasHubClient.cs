@@ -12,5 +12,6 @@ public interface ICanvasHubClient
 
     Task NotifyOnCursorPos(CursorPositionModel cursorPosition);
 
+    // ! Might remove this
     Task ReceiveCanvasSnapshot(string snapshotUrl);
 }

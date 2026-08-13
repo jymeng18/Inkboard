@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { loginUser, logoutUser, registerUser } from '@/api/auth'
 import { markMobileNoticePending } from '@/lib/firstRun'
+import { queryClient } from '@/lib/queryClient'
 import { sessionFromToken } from '@/lib/session'
 import { useAuthStore } from '@/stores/authStore'
 import { usePartyStore } from '@/stores/partyStore'
@@ -80,6 +81,11 @@ export function useAuth() {
     // inherit a stale activePartyId.
     usePartyStore.getState().clearParty()
     clearSessionState()
+
+    // Wipe every cached server read (canvases, invites, friends, inbox, previews).
+    // Logout is a client-side navigation, so without this the next account that
+    // signs in on this tab would see the previous user's cached data.
+    queryClient.clear()
   }
 
   return { login, register, logout, loading, error }

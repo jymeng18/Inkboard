@@ -66,7 +66,7 @@ builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendsListService, FriendsListService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddSingleton<IImageValidator, SkiaSharpValidator>();
-
+builder.Services.AddScoped<ICanvasNotifier, CanvasNotifier>();
 builder.Services.AddSingleton<IConnectionStore, ConnectionStore>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
@@ -99,5 +99,6 @@ app.MapCanvasEndpoint();
 app.MapFriendEndpoint();
 
 app.MapHub<PartyHub>("/hubs/party");
+app.MapHub<CanvasHub>("/hubs/canvas");
 
 app.Run();

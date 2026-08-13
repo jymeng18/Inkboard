@@ -14,13 +14,13 @@ public class ConnectionStore : IConnectionStore
 
     public void Add(string connectionId, Guid userId, string hubName)
     {
-        var key = new HubUserKey(userId, nameof(hubName));
+        var key = new HubUserKey(userId, hubName);
         connections[key] = connectionId;
     }
 
     public string? Get(Guid userId, string hubName)
     {
-        var key = new HubUserKey(userId, nameof(hubName));
+        var key = new HubUserKey(userId, hubName);
         if (connections.TryGetValue(key, out var connId))
         {
             return connId;
@@ -30,7 +30,7 @@ public class ConnectionStore : IConnectionStore
 
     public void Remove(Guid userId, string hubName)
     {
-        var key = new HubUserKey(userId, nameof(hubName));
+        var key = new HubUserKey(userId, hubName);
         connections.TryRemove(key, out var _);
     }
 }
