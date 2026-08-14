@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
 
+import { subscribeLocalOps } from '@/lib/opChannel'
 import { useAuthStore } from '@/stores/authStore'
 import { useCursorStore } from '@/stores/cursorStore'
 import { usePartyStore } from '@/stores/partyStore'
+import { useSceneStore, type SceneItem } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 
 // Cap outbound cursor frames. Raw pointermove fires ~120/sec; this keeps the
@@ -21,11 +23,16 @@ interface CursorPacket {
   y: number
 }
 
+// The server relays the op envelope; we only read the opaque payload it never parses.
+interface OperationPacket {
+  operationData: string
+}
+
 /*
- * Live cursor sync for one canvas over the CanvasHub. Connects, joins the canvas
- * group (the hub's single auth checkpoint), streams the local cursor throttled in
- * world coordinates, and feeds remote cursors into the cursor store. Operations
- * are deliberately out of scope here for now.
+ * Live sync for one canvas over the CanvasHub. Connects, joins the canvas group
+ * (the hub's single auth checkpoint), streams the local cursor (throttled, in world
+ * coordinates), and broadcasts / applies finished drawing operations. Operations
+ * are commit-only for now: one op per finished stroke, not live in-progress points.
  */
 export function useCanvasHub(canvasId: string | undefined) {
   const accessToken = useAuthStore((s) => s.accessToken)
@@ -68,6 +75,24 @@ export function useCanvasHub(canvasId: string | undefined) {
       useCursorStore.getState().upsert(cursor.userId, cursor.x, cursor.y)
     })
 
+    // Remote drawing ops apply straight to the scene (deduped by id) and never
+    // loop back out through the op channel, so there's no rebroadcast.
+    conn.on('NotifyOnOperation', (op: OperationPacket) => {
+      try {
+        useSceneStore.getState().addRemote(JSON.parse(op.operationData) as SceneItem)
+      } catch {
+        // Ignore a malformed op payload rather than tearing anything down.
+      }
+    })
+
+    // Broadcast this client's finished ops. Fire-and-forget (the local render already
+    // happened); dropped when not joined (e.g. solo), matching the cursor path.
+    const unsubscribeOps = subscribeLocalOps((op) => {
+      if (!joinedRef.current || conn.state !== signalR.HubConnectionState.Connected) return
+      const type = op.kind === 'stroke' && op.tool === 'eraser' ? 1 : 0
+      void conn.send('SendOperation', { type, operationData: JSON.stringify(op) })
+    })
+
     conn.onreconnected(() => {
       setConnected(true)
       joinedRef.current = false // group membership is dropped on reconnect
@@ -90,6 +115,7 @@ export function useCanvasHub(canvasId: string | undefined) {
     return () => {
       joinedRef.current = false
       setConnected(false)
+      unsubscribeOps()
       useCursorStore.getState().clear()
       void conn.stop()
       connectionRef.current = null

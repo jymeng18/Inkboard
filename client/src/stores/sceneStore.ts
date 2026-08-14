@@ -33,6 +33,7 @@ interface SceneState {
   items: SceneItem[]
   redoStack: SceneItem[]
   add: (item: SceneItem) => void
+  addRemote: (item: SceneItem) => void
   undo: () => void
   redo: () => void
   clear: () => void
@@ -43,6 +44,11 @@ export const useSceneStore = create<SceneState>((set) => ({
   redoStack: [],
 
   add: (item) => set((s) => ({ items: [...s.items, item], redoStack: [] })),
+
+  // Applies an op received from another client: append only if we don't already
+  // have it (dedupe by id), and never clear our own redo stack.
+  addRemote: (item) =>
+    set((s) => (s.items.some((i) => i.id === item.id) ? s : { items: [...s.items, item] })),
   
   undo: () =>
     set((s) => {

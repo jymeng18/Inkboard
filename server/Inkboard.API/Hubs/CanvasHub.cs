@@ -115,9 +115,32 @@ public class CanvasHub : Hub<ICanvasHubClient>
         await _canvasNotifier.NotifyCursorPos(stamped, canvasId, Context.ConnectionId);
     }
 
+    // Max size of an op's opaque payload. A finished stroke is raw points + a few
+    // fields; this is generous headroom while rejecting absurd payloads.
+    private const int MaxOperationDataLength = 256 * 1024;
+
     public async Task SendOperation(CanvasOperation operation)
     {
-        // TODO: LEAVE FOR NOW
+        var userIdStr = Context.UserIdentifier;
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return;
+
+        if (!Context.Items.TryGetValue("CanvasId", out var cachedCanvasId))
+            return;
+
+        if (string.IsNullOrEmpty(operation.OperationData) || operation.OperationData.Length > MaxOperationDataLength)
+            return;
+
+        var canvasId = (Guid)cachedCanvasId!;
+
+        // Stamp server-authoritative fields, never trust the client for identity/routing.
+        // OperationData untouched, the server only relays it via WS
+        operation.Id = Guid.NewGuid();
+        operation.UserId = userId;
+        operation.CanvasId = canvasId;
+        operation.Timestamp = DateTimeOffset.UtcNow;
+
+        await _canvasNotifier.NotifyOperation(operation, canvasId, Context.ConnectionId);
     }
 
     public static string GroupName(Guid? canvasId) => $"canvas-{canvasId}";

@@ -3,9 +3,10 @@ import { Layer, Stage } from 'react-konva'
 import { useGesture } from '@use-gesture/react'
 import type Konva from 'konva'
 
+import { publishLocalOp } from '@/lib/opChannel'
 import { useCanvasUiStore } from '@/stores/canvasUiStore'
 import { useDrawingStore } from '@/stores/drawingStore'
-import { useSceneStore } from '@/stores/sceneStore'
+import { useSceneStore, type SceneItem } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 import CurrentStroke from './CurrentStroke'
 import SceneShapes from './SceneShapes'
@@ -125,21 +126,23 @@ export default function CanvasStage() {
     if (ds.mode === 'stroke' && pointsRef.current.length > 0) {
       // Store the raw input, not the outline: this is the operation we'll
       // broadcast and persist, and each client renders its own outline from it.
-      scene.add({
+      const item: SceneItem = {
         id: crypto.randomUUID(),
         kind: 'stroke',
         tool: ds.tool as StrokeTool,
         color: ds.color,
         size: ds.size,
         points: pointsRef.current.slice(),
-      })
+      }
+      scene.add(item)
+      publishLocalOp(item)
     } else if (ds.mode === 'shape' && shapeStart.current && shapeHead.current) {
       const [sx, sy] = shapeStart.current
       const [hx, hy] = shapeHead.current
       const width = Math.abs(hx - sx)
       const height = Math.abs(hy - sy)
       if (width > 2 && height > 2) {
-        scene.add({
+        const item: SceneItem = {
           id: crypto.randomUUID(),
           kind: 'rect',
           color: ds.color,
@@ -148,7 +151,9 @@ export default function CanvasStage() {
           width,
           height,
           strokeWidth: SHAPE_STROKE_WIDTH,
-        })
+        }
+        scene.add(item)
+        publishLocalOp(item)
       }
     }
 
@@ -164,7 +169,8 @@ export default function CanvasStage() {
       lastPan.current = null
       if (containerRef.current) {
         const ui = useCanvasUiStore.getState()
-        containerRef.current.style.cursor = cursorForTool(ui.tool, ui.size)
+        const zoom = useViewportStore.getState().scale
+        containerRef.current.style.cursor = cursorForTool(ui.tool, ui.size * zoom)
       }
       return
     }
@@ -220,7 +226,7 @@ export default function CanvasStage() {
       }}
       style={{
         touchAction: 'none',
-        cursor: cursorForTool(tool, size),
+        cursor: cursorForTool(tool, size * scale),
         backgroundPosition: `${x}px ${y}px`,
         backgroundSize: `${GRID * scale}px ${GRID * scale}px`,
       }}

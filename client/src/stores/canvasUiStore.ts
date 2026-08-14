@@ -9,7 +9,7 @@ export type Tool = 'pencil' | 'brush' | 'eraser' | 'shapes' | 'hand'
  */
 export const STROKE_SIZE = {
   min: 4,
-  max: 40,
+  max: 100,
   default: 4,
   step: 1,
 } as const
