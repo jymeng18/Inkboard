@@ -35,4 +35,10 @@ public class CanvasNotifier : ICanvasNotifier
         var groupName = CanvasHub.GroupName(canvasId);
         await _hub.Clients.GroupExcept(groupName, connId).NotifyOnOperation(canvasOperation);
     }
+
+    public async Task NotifyLiveStroke(LiveStrokeModel liveStroke, Guid canvasId, string connId)
+    {
+        var groupName = CanvasHub.GroupName(canvasId);
+        await _hub.Clients.GroupExcept(groupName, connId).NotifyOnLiveStroke(liveStroke);
+    }
 }

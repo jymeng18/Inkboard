@@ -143,5 +143,24 @@ public class CanvasHub : Hub<ICanvasHubClient>
         await _canvasNotifier.NotifyOperation(operation, canvasId, Context.ConnectionId);
     }
 
+    public async Task SendLiveStroke(LiveStrokeModel liveStroke)
+    {
+        if (!Guid.TryParse(Context.UserIdentifier, out var userId))
+            return;
+
+        if (!Context.Items.TryGetValue("CanvasId", out var cachedCanvasId))
+            return;
+
+        if (string.IsNullOrEmpty(liveStroke.Data) || liveStroke.Data.Length > MaxOperationDataLength)
+            return;
+
+        var canvasId = (Guid)cachedCanvasId!;
+
+        // Stamp identity server-side (like cursors); Data stays an opaque relay.
+        var stamped = liveStroke with { UserId = userId };
+
+        await _canvasNotifier.NotifyLiveStroke(stamped, canvasId, Context.ConnectionId);
+    }
+
     public static string GroupName(Guid? canvasId) => $"canvas-{canvasId}";
 }

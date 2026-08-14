@@ -9,6 +9,7 @@ import { useDrawingStore } from '@/stores/drawingStore'
 import { useSceneStore, type SceneItem } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 import CurrentStroke from './CurrentStroke'
+import RemoteLiveStrokes from './RemoteLiveStrokes'
 import SceneShapes from './SceneShapes'
 import { cursorForTool } from './cursors'
 import type { StrokeTool } from './strokeGeometry'
@@ -92,7 +93,9 @@ export default function CanvasStage() {
     } else {
       const pressure = e.evt.pressure || 0.5
       pointsRef.current = [[wx, wy, pressure]]
-      useDrawingStore.getState().beginStroke(ui.tool, ui.color, ui.size, [wx, wy, pressure])
+      // Id assigned here so the live-stream frames and the final committed op
+      // carry the same id.
+      useDrawingStore.getState().beginStroke(crypto.randomUUID(), ui.tool, ui.color, ui.size, [wx, wy, pressure])
     }
   }, [])
 
@@ -127,7 +130,7 @@ export default function CanvasStage() {
       // Store the raw input, not the outline: this is the operation we'll
       // broadcast and persist, and each client renders its own outline from it.
       const item: SceneItem = {
-        id: crypto.randomUUID(),
+        id: ds.id ?? crypto.randomUUID(),
         kind: 'stroke',
         tool: ds.tool as StrokeTool,
         color: ds.color,
@@ -253,7 +256,10 @@ export default function CanvasStage() {
           <SceneShapes />
           {tool === 'eraser' && <CurrentStroke />}
         </Layer>
-        <Layer listening={false}>{tool !== 'eraser' && <CurrentStroke />}</Layer>
+        <Layer listening={false}>
+          {tool !== 'eraser' && <CurrentStroke />}
+          <RemoteLiveStrokes />
+        </Layer>
       </Stage>
     </div>
   )
