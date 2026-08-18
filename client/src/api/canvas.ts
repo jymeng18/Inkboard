@@ -71,3 +71,22 @@ export async function getSnapshotPreview(canvasId: string, version: string): Pro
   })
   return data as Blob
 }
+
+/*
+ * The persisted op-log for a canvas, ordered oldest-first. Each entry is the
+ * opaque `operationData` JSON (a serialized SceneItem); the caller parses and
+ * replays them to rebuild the scene on open.
+ */
+export async function getCanvasOperations(canvasId: string): Promise<string[]> {
+  const { data } = await api.get(`/canvas/${canvasId}/operations`)
+  return data as string[]
+}
+
+/*
+ * Persists a single committed op directly, for when it can't be broadcast over
+ * the hub (a solo owner, or before the group join). `type` matches the hub's
+ * ActionType: 0 = draw, 1 = erase.
+ */
+export async function saveCanvasOperation(canvasId: string, type: number, operationData: string) {
+  await api.post(`/canvas/${canvasId}/operations`, { type, operationData })
+}

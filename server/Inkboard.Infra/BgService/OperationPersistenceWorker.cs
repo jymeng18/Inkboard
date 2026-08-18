@@ -8,9 +8,7 @@ namespace Inkboard.Infra.BgService;
 
 /// <summary>
 /// Drains the operation write queue and bulk-inserts in batches, flushing when a
-/// batch fills or a short window elapses after the first op. This keeps per-stroke
-/// DB writes entirely off the real-time path: a burst of strokes collapses into a
-/// single insert, and a steady drip is still amortised across the window.
+/// batch fills or a short window elapses after the first op.
 /// </summary>
 public class OperationPersistenceWorker : BackgroundService
 {

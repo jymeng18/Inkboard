@@ -34,6 +34,7 @@ interface SceneState {
   redoStack: SceneItem[]
   add: (item: SceneItem) => void
   addRemote: (item: SceneItem) => void
+  addManyRemote: (items: SceneItem[]) => void
   undo: () => void
   redo: () => void
   clear: () => void
@@ -49,6 +50,15 @@ export const useSceneStore = create<SceneState>((set) => ({
   // have it (dedupe by id), and never clear our own redo stack.
   addRemote: (item) =>
     set((s) => (s.items.some((i) => i.id === item.id) ? s : { items: [...s.items, item] })),
+
+  // Replay a batch (op-log hydrate on open) in one update, skipping any we already
+  // have so it reconciles with live ops that arrived during the fetch.
+  addManyRemote: (items) =>
+    set((s) => {
+      const seen = new Set(s.items.map((i) => i.id))
+      const additions = items.filter((i) => !seen.has(i.id))
+      return additions.length === 0 ? s : { items: [...s.items, ...additions] }
+    }),
   
   undo: () =>
     set((s) => {

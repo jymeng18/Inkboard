@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
 
+import { saveCanvasOperation } from '@/api/canvas'
 import { subscribeLocalOps } from '@/lib/opChannel'
 import { useAuthStore } from '@/stores/authStore'
 import { useCursorStore } from '@/stores/cursorStore'
@@ -109,12 +110,18 @@ export function useCanvasHub(canvasId: string | undefined) {
       }
     })
 
-    // Broadcast this client's finished ops. Fire-and-forget (the local render already
-    // happened); dropped when not joined (e.g. solo), matching the cursor path.
+    // Broadcast this client's finished ops. Fire-and-forget (the local render
+    // already happened). When we can't broadcast live (solo, or before the group
+    // join), persist the op directly so it survives a reopen; peers replay it from
+    // the op-log when they hydrate.
     const unsubscribeOps = subscribeLocalOps((op) => {
-      if (!joinedRef.current || conn.state !== signalR.HubConnectionState.Connected) return
       const type = op.kind === 'stroke' && op.tool === 'eraser' ? 1 : 0
-      void conn.send('SendOperation', { type, operationData: JSON.stringify(op) })
+      const operationData = JSON.stringify(op)
+      if (!joinedRef.current || conn.state !== signalR.HubConnectionState.Connected) {
+        void saveCanvasOperation(canvasId, type, operationData)
+        return
+      }
+      void conn.send('SendOperation', { type, operationData })
     })
 
     conn.onreconnected(() => {
