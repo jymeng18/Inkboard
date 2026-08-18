@@ -283,7 +283,7 @@ export default function DashboardPage() {
           unreadCount={unreadCount}
         />
 
-        <main className="flex-1 overflow-x-hidden p-5 sm:p-8">
+        <main className="flex-1 overflow-x-clip p-5 sm:p-8">
           <nav className="mb-6 flex gap-2 overflow-x-auto lg:hidden">
             {NAV_ITEMS.map(({ view: tab, label, icon: Icon }) => (
               <button

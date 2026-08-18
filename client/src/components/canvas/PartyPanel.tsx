@@ -71,7 +71,7 @@ export default function PartyPanel({
       )}
 
       <aside
-        className={`absolute top-4 right-4 bottom-4 z-20 flex w-80 flex-col rounded-3xl border-4 border-outline bg-surface p-5 sticker-shadow-lg transition-transform duration-200 ${
+        className={`absolute top-4 right-4 bottom-4 z-20 flex w-80 max-w-[calc(100vw-2rem)] flex-col rounded-3xl border-4 border-outline bg-surface p-5 sticker-shadow-lg transition-transform duration-200 ${
           open ? 'translate-x-0' : 'translate-x-[calc(100%+1.5rem)]'
         }`}
       >

@@ -33,23 +33,27 @@ export default function ColorPicker() {
         title={`Selected: ${color}`}
         aria-label={`Selected color ${color}`}
       />
-      <span className="mx-0.5 h-6 w-0.5 rounded bg-outline/15" aria-hidden />
+      <div className="hidden items-center gap-1.5 sm:flex">
+        <span className="mx-0.5 h-6 w-0.5 rounded bg-outline/15" aria-hidden />
 
-      {SWATCHES.map((swatch) => (
-        <button
-          key={swatch}
-          type="button"
-          onClick={() => setColor(swatch)}
-          title={swatch}
-          aria-label={`Use ${swatch}`}
-          className={`size-6 rounded-full border-2 transition-transform hover:scale-110 ${
-            color.toLowerCase() === swatch.toLowerCase()
-              ? 'border-outline ring-2 ring-outline ring-offset-1'
-              : 'border-outline/40'
-          }`}
-          style={{ backgroundColor: swatch }}
-        />
-      ))}
+        {SWATCHES.map((swatch) => (
+          <button
+            key={swatch}
+            type="button"
+            onClick={() => setColor(swatch)}
+            title={swatch}
+            aria-label={`Use ${swatch}`}
+            className={`size-6 rounded-full border-2 transition-transform hover:scale-110 ${
+              color.toLowerCase() === swatch.toLowerCase()
+                ? 'border-outline ring-2 ring-outline ring-offset-1'
+                : 'border-outline/40'
+            }`}
+            style={{ backgroundColor: swatch }}
+          />
+        ))}
+      </div>
+
+      <span className="mx-0.5 hidden h-6 w-0.5 rounded bg-outline/15 sm:block" aria-hidden />
 
       <div className="relative flex items-center">
         <button

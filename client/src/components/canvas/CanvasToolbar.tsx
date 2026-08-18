@@ -6,6 +6,7 @@ import {
   Eraser,
   Hand,
   History,
+  LayoutDashboard,
   Pencil,
   PowerOff,
   Redo2,
@@ -97,16 +98,16 @@ export default function CanvasToolbar({
 
   return (
     <>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-4">
-        <div className="pointer-events-auto flex items-center gap-2">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-wrap items-start justify-between gap-2 p-2 sm:gap-3 sm:p-4 xl:flex-nowrap">
+        <div className="pointer-events-auto order-1 flex items-center gap-2 xl:order-none">
           <Link
             to="/dashboard"
             onClick={() => void snapshot?.save()}
-            className="flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2 sticker-shadow-sm transition-transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-2 sticker-shadow-sm transition-transform hover:-translate-y-0.5 sm:px-4"
             title="Back to dashboard"
           >
-            <img src="/pen.svg" alt="" className="h-6 -rotate-30" />
-            <span className="hidden font-display text-xl sm:inline">Inkboard</span>
+            <LayoutDashboard className="size-6 sm:hidden" aria-hidden />
+            <span className="hidden font-display text-xl sm:inline">Dashboard</span>
           </Link>
 
           {/* Mirrors the dashboard link's own classes rather than using Button,
@@ -124,25 +125,27 @@ export default function CanvasToolbar({
           )}
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-1.5 sticker-shadow">
-          <Dock
-            items={TOOLS.map(({ tool: value, icon: Icon, label }) => ({
-              label,
-              active: tool === value,
-              onClick: () => setTool(value),
-              icon: <Icon className="size-5" aria-hidden />,
-            }))}
-            baseItemSize={TOOL_SIZE}
-            magnification={TOOL_MAGNIFICATION}
-            distance={130}
-          />
+        <div className="pointer-events-none order-3 flex w-full justify-center xl:order-none xl:w-auto">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-1.5 sticker-shadow">
+            <Dock
+              items={TOOLS.map(({ tool: value, icon: Icon, label }) => ({
+                label,
+                active: tool === value,
+                onClick: () => setTool(value),
+                icon: <Icon className="size-5" aria-hidden />,
+              }))}
+              baseItemSize={TOOL_SIZE}
+              magnification={TOOL_MAGNIFICATION}
+              distance={130}
+            />
 
-          <span className="mx-1 h-7 w-0.5 rounded bg-outline/15" aria-hidden />
+            <span className="mx-1 h-7 w-0.5 rounded bg-outline/15" aria-hidden />
 
-          <ColorPicker />
+            <ColorPicker />
+          </div>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto order-2 flex items-center gap-2 xl:order-none">
           <div className="flex items-center gap-1 rounded-full border-[3px] border-outline bg-surface px-2 py-1.5 sticker-shadow-sm">
             <IconButton icon={Undo2} label="Undo (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
             <IconButton
