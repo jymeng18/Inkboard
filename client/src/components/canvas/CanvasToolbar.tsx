@@ -107,7 +107,10 @@ export default function CanvasToolbar({
             title="Back to dashboard"
           >
             <LayoutDashboard className="size-6 sm:hidden" aria-hidden />
-            <span className="hidden font-display text-xl sm:inline">Dashboard</span>
+            <img src="/brush_paint.svg" alt="" className="h-6" />
+            <span className="hidden font-display text-xl sm:inline">
+              Inkboard
+            </span>
           </Link>
 
           {/* Mirrors the dashboard link's own classes rather than using Button,
@@ -120,7 +123,9 @@ export default function CanvasToolbar({
               className="flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-4 py-2 sticker-shadow-sm transition-transform hover:-translate-y-0.5 hover:text-primary"
             >
               <PowerOff className="size-6" aria-hidden />
-              <span className="hidden font-display text-xl sm:inline">End session</span>
+              <span className="hidden font-display text-xl sm:inline">
+                End session
+              </span>
             </button>
           )}
         </div>
@@ -139,7 +144,10 @@ export default function CanvasToolbar({
               distance={130}
             />
 
-            <span className="mx-1 h-7 w-0.5 rounded bg-outline/15" aria-hidden />
+            <span
+              className="mx-1 h-7 w-0.5 rounded bg-outline/15"
+              aria-hidden
+            />
 
             <ColorPicker />
           </div>
@@ -147,7 +155,12 @@ export default function CanvasToolbar({
 
         <div className="pointer-events-auto order-2 flex items-center gap-2 xl:order-none">
           <div className="flex items-center gap-1 rounded-full border-[3px] border-outline bg-surface px-2 py-1.5 sticker-shadow-sm">
-            <IconButton icon={Undo2} label="Undo (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
+            <IconButton
+              icon={Undo2}
+              label="Undo (Ctrl+Z)"
+              onClick={undo}
+              disabled={!canUndo}
+            />
             <IconButton
               icon={Redo2}
               label="Redo (Ctrl+Shift+Z)"
@@ -164,7 +177,7 @@ export default function CanvasToolbar({
 
           <span
             className="flex size-10 items-center justify-center rounded-full border-[3px] border-outline bg-secondary-container font-display text-lg sticker-shadow-sm"
-            title={userName || 'You'}
+            title={userName || "You"}
           >
             {initial}
           </span>
@@ -190,7 +203,7 @@ export default function CanvasToolbar({
         />
       )}
     </>
-  )
+  );
 }
 
 function IconButton({

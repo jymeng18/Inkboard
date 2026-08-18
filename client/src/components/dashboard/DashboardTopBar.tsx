@@ -22,7 +22,7 @@ export default function DashboardTopBar({
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b-4 border-outline bg-surface px-5 py-3">
       <div className="flex items-center gap-3">
-        <img src="/pen.svg" alt="" className="h-8 -rotate-[30deg]" />
+        <img src="/brush_paint.svg" alt="" className="h-8 -rotate-[30deg]" />
         <span className="font-display text-2xl">Inkboard</span>
       </div>
 

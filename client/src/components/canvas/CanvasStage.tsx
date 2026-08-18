@@ -234,12 +234,6 @@ export default function CanvasStage() {
         backgroundSize: `${GRID * scale}px ${GRID * scale}px`,
       }}
     >
-      <img
-        src="/pen.svg"
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 h-40 -translate-x-1/2 -translate-y-1/2 -rotate-30 opacity-[0.03]"
-      />
       <Stage
         width={dims.w}
         height={dims.h}
