@@ -97,7 +97,7 @@ export default function CanvasesView({
 
       {!isLoading && !isError && !session.locked && canvases.length === 0 && (
         <p className="mt-8 text-center font-body text-sm text-on-background/60">
-          No canvases yet — start your first one and it'll show up here.
+          No canvases yet, create your first one and it'll show up here.
         </p>
       )}
     </section>
