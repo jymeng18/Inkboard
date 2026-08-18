@@ -28,3 +28,6 @@
 - [ ] PartyService and CanvasService are tightly coupled, some methods write into each others states
 - [ ] Rate limiting
 - [ ] http logging
+- [ ] User Account page / User preferences
+- [ ] DMs page
+- [ ] Optimize CanvasService.SaveOperationsAsync()

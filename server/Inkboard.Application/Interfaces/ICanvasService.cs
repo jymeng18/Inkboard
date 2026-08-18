@@ -13,4 +13,6 @@ public interface ICanvasService
     Task<Result> UploadSnapshotAsync(Guid canvasId, Guid ownerId, Stream imageData, string contentType);
     Task<Result<Stream>> GetSnapshotAsync(Guid canvasId, Guid requesterId);
     Task<Result<Stream>> GetSnapshotPreviewAsync(Guid canvasId, Guid requesterId);
+    Task<Result<List<string>>> GetOperationsAsync(Guid canvasId, Guid requesterId);
+    Task<Result> SaveOperationAsync(Guid canvasId, Guid requesterId, int type, string operationData);
 }

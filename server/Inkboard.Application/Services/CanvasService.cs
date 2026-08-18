@@ -11,22 +11,27 @@ public class CanvasService : ICanvasService
     // Longest edge of a dashboard preview thumbnail, in pixels.
     private const int PreviewMaxDimension = 400;
 
+    private const int MaxOperationDataLength = 256 * 1024;
+
     private readonly ICanvasRepository _canvasRepository;
     private readonly IPartyRepository _partyRepository;
     private readonly IBlobStorageService _blobStorageService;
     private readonly IImageValidator _imageValidator;
+    private readonly IOperationRepository _operationRepository;
 
     public CanvasService(
         ICanvasRepository canvasRepository,
         IPartyRepository partyRepository,
         IBlobStorageService blobStorageService,
-        IImageValidator imageValidator
+        IImageValidator imageValidator,
+        IOperationRepository operationRepository
     )
     {
         _canvasRepository = canvasRepository;
         _partyRepository = partyRepository;
         _blobStorageService = blobStorageService;
         _imageValidator = imageValidator;
+        _operationRepository = operationRepository;
     }
 
     public async Task<Result<Canvas>> CreateCanvasAsync(Guid userId, string canvasName)
@@ -185,7 +190,11 @@ public class CanvasService : ICanvasService
             {
                 await using (preview)
                 {
-                    await _blobStorageService.UploadPreviewAsync(canvasId, preview, expectedContentType);
+                    await _blobStorageService.UploadPreviewAsync(
+                        canvasId,
+                        preview,
+                        expectedContentType
+                    );
                 }
             }
         }
@@ -296,6 +305,71 @@ public class CanvasService : ICanvasService
 
             return Result<Stream>.Ok(thumbnail);
         }
+    }
+
+    public async Task<Result<List<string>>> GetOperationsAsync(Guid canvasId, Guid requesterId)
+    {
+        var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
+        if (canvas is null)
+        {
+            return Result<List<string>>.Fail(ErrorType.NotFound, "Canvas not found.");
+        }
+
+        if (canvas.OwnerId != requesterId)
+        {
+            var activeParty = await _partyRepository.GetActivePartyForUserAsync(requesterId);
+            if (activeParty is null || activeParty.CanvasId != canvasId)
+            {
+                return Result<List<string>>.Fail(
+                    ErrorType.Forbidden,
+                    "Canvas does not belong to you."
+                );
+            }
+        }
+
+        List<CanvasOperation> operations = await _operationRepository.GetByCanvasAsync(canvasId);
+        List<string> payloads = operations.ConvertAll(op => op.OperationData);
+        return Result<List<string>>.Ok(payloads);
+    }
+
+    // TODO: Needs optimization if more drawing is done solo
+    /// <summary>
+    /// Persists a single committed op. Used when a client can't broadcast it over
+    /// the hub (a solo owner, or before the group join), so drawing survives a reopen
+    /// </summary>
+    public async Task<Result> SaveOperationAsync(
+        Guid canvasId,
+        Guid requesterId,
+        int type,
+        string operationData
+    )
+    {
+        if (string.IsNullOrEmpty(operationData) || operationData.Length > MaxOperationDataLength)
+            return Result.Fail(ErrorType.Validation, "Operation payload is missing or too large.");
+
+        var canvas = await _canvasRepository.GetCanvasByIdAsync(canvasId);
+        if (canvas is null)
+            return Result.Fail(ErrorType.NotFound, "Canvas not found.");
+
+        if (canvas.OwnerId != requesterId)
+        {
+            var activeParty = await _partyRepository.GetActivePartyForUserAsync(requesterId);
+            if (activeParty is null || activeParty.CanvasId != canvasId)
+                return Result.Fail(ErrorType.Forbidden, "Canvas does not belong to you.");
+        }
+
+        var operation = new CanvasOperation
+        {
+            Id = Guid.NewGuid(),
+            Type = Enum.IsDefined(typeof(ActionType), type) ? (ActionType)type : ActionType.Draw,
+            OperationData = operationData,
+            CanvasId = canvasId,
+            UserId = requesterId,
+            Timestamp = DateTimeOffset.UtcNow,
+        };
+
+        await _operationRepository.AddRangeAsync(new[] { operation });
+        return Result.Ok();
     }
 
     public static async Task<Result> ImageDataValidator(Stream imageData)

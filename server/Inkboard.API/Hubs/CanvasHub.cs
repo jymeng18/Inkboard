@@ -13,17 +13,20 @@ public class CanvasHub : Hub<ICanvasHubClient>
     private readonly IPartyRepository _partyRepository;
     private readonly IConnectionStore _connectionStore;
     private readonly ICanvasNotifier _canvasNotifier;
+    private readonly IOperationWriteQueue _writeQueue;
     public static readonly string HubName = "CanvasHub";
 
     public CanvasHub(
         IPartyRepository partyRepository,
         IConnectionStore connectionStore,
-        ICanvasNotifier canvasNotifier
+        ICanvasNotifier canvasNotifier,
+        IOperationWriteQueue writeQueue
     )
     {
         _partyRepository = partyRepository;
         _connectionStore = connectionStore;
         _canvasNotifier = canvasNotifier;
+        _writeQueue = writeQueue;
     }
 
     public override async Task OnConnectedAsync()
@@ -133,7 +136,7 @@ public class CanvasHub : Hub<ICanvasHubClient>
 
         var canvasId = (Guid)cachedCanvasId!;
 
-        // Stamp server-authoritative fields, never trust the client for identity/routing.
+        // Stamp server-authoritative fields, 
         // OperationData untouched, the server only relays it via WS
         operation.Id = Guid.NewGuid();
         operation.UserId = userId;
@@ -141,6 +144,9 @@ public class CanvasHub : Hub<ICanvasHubClient>
         operation.Timestamp = DateTimeOffset.UtcNow;
 
         await _canvasNotifier.NotifyOperation(operation, canvasId, Context.ConnectionId);
+
+        // background worker batch-inserts. The broadcast above never waits on the DB.
+        _writeQueue.Enqueue(operation);
     }
 
     public async Task SendLiveStroke(LiveStrokeModel liveStroke)

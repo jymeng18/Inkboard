@@ -179,9 +179,55 @@ public static class CanvasEndpoint
                     if (!result.IsSuccess)
                         return ToErrorResult(result.Error, result.ErrorType);
 
-                    // * cache previews in user RAM, no Azure 
+                    // * cache previews in user RAM, no Azure
                     context.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
                     return Results.Stream(result.Data!, "image/png");
+                }
+            )
+            .RequireAuthorization();
+
+        endpoint
+            .MapPost(
+                "/api/canvas/{canvasId}/operations",
+                async (
+                    Guid canvasId,
+                    OperationRequest request,
+                    ClaimsPrincipal user,
+                    ICanvasService canvasService
+                ) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await canvasService.SaveOperationAsync(
+                        canvasId,
+                        userId,
+                        request.Type,
+                        request.OperationData
+                    );
+                    if (!result.IsSuccess)
+                        return ToErrorResult(result.Error, result.ErrorType);
+
+                    return Results.NoContent();
+                }
+            )
+            .RequireAuthorization();
+
+        endpoint
+            .MapGet(
+                "/api/canvas/{canvasId}/operations",
+                async (Guid canvasId, ClaimsPrincipal user, ICanvasService canvasService) =>
+                {
+                    var userId = user.GetUserId();
+                    if (userId == Guid.Empty)
+                        return Results.Unauthorized();
+
+                    var result = await canvasService.GetOperationsAsync(canvasId, userId);
+                    if (!result.IsSuccess)
+                        return ToErrorResult(result.Error, result.ErrorType);
+
+                    return Results.Ok(result.Data);
                 }
             )
             .RequireAuthorization();
