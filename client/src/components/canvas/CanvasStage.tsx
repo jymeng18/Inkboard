@@ -9,6 +9,7 @@ import { useDrawingStore } from '@/stores/drawingStore'
 import { useSceneStore, type SceneItem } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 import CurrentStroke from './CurrentStroke'
+import RemoteLiveShapes from './RemoteLiveShapes'
 import RemoteLiveStrokes from './RemoteLiveStrokes'
 import SceneShapes from './SceneShapes'
 import { cursorForTool } from './cursors'
@@ -16,6 +17,20 @@ import type { StrokeTool } from './strokeGeometry'
 
 const SHAPE_STROKE_WIDTH = 3
 const GRID = 24
+
+// Snap a ruler line's head onto the nearest 0/45/90 axis from its start, keeping
+// the drawn length. Used while Shift is held.
+function snapToAngle(
+  [sx, sy]: [number, number],
+  [hx, hy]: [number, number],
+): [number, number] {
+  const dx = hx - sx
+  const dy = hy - sy
+  const length = Math.hypot(dx, dy)
+  const step = Math.PI / 4
+  const angle = Math.round(Math.atan2(dy, dx) / step) * step
+  return [sx + Math.cos(angle) * length, sy + Math.sin(angle) * length]
+}
 
 /*
  * The live Konva stage. Drawing is driven imperatively through refs + a per-frame
@@ -86,16 +101,20 @@ export default function CanvasStage() {
     const [wx, wy] = toWorld(stage)
     drawing.current = true
 
-    if (ui.tool === 'shapes') {
+    if (ui.tool === 'shapes' || ui.tool === 'ruler') {
+      const shape = ui.tool === 'ruler' ? 'line' : ui.shapeKind
       shapeStart.current = [wx, wy]
       shapeHead.current = [wx, wy]
-      useDrawingStore.getState().beginShape(ui.tool, ui.color, [wx, wy])
+      useDrawingStore.getState().beginShape(shape, ui.color, [wx, wy])
     } else {
+      // 'brush' is a family; the active variant is the concrete geometry stored
+      // on the stroke so it replays identically everywhere.
+      const geom: StrokeTool = ui.tool === 'brush' ? ui.brushVariant : (ui.tool as StrokeTool)
       const pressure = e.evt.pressure || 0.5
       pointsRef.current = [[wx, wy, pressure]]
       // Id assigned here so the live-stream frames and the final committed op
       // carry the same id.
-      useDrawingStore.getState().beginStroke(crypto.randomUUID(), ui.tool, ui.color, ui.size, [wx, wy, pressure])
+      useDrawingStore.getState().beginStroke(crypto.randomUUID(), geom, ui.color, ui.size, [wx, wy, pressure])
     }
   }, [])
 
@@ -112,8 +131,13 @@ export default function CanvasStage() {
       if (!stage) return
 
       const [wx, wy] = toWorld(stage)
-      if (useDrawingStore.getState().mode === 'shape') {
-        shapeHead.current = [wx, wy]
+      const ds = useDrawingStore.getState()
+      if (ds.mode === 'shape') {
+        // Shift constrains the ruler line to 45 increments.
+        shapeHead.current =
+          ds.shape === 'line' && e.evt.shiftKey && shapeStart.current
+            ? snapToAngle(shapeStart.current, [wx, wy])
+            : [wx, wy]
       } else {
         pointsRef.current.push([wx, wy, e.evt.pressure || 0.5])
       }
@@ -139,24 +163,45 @@ export default function CanvasStage() {
       }
       scene.add(item)
       publishLocalOp(item)
-    } else if (ds.mode === 'shape' && shapeStart.current && shapeHead.current) {
+    } else if (ds.mode === 'shape' && ds.shape && shapeStart.current && shapeHead.current) {
+      const shape = ds.shape
       const [sx, sy] = shapeStart.current
       const [hx, hy] = shapeHead.current
-      const width = Math.abs(hx - sx)
-      const height = Math.abs(hy - sy)
-      if (width > 2 && height > 2) {
-        const item: SceneItem = {
-          id: crypto.randomUUID(),
-          kind: 'rect',
-          color: ds.color,
-          x: Math.min(sx, hx),
-          y: Math.min(sy, hy),
-          width,
-          height,
-          strokeWidth: SHAPE_STROKE_WIDTH,
+
+      if (shape === 'line') {
+        // A line only needs enough length to be a deliberate mark, not a stray click.
+        if (Math.hypot(hx - sx, hy - sy) > 2) {
+          const item: SceneItem = {
+            id: crypto.randomUUID(),
+            kind: 'line',
+            color: ds.color,
+            x1: sx,
+            y1: sy,
+            x2: hx,
+            y2: hy,
+            strokeWidth: SHAPE_STROKE_WIDTH,
+          }
+          scene.add(item)
+          publishLocalOp(item)
         }
-        scene.add(item)
-        publishLocalOp(item)
+      } else {
+        const width = Math.abs(hx - sx)
+        const height = Math.abs(hy - sy)
+        if (width > 2 && height > 2) {
+          const item: SceneItem = {
+            id: crypto.randomUUID(),
+            kind: 'shape',
+            shape,
+            color: ds.color,
+            x: Math.min(sx, hx),
+            y: Math.min(sy, hy),
+            width,
+            height,
+            strokeWidth: SHAPE_STROKE_WIDTH,
+          }
+          scene.add(item)
+          publishLocalOp(item)
+        }
       }
     }
 
@@ -253,6 +298,7 @@ export default function CanvasStage() {
         <Layer listening={false}>
           {tool !== 'eraser' && <CurrentStroke />}
           <RemoteLiveStrokes />
+          <RemoteLiveShapes />
         </Layer>
       </Stage>
     </div>

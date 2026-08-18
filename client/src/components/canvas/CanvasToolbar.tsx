@@ -10,6 +10,7 @@ import {
   Pencil,
   PowerOff,
   Redo2,
+  Ruler,
   Share2,
   Shapes,
   Undo2,
@@ -26,14 +27,16 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCanvasUiStore, type Tool } from '@/stores/canvasUiStore'
 import { useSceneStore } from '@/stores/sceneStore'
 import ColorPicker from './ColorPicker'
+import ToolOptions from './ToolOptions'
 
 type Party = ReturnType<typeof useCanvasParty>
 
 const TOOLS: { tool: Tool; icon: LucideIcon; label: string }[] = [
   { tool: 'pencil', icon: Pencil, label: 'Pencil (P)' },
   { tool: 'brush', icon: Brush, label: 'Brush (B)' },
-  { tool: 'eraser', icon: Eraser, label: 'Eraser (E)' },
+  { tool: 'ruler', icon: Ruler, label: 'Ruler (R)' },
   { tool: 'shapes', icon: Shapes, label: 'Shapes (U)' },
+  { tool: 'eraser', icon: Eraser, label: 'Eraser (E)' },
   { tool: 'hand', icon: Hand, label: 'Hand (H)' },
 ]
 
@@ -99,7 +102,7 @@ export default function CanvasToolbar({
   return (
     <>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-wrap items-start justify-between gap-2 p-2 sm:gap-3 sm:p-4 xl:flex-nowrap">
-        <div className="pointer-events-auto order-1 flex items-center gap-2 xl:order-none">
+        <div className="pointer-events-auto order-1 flex items-center gap-2 xl:order-0">
           <Link
             to="/dashboard"
             onClick={() => void snapshot?.save()}
@@ -130,7 +133,7 @@ export default function CanvasToolbar({
           )}
         </div>
 
-        <div className="pointer-events-none order-3 flex w-full justify-center xl:order-none xl:w-auto">
+        <div className="pointer-events-none order-3 flex w-full justify-center xl:order-0 xl:w-auto">
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border-[3px] border-outline bg-surface px-3 py-1.5 sticker-shadow">
             <Dock
               items={TOOLS.map(({ tool: value, icon: Icon, label }) => ({
@@ -144,6 +147,8 @@ export default function CanvasToolbar({
               distance={130}
             />
 
+            <ToolOptions />
+
             <span
               className="mx-1 h-7 w-0.5 rounded bg-outline/15"
               aria-hidden
@@ -153,7 +158,7 @@ export default function CanvasToolbar({
           </div>
         </div>
 
-        <div className="pointer-events-auto order-2 flex items-center gap-2 xl:order-none">
+        <div className="pointer-events-auto order-2 flex items-center gap-2 xl:order-0">
           <div className="flex items-center gap-1 rounded-full border-[3px] border-outline bg-surface px-2 py-1.5 sticker-shadow-sm">
             <IconButton
               icon={Undo2}

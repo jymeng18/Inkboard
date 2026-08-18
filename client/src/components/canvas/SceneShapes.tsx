@@ -1,7 +1,8 @@
 import { memo, useMemo } from 'react'
-import { Line, Rect } from 'react-konva'
+import { Line } from 'react-konva'
 
 import { useSceneStore, type StrokeItem } from '@/stores/sceneStore'
+import ShapeNode from './ShapeNode'
 import { strokeOutline } from './strokeGeometry'
 
 /*
@@ -40,24 +41,52 @@ function SceneShapes() {
 
   return (
     <>
-      {items.map((item) =>
-        item.kind === 'stroke' ? (
-          <StrokeShape key={item.id} item={item} />
-        ) : (
-          <Rect
-            key={item.id}
-            x={item.x}
-            y={item.y}
-            width={item.width}
-            height={item.height}
-            stroke={item.color}
-            strokeWidth={item.strokeWidth}
-            lineJoin="round"
-            listening={false}
-            perfectDrawEnabled={false}
-          />
-        ),
-      )}
+      {items.map((item) => {
+        switch (item.kind) {
+          case 'stroke':
+            return <StrokeShape key={item.id} item={item} />
+          case 'shape':
+            return (
+              <ShapeNode
+                key={item.id}
+                shape={item.shape}
+                ax={item.x}
+                ay={item.y}
+                bx={item.x + item.width}
+                by={item.y + item.height}
+                color={item.color}
+                strokeWidth={item.strokeWidth}
+              />
+            )
+          case 'line':
+            return (
+              <ShapeNode
+                key={item.id}
+                shape="line"
+                ax={item.x1}
+                ay={item.y1}
+                bx={item.x2}
+                by={item.y2}
+                color={item.color}
+                strokeWidth={item.strokeWidth}
+              />
+            )
+          // Legacy rectangle op predating the generalized shape.
+          case 'rect':
+            return (
+              <ShapeNode
+                key={item.id}
+                shape="rectangle"
+                ax={item.x}
+                ay={item.y}
+                bx={item.x + item.width}
+                by={item.y + item.height}
+                color={item.color}
+                strokeWidth={item.strokeWidth}
+              />
+            )
+        }
+      })}
     </>
   )
 }

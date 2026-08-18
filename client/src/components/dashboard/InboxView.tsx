@@ -232,7 +232,7 @@ export default function InboxView() {
                 className="flex items-center gap-4 rounded-2xl border-[3px] border-outline bg-surface p-3 sticker-shadow-sm"
               >
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-[3px] border-outline bg-primary-container">
-                  <img src="/pen.svg" alt="" className="h-6 -rotate-[30deg]" />
+                  <img src="/pen.svg" alt="" className="h-6 rotate-[-30deg]" />
                 </span>
 
                 <div className="min-w-0 flex-1">

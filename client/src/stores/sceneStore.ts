@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 
+import type { StrokeTool } from '@/components/canvas/strokeGeometry'
+import type { ShapeKind } from './canvasUiStore'
+
 /*
  * Committed canvas content. Kept deliberately flat and serialisable so it can be
  * broadcast/persisted as-is. Strokes store the raw [x, y, pressure] input, which
@@ -10,12 +13,44 @@ import { create } from 'zustand'
 export type StrokeItem = {
   id: string
   kind: 'stroke'
-  tool: 'pencil' | 'brush' | 'eraser'
+  tool: StrokeTool
   color: string
   size: number
   points: number[][]
 }
 
+/*
+ * An outline shape defined by its bounding box. Direction-independent, so the box
+ * is stored already normalized (top-left origin + positive extents) and every
+ * shape kind is drawn to fit it.
+ */
+export type ShapeItem = {
+  id: string
+  kind: 'shape'
+  shape: ShapeKind
+  color: string
+  x: number
+  y: number
+  width: number
+  height: number
+  strokeWidth: number
+}
+
+/* A straight line segment (the ruler tool). Keeps real endpoints, since a line's
+ * direction is lost if it's flattened to a bounding box. */
+export type LineItem = {
+  id: string
+  kind: 'line'
+  color: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  strokeWidth: number
+}
+
+/* Legacy rectangle op, kept so op-logs written before the generalized ShapeItem
+ * still replay. New rectangles are stored as ShapeItem with shape 'rectangle'. */
 export type RectItem = {
   id: string
   kind: 'rect'
@@ -27,7 +62,7 @@ export type RectItem = {
   strokeWidth: number
 }
 
-export type SceneItem = StrokeItem | RectItem
+export type SceneItem = StrokeItem | ShapeItem | LineItem | RectItem
 
 interface SceneState {
   items: SceneItem[]

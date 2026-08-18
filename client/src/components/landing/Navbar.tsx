@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'How it Works', href: '#canvas' },
-  { label: 'AI Magic', href: '#features' },
+  { label: 'Overview', href: '#overview' },
 ]
 
 interface NavbarProps {
