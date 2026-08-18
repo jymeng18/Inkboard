@@ -10,6 +10,7 @@ using Inkboard.Application.Services;
 using Inkboard.Domain.Repositories;
 using Inkboard.Infra.Auth;
 using Inkboard.Infra.Azure;
+using Inkboard.Infra.BgService;
 using Inkboard.Infra.Db;
 using Inkboard.Infra.DependencyInjection;
 using Inkboard.Infra.Imaging;
@@ -42,10 +43,9 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 builder.Services.AddInfraServices(builder.Configuration, builder.Environment);
-builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddAuthenticationServices(builder.Configuration);
 builder.Services.AddAzureServices(builder.Configuration);
 
-builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
 builder.Services.AddSignalR();
@@ -62,12 +62,16 @@ builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPartyNotifier, PartyNotifier>();
 builder.Services.AddScoped<ICanvasRepository, CanvasRepository>();
 builder.Services.AddScoped<ICanvasService, CanvasService>();
+builder.Services.AddScoped<IOperationRepository, OperationRepository>();
+builder.Services.AddSingleton<OperationWriteQueue>();
+builder.Services.AddSingleton<IOperationWriteQueue>(sp => sp.GetRequiredService<OperationWriteQueue>());
+builder.Services.AddHostedService<OperationPersistenceWorker>();
 builder.Services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendsListService, FriendsListService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddSingleton<IImageValidator, SkiaSharpValidator>();
-
+builder.Services.AddScoped<ICanvasNotifier, CanvasNotifier>();
 builder.Services.AddSingleton<IConnectionStore, ConnectionStore>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
@@ -100,5 +104,6 @@ app.MapCanvasEndpoint();
 app.MapFriendEndpoint();
 
 app.MapHub<PartyHub>("/hubs/party");
+app.MapHub<CanvasHub>("/hubs/canvas");
 
 app.Run();

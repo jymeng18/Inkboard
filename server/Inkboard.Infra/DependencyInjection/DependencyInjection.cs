@@ -41,7 +41,7 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddApiServices(
+    public static IServiceCollection AddAuthenticationServices(
         this IServiceCollection services,
         IConfiguration config
     )

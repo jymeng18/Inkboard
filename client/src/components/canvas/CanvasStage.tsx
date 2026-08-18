@@ -3,13 +3,16 @@ import { Layer, Stage } from 'react-konva'
 import { useGesture } from '@use-gesture/react'
 import type Konva from 'konva'
 
+import { publishLocalOp } from '@/lib/opChannel'
 import { useCanvasUiStore } from '@/stores/canvasUiStore'
 import { useDrawingStore } from '@/stores/drawingStore'
-import { useSceneStore } from '@/stores/sceneStore'
+import { useSceneStore, type SceneItem } from '@/stores/sceneStore'
 import { useViewportStore } from '@/stores/viewportStore'
 import CurrentStroke from './CurrentStroke'
+import RemoteLiveStrokes from './RemoteLiveStrokes'
 import SceneShapes from './SceneShapes'
-import { strokeOutline, type StrokeTool } from './strokeGeometry'
+import { cursorForTool } from './cursors'
+import type { StrokeTool } from './strokeGeometry'
 
 const SHAPE_STROKE_WIDTH = 3
 const GRID = 24
@@ -24,6 +27,7 @@ export default function CanvasStage() {
   const [dims, setDims] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
 
   const tool = useCanvasUiStore((s) => s.tool)
+  const size = useCanvasUiStore((s) => s.size)
   const x = useViewportStore((s) => s.x)
   const y = useViewportStore((s) => s.y)
   const scale = useViewportStore((s) => s.scale)
@@ -89,7 +93,9 @@ export default function CanvasStage() {
     } else {
       const pressure = e.evt.pressure || 0.5
       pointsRef.current = [[wx, wy, pressure]]
-      useDrawingStore.getState().beginStroke(ui.tool, ui.color, [wx, wy, pressure])
+      // Id assigned here so the live-stream frames and the final committed op
+      // carry the same id.
+      useDrawingStore.getState().beginStroke(crypto.randomUUID(), ui.tool, ui.color, ui.size, [wx, wy, pressure])
     }
   }, [])
 
@@ -121,24 +127,25 @@ export default function CanvasStage() {
     const scene = useSceneStore.getState()
 
     if (ds.mode === 'stroke' && pointsRef.current.length > 0) {
-      const strokeTool = ds.tool as StrokeTool
-      const outline = strokeOutline(pointsRef.current, strokeTool, true)
-      if (outline.length >= 6) {
-        scene.add({
-          id: crypto.randomUUID(),
-          kind: 'stroke',
-          tool: strokeTool,
-          color: ds.color,
-          outline,
-        })
+      // Store the raw input, not the outline: this is the operation we'll
+      // broadcast and persist, and each client renders its own outline from it.
+      const item: SceneItem = {
+        id: ds.id ?? crypto.randomUUID(),
+        kind: 'stroke',
+        tool: ds.tool as StrokeTool,
+        color: ds.color,
+        size: ds.size,
+        points: pointsRef.current.slice(),
       }
+      scene.add(item)
+      publishLocalOp(item)
     } else if (ds.mode === 'shape' && shapeStart.current && shapeHead.current) {
       const [sx, sy] = shapeStart.current
       const [hx, hy] = shapeHead.current
       const width = Math.abs(hx - sx)
       const height = Math.abs(hy - sy)
       if (width > 2 && height > 2) {
-        scene.add({
+        const item: SceneItem = {
           id: crypto.randomUUID(),
           kind: 'rect',
           color: ds.color,
@@ -147,7 +154,9 @@ export default function CanvasStage() {
           width,
           height,
           strokeWidth: SHAPE_STROKE_WIDTH,
-        })
+        }
+        scene.add(item)
+        publishLocalOp(item)
       }
     }
 
@@ -162,8 +171,9 @@ export default function CanvasStage() {
       panning.current = false
       lastPan.current = null
       if (containerRef.current) {
-        containerRef.current.style.cursor =
-          useCanvasUiStore.getState().tool === 'hand' ? 'grab' : 'crosshair'
+        const ui = useCanvasUiStore.getState()
+        const zoom = useViewportStore.getState().scale
+        containerRef.current.style.cursor = cursorForTool(ui.tool, ui.size * zoom)
       }
       return
     }
@@ -219,7 +229,7 @@ export default function CanvasStage() {
       }}
       style={{
         touchAction: 'none',
-        cursor: tool === 'hand' ? 'grab' : 'crosshair',
+        cursor: cursorForTool(tool, size * scale),
         backgroundPosition: `${x}px ${y}px`,
         backgroundSize: `${GRID * scale}px ${GRID * scale}px`,
       }}
@@ -246,7 +256,10 @@ export default function CanvasStage() {
           <SceneShapes />
           {tool === 'eraser' && <CurrentStroke />}
         </Layer>
-        <Layer listening={false}>{tool !== 'eraser' && <CurrentStroke />}</Layer>
+        <Layer listening={false}>
+          {tool !== 'eraser' && <CurrentStroke />}
+          <RemoteLiveStrokes />
+        </Layer>
       </Stage>
     </div>
   )

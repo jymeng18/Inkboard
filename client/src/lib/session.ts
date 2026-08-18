@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { jwtDecode } from 'jwt-decode'
 
-import { useAuthStore } from '@/stores/authStore'
+import { hasSessionHint, useAuthStore } from '@/stores/authStore'
 import type { AuthTokens, JwtClaims, SessionUser } from '@/types/auth'
 
 export function decodeClaims(token: string): JwtClaims | null {
@@ -46,10 +46,19 @@ export function refreshAccessToken(): Promise<string> {
 
 /** Runs once on app load to restore a session from the refresh cookie. */
 export async function bootstrapSession(): Promise<void> {
+  // Never signed in on this device means no refresh cookie to try, so skip the
+  // request that would only 401 (e.g. a first visit to the landing page).
+  if (!hasSessionHint()) {
+    useAuthStore.getState().finishBootstrap()
+    return
+  }
+
   try {
     await refreshAccessToken()
   } catch {
-    // No valid refresh cookie; the user stays signed out.
+    // The hint outlived the cookie (expired or revoked); clear it via logout so
+    // the next reload doesn't retry.
+    useAuthStore.getState().logout()
   } finally {
     useAuthStore.getState().finishBootstrap()
   }

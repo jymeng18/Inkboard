@@ -10,7 +10,10 @@ public interface ICanvasHubClient
 {
     Task NotifyOnOperation(CanvasOperation canvasOperation);
 
+    Task NotifyOnLiveStroke(LiveStrokeModel liveStroke);
+
     Task NotifyOnCursorPos(CursorPositionModel cursorPosition);
 
+    // ! Might remove this
     Task ReceiveCanvasSnapshot(string snapshotUrl);
 }

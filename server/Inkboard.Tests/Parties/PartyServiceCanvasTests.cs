@@ -11,7 +11,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
 {
     private CanvasService CreateCanvasService()
     {
-        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context), null, null);
+        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context), null, null, null);
     }
 
     [TestMethod]

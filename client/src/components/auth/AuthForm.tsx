@@ -44,6 +44,10 @@ export default function AuthForm() {
 
   const copy = COPY[mode]
 
+  // Required fields per mode: login needs email + password, signup also a name.
+  const canSubmit =
+    email.trim() !== '' && password !== '' && (mode === 'login' || name.trim() !== '')
+
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard', { replace: true })
   }, [isAuthenticated, navigate])
@@ -168,6 +172,7 @@ export default function AuthForm() {
           onChange={fieldSetter('password', setPassword)}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           required
+          revealable
           maxLength={AUTH_LIMITS.password.max}
           error={fieldErrors.password}
         />
@@ -189,7 +194,7 @@ export default function AuthForm() {
           </p>
         )}
 
-        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+        <Button type="submit" size="lg" className="w-full" disabled={loading || !canSubmit}>
           {loading ? copy.pending : copy.submit}
         </Button>
       </form>

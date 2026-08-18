@@ -151,6 +151,62 @@
 }
 
 /*
+ * Stroke-thickness slider: a thick-bordered track with a chunky round thumb, so
+ * the native range input matches the sticker/brutalist controls in both engines.
+ */
+.size-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.size-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-outline);
+  background: var(--color-primary-container);
+}
+
+.size-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-outline);
+  background: var(--color-primary-container);
+}
+
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 9999px;
+  border: 3px solid var(--color-outline);
+  background: var(--color-primary);
+}
+
+.size-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 3px solid var(--color-outline);
+  background: var(--color-primary);
+}
+
+.size-slider:focus-visible {
+  outline: none;
+}
+
+.size-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--color-secondary);
+}
+
+.size-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--color-secondary);
+}
+
+/*
  * Legacy globals for the existing barebones app (LoginPage / DashboardPage /
  * CanvasPage). These sit after Tailwind's preflight so they still win there.
  * The landing page sets its own font on its root and is unaffected.

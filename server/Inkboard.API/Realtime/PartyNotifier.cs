@@ -28,7 +28,7 @@ public class PartyNotifier : IPartyNotifier
 
     public async Task NotifyKick(Guid targetUserId, Guid partyId)
     {
-        var connId = _connectionStore.Get(targetUserId);
+        var connId = _connectionStore.Get(targetUserId, PartyHub.HubName);
         var groupName = PartyHub.GroupName(partyId);
         if (connId is not null)
         {
@@ -46,7 +46,7 @@ public class PartyNotifier : IPartyNotifier
 
     public async Task NotifyMemberJoined(Guid partyId, PartyMember newMember)
     {
-        var connId = _connectionStore.Get(newMember.UserId);
+        var connId = _connectionStore.Get(newMember.UserId, PartyHub.HubName);
         var groupName = PartyHub.GroupName(partyId);
         if (connId is not null)
         {
@@ -57,7 +57,7 @@ public class PartyNotifier : IPartyNotifier
 
     public async Task NotifyMemberLeft(Guid partyId, Guid userId)
     {
-        var connId = _connectionStore.Get(userId);
+        var connId = _connectionStore.Get(userId, PartyHub.HubName);
         var groupName = PartyHub.GroupName(partyId);
 
         if (connId is not null)
@@ -75,7 +75,7 @@ public class PartyNotifier : IPartyNotifier
         {
             await _hub.Clients.User(memberId.ToString()).PartyEnded();
 
-            var connId = _connectionStore.Get(memberId);
+            var connId = _connectionStore.Get(memberId, PartyHub.HubName);
             if (connId is not null)
                 await _hub.Groups.RemoveFromGroupAsync(connId, groupName);
         }
