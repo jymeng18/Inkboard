@@ -8,7 +8,10 @@ const PERKS = ['Up to 5 artists per room', 'Strokes sync in real time', 'Snapsho
 
 export default function PartyMode() {
   return (
-    <section className="mb-24 self-stretch border-y-4 border-outline bg-primary-container py-20 mx-[calc(50%-50vw)]">
+    <section
+      id="overview"
+      className="mb-24 self-stretch scroll-mt-24 border-y-4 border-outline bg-primary-container py-20 mx-[calc(50%-50vw)]"
+    >
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-14 px-6 md:flex-row">
         <div className="order-2 flex-1 md:order-1">
           {/* Two canvases stacked at opposing angles, as if dropped on a desk */}
