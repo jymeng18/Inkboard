@@ -294,10 +294,12 @@ export default function CanvasStage() {
         <Layer>
           <SceneShapes />
           {tool === 'eraser' && <CurrentStroke />}
+          {/* Peers' erasers cut the committed scene live, same as a local eraser. */}
+          <RemoteLiveStrokes variant="eraser" />
         </Layer>
         <Layer listening={false}>
           {tool !== 'eraser' && <CurrentStroke />}
-          <RemoteLiveStrokes />
+          <RemoteLiveStrokes variant="ink" />
           <RemoteLiveShapes />
         </Layer>
       </Stage>
