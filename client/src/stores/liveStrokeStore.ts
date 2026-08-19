@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import type { StrokeTool } from '@/components/canvas/strokeGeometry'
+import type { StrokeTool } from '@/components/canvas/scene/strokeGeometry'
 
 /*
  * Other users' in-progress strokes, streamed while they draw and cleared when the

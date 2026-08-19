@@ -5,8 +5,8 @@ import {
   diamondPoints,
   starRadii,
   trianglePoints,
-} from '@/components/canvas/shapeGeometry'
-import { strokeOutline } from '@/components/canvas/strokeGeometry'
+} from '@/components/canvas/scene/shapeGeometry'
+import { strokeOutline } from '@/components/canvas/scene/strokeGeometry'
 import type { LineItem, RectItem, SceneItem, ShapeItem } from '@/stores/sceneStore'
 
 /*

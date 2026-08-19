@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 
 import type { FriendRequestDto } from '@/api/friends'
-import FriendRequestToast from '@/components/dashboard/FriendRequestToast'
+import FriendRequestToast from '@/components/dashboard/social/FriendRequestToast'
 
 /*
  * A stable, per-request toast id. Giving the arrival toast a deterministic id

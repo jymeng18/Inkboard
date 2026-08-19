@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 
-import PartyInviteToast, { type InviteSummary } from '@/components/dashboard/PartyInviteToast'
+import PartyInviteToast, { type InviteSummary } from '@/components/dashboard/social/PartyInviteToast'
 
 /*
  * A stable, per-invite toast id. Answering the invite anywhere — the Inbox tab

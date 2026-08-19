@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
-import FollowCountdownOverlay from '@/components/canvas/FollowCountdownOverlay'
+import FollowCountdownOverlay from '@/components/canvas/party/FollowCountdownOverlay'
 import { useFriendRequestNotifications } from '@/hooks/useFriendRequestNotifications'
 import { usePartyCanvasNavigation } from '@/hooks/usePartyCanvasNavigation'
 import { usePartyHub } from '@/hooks/usePartyHub'

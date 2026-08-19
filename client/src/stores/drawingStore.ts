@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import type { StrokeTool } from '@/components/canvas/strokeGeometry'
+import type { StrokeTool } from '@/components/canvas/scene/strokeGeometry'
 import { STROKE_SIZE, type ShapeKind } from './canvasUiStore'
 
 /*
