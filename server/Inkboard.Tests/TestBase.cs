@@ -1,18 +1,30 @@
-using FluentValidation;
-using Inkboard.Application;
-using Inkboard.Application.Auth.DTO;
-using Inkboard.Application.Auth.Handlers;
-using Inkboard.Application.Interfaces;
-using Inkboard.Application.Services;
-using Inkboard.Domain.Repositories;
+using Inkboard.Domain.Models;
 using Inkboard.Infra.Db;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 
 namespace Inkboard.Tests;
 
+/// <summary>
+/// Base for every test that talks to the database. Owns a fresh in-memory
+/// <see cref="AppDbContext"/> per test and the seeding helpers shared across
+/// domains. Domain-specific bases add their own service wiring on top.
+/// </summary>
 public abstract class TestBase
 {
+    protected AppDbContext Context { get; private set; } = null!;
+
+    [TestInitialize]
+    public void InitializeContext()
+    {
+        Context = CreateDbContext();
+    }
+
+    [TestCleanup]
+    public void DisposeContext()
+    {
+        Context?.Dispose();
+    }
+
     protected static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -21,55 +33,34 @@ public abstract class TestBase
         return new AppDbContext(options);
     }
 
-    private static int _tokenCounter;
-
-    protected static Mock<ITokenGenerator> CreateTokenGeneratorMock()
+    protected async Task<User> SeedUserAsync(string userName)
     {
-        var mock = new Mock<ITokenGenerator>(MockBehavior.Strict);
-        mock.Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(
-                (Guid userId, string _, string _) =>
-                    $"test-access-token-{userId}-{Interlocked.Increment(ref _tokenCounter)}"
-            );
-        mock.Setup(t => t.GenerateRefreshToken())
-            .Returns(() => $"test-refresh-token-{Guid.NewGuid()}");
-        return mock;
+        var user = new User
+        {
+            UserName = userName,
+            Email = $"{userName}-{Guid.NewGuid():N}@test.com",
+            PasswordHash = "hash",
+        };
+        Context.Users.Add(user);
+        await Context.SaveChangesAsync();
+        return user;
     }
 
-    protected static IValidator<RegisterRequestModel> CreateRegisterValidator()
-    {
-        return new RegisterRequestValidator();
-    }
-
-    protected static IValidator<LoginRequestModel> CreateLoginValidator()
-    {
-        return new LoginRequestValidator();
-    }
-
-    protected static AuthService CreateAuthService(
-        AppDbContext context,
-        Mock<ITokenGenerator>? tokenGenMock = null,
-        IValidator<RegisterRequestModel>? registerValidator = null,
-        IValidator<LoginRequestModel>? loginValidator = null
+    protected async Task<Canvas> SeedCanvasAsync(
+        Guid ownerId,
+        string name = "Test Canvas",
+        string? snapshotUrl = null
     )
     {
-        tokenGenMock ??= CreateTokenGeneratorMock();
-        registerValidator ??= CreateRegisterValidator();
-        loginValidator ??= CreateLoginValidator();
-
-        IUserRepository userRepo = new UserRepository(context);
-        ITokenRepository tokenRepo = new TokenRepository(context);
-
-        return new AuthService(
-            tokenGenMock.Object,
-            userRepo,
-            registerValidator,
-            loginValidator,
-            tokenRepo
-        );
+        var canvas = new Canvas
+        {
+            OwnerId = ownerId,
+            Name = name,
+            SnapshotURL = snapshotUrl,
+            LastModifiedAt = DateTimeOffset.UtcNow,
+        };
+        Context.Canvas.Add(canvas);
+        await Context.SaveChangesAsync();
+        return canvas;
     }
-
-    protected const string ValidEmail = "test@example.com";
-    protected const string ValidPassword = "password123";
-    protected const string ValidUserName = "testuser";
 }

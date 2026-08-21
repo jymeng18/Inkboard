@@ -51,8 +51,8 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task SetPartyCanvas_PartyNotFound_ReturnsNotFound()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
 
         var result = await Service.SetPartyCanvasAsync(Guid.NewGuid(), leader.Id, canvas.Id);
 
@@ -63,11 +63,11 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task SetPartyCanvas_NonLeaderCaller_ReturnsForbidden()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await AddMemberAsync(party.Id, member.Id);
-        var otherCanvas = await SeedCanvasAsync(Context, leader.Id, "Other");
+        var otherCanvas = await SeedCanvasAsync(leader.Id, "Other");
 
         var result = await Service.SetPartyCanvasAsync(party.Id, member.Id, otherCanvas.Id);
 
@@ -78,8 +78,8 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task SetPartyCanvas_CanvasDoesNotExist_ReturnsNotFound()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var (party, _) = await SeedPartyAsync(leader.Id);
 
         var result = await Service.SetPartyCanvasAsync(party.Id, leader.Id, Guid.NewGuid());
 
@@ -91,9 +91,9 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task SetPartyCanvas_LeaderRelinks_UpdatesCanvasId()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var (party, firstCanvas) = await SeedPartyAsync(Context, leader.Id);
-        var secondCanvas = await SeedCanvasAsync(Context, leader.Id, "Second");
+        var leader = await SeedUserAsync("leader");
+        var (party, firstCanvas) = await SeedPartyAsync(leader.Id);
+        var secondCanvas = await SeedCanvasAsync(leader.Id, "Second");
 
         var result = await Service.SetPartyCanvasAsync(party.Id, leader.Id, secondCanvas.Id);
 
@@ -106,17 +106,16 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task SetPartyCanvas_WithOtherMembers_NotifiesEveryoneButLeader()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var service = CreatePartyServiceWithNotifier(Context, out var notifier);
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await AddMemberAsync(party.Id, member.Id);
-        var target = await SeedCanvasAsync(Context, leader.Id, "Target");
+        var target = await SeedCanvasAsync(leader.Id, "Target");
 
-        var result = await service.SetPartyCanvasAsync(party.Id, leader.Id, target.Id);
+        var result = await Service.SetPartyCanvasAsync(party.Id, leader.Id, target.Id);
 
         Assert.IsTrue(result.IsSuccess);
-        notifier.Verify(
+        Notifier.Verify(
             n => n.NotifyPartyCanvasOpened(
                 party.Id,
                 target.Id,
@@ -129,15 +128,14 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task SetPartyCanvas_SoloLeader_SendsNoCanvasOpenedNotification()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var service = CreatePartyServiceWithNotifier(Context, out var notifier);
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
-        var target = await SeedCanvasAsync(Context, leader.Id, "Target");
+        var leader = await SeedUserAsync("leader");
+        var (party, _) = await SeedPartyAsync(leader.Id);
+        var target = await SeedCanvasAsync(leader.Id, "Target");
 
-        var result = await service.SetPartyCanvasAsync(party.Id, leader.Id, target.Id);
+        var result = await Service.SetPartyCanvasAsync(party.Id, leader.Id, target.Id);
 
         Assert.IsTrue(result.IsSuccess);
-        notifier.Verify(
+        Notifier.Verify(
             n => n.NotifyPartyCanvasOpened(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
@@ -152,7 +150,7 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task EndSession_PartyNotFound_ReturnsNotFound()
     {
-        var leader = await SeedUserAsync(Context, "leader");
+        var leader = await SeedUserAsync("leader");
 
         var result = await Service.EndSessionAsync(Guid.NewGuid(), leader.Id);
 
@@ -163,9 +161,9 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task EndSession_NonLeaderCaller_ReturnsForbidden()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await AddMemberAsync(party.Id, member.Id);
 
         var result = await Service.EndSessionAsync(party.Id, member.Id);
@@ -179,9 +177,9 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task EndSession_LeaderEnds_DeletesPartyAndAllMemberships()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await AddMemberAsync(party.Id, member.Id);
 
         var result = await Service.EndSessionAsync(party.Id, leader.Id);
@@ -194,16 +192,15 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task EndSession_LeaderEnds_NotifiesAllMembersPartyEnded()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var service = CreatePartyServiceWithNotifier(Context, out var notifier);
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await AddMemberAsync(party.Id, member.Id);
 
-        var result = await service.EndSessionAsync(party.Id, leader.Id);
+        var result = await Service.EndSessionAsync(party.Id, leader.Id);
 
         Assert.IsTrue(result.IsSuccess);
-        notifier.Verify(
+        Notifier.Verify(
             n => n.NotifyPartyEnded(
                 party.Id,
                 It.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(leader.Id) && ids.Contains(member.Id))
@@ -215,8 +212,8 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task EndSession_LeaderEnds_CanvasItselfIsNotDeleted()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var (party, canvas) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var (party, canvas) = await SeedPartyAsync(leader.Id);
 
         var result = await Service.EndSessionAsync(party.Id, leader.Id);
 
@@ -229,9 +226,9 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyInvites_ReturnsOnlyThisUsersPendingInvites()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invitee = await SeedUserAsync(Context, "invitee");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invitee = await SeedUserAsync("invitee");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         var pending = await SeedInviteAsync(party.Id, leader.Id, invitee.Id);
 
         var result = await Service.GetPartyInvitesByUserIdAsync(invitee.Id);
@@ -244,9 +241,9 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyInvites_ExcludesAnsweredInvites()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invitee = await SeedUserAsync(Context, "invitee");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invitee = await SeedUserAsync("invitee");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await SeedInviteAsync(party.Id, leader.Id, invitee.Id, InviteStatus.Declined);
         await SeedInviteAsync(party.Id, leader.Id, invitee.Id, InviteStatus.Accepted);
 
@@ -259,10 +256,10 @@ public sealed class PartySessionLinkTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyInvites_DoesNotLeakOtherUsersInvites()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invitee = await SeedUserAsync(Context, "invitee");
-        var someoneElse = await SeedUserAsync(Context, "someoneElse");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invitee = await SeedUserAsync("invitee");
+        var someoneElse = await SeedUserAsync("someoneElse");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         await SeedInviteAsync(party.Id, leader.Id, someoneElse.Id);
 
         var result = await Service.GetPartyInvitesByUserIdAsync(invitee.Id);

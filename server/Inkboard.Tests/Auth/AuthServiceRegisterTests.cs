@@ -3,15 +3,12 @@ using Inkboard.Application.Auth.DTO;
 namespace Inkboard.Tests.Auth;
 
 [TestClass]
-public sealed class RegisterTests : TestBase
+public sealed class RegisterTests : AuthTestBase
 {
     [TestMethod]
     public async Task ValidRequest_ReturnsSuccessWithUserId()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -28,10 +25,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task DuplicateEmail_ReturnsError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        await service.RegisterAsync(
+        await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -40,7 +34,7 @@ public sealed class RegisterTests : TestBase
             }
         );
 
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = "otheruser",
@@ -57,10 +51,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task DuplicateEmail_ReturnsAfterValidation()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        await service.RegisterAsync(
+        await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -69,7 +60,7 @@ public sealed class RegisterTests : TestBase
             }
         );
 
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = "Coolusername21312",
@@ -86,10 +77,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task EmptyUserName_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = "",
@@ -106,10 +94,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task UserNameTooShort_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = "ab",
@@ -127,10 +112,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task UserNameTooLong_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = new string('a', 31),
@@ -147,10 +129,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task EmptyPassword_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -167,10 +146,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task PasswordTooShort_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -188,10 +164,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task EmptyEmail_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -208,10 +181,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task InvalidEmailFormat_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -228,10 +198,7 @@ public sealed class RegisterTests : TestBase
     [TestMethod]
     public async Task ValidRequest_PersistsUserToDatabase()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
+        var result = await Service.RegisterAsync(
             new RegisterRequestModel
             {
                 UserName = ValidUserName,
@@ -243,7 +210,7 @@ public sealed class RegisterTests : TestBase
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(result.UserId);
 
-        var savedUser = await context.Users.FindAsync(result.UserId.Value);
+        var savedUser = await Context.Users.FindAsync(result.UserId.Value);
         Assert.IsNotNull(savedUser);
         Assert.AreEqual(ValidUserName, savedUser.UserName);
         Assert.AreEqual(ValidEmail, savedUser.Email);

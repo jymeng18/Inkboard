@@ -10,8 +10,8 @@ public sealed class PartyServiceCreateTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_CreatesParty_LeaderIsMemberWithLeaderRole()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
 
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -31,12 +31,12 @@ public sealed class PartyServiceCreateTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_UserAlreadyInActiveParty_ReturnsConflict()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var first = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(first.IsSuccess);
 
-        var canvas2 = await SeedCanvasAsync(Context, leader.Id, "Another Canvas");
+        var canvas2 = await SeedCanvasAsync(leader.Id, "Another Canvas");
         var result = await Service.CreatePartyAsync(leader.Id, canvas2.Id);
 
         Assert.IsFalse(result.IsSuccess);

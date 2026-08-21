@@ -11,9 +11,9 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_LeaderLeavesTwoMemberParty_PartyDissolved()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
@@ -33,10 +33,10 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_LeadershipGoesToOldestByJoinedAt_NotInsertionOrder()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var lateJoiner = await SeedUserAsync(Context, "late");
-        var earlyJoiner = await SeedUserAsync(Context, "early");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var lateJoiner = await SeedUserAsync("late");
+        var earlyJoiner = await SeedUserAsync("early");
+        var (party, _) = await SeedPartyAsync(leader.Id);
         var repo = new PartyRepository(Context);
 
         // Insert the "late" member first, but with a newer JoinedAt.
@@ -70,9 +70,9 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_NonLeaderLeavesTwoMemberParty_PartyNotDissolved()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
@@ -88,16 +88,16 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_OldLeaderCanCreateNewPartyAfterTransfer()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(invite.Data!.Id, member.Id, true);
         await Service.LeavePartyAsync(party.Id, leader.Id);
 
-        var newCanvas = await SeedCanvasAsync(Context, leader.Id, "New");
+        var newCanvas = await SeedCanvasAsync(leader.Id, "New");
         var result = await Service.CreatePartyAsync(leader.Id, newCanvas.Id);
 
         Assert.IsTrue(result.IsSuccess);
@@ -106,9 +106,9 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_MemberLeavesTwoMemberParty_DoesntDissolve()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var invite = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
@@ -127,8 +127,8 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_SoleLeaderLeaves_RemovesMembershipRow()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
 
@@ -141,10 +141,10 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_AfterTransfer_ExactlyOneLeaderRemains()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member1 = await SeedUserAsync(Context, "member1");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member1 = await SeedUserAsync("member1");
+        var member2 = await SeedUserAsync("member2");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         foreach (var m in new[] { member1, member2 })
@@ -164,13 +164,13 @@ public sealed class PartyServiceLeaveEdgeTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_LeaderLeavesFullParty_TransfersAndDropsToFour()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         for (int i = 0; i < 4; i++)
         {
-            var m = await SeedUserAsync(Context, $"member{i}");
+            var m = await SeedUserAsync($"member{i}");
             var inv = await Service.InviteUserAsync(party.Id, leader.Id, m.Id);
             await Service.RespondToUserInviteAsync(inv.Data!.Id, m.Id, true);
         }

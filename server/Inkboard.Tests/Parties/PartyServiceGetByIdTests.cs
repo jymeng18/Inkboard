@@ -18,8 +18,8 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_ReturnsLeaderAndCanvasIds()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -35,8 +35,8 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_SoloParty_ReturnsSingleLeaderMember()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -52,9 +52,9 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_RoleSerializedAsString()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -73,15 +73,15 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_MemberCountGrowsAfterAccept()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
 
         for (int i = 0; i < 3; i++)
         {
-            var m = await SeedUserAsync(Context, $"member{i}");
+            var m = await SeedUserAsync($"member{i}");
             var inv = await Service.InviteUserAsync(party.Id, leader.Id, m.Id);
             await Service.RespondToUserInviteAsync(inv.Data!.Id, m.Id, true);
         }
@@ -95,9 +95,9 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_DeclinedInviteeNotIncludedInMembers()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -114,10 +114,10 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_LeftMemberNotIncluded()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var member2 = await SeedUserAsync("member2");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -138,10 +138,10 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_AfterLeadershipTransfer_ReflectsNewLeaderRole()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var member2 = await SeedUserAsync("member2");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -165,10 +165,10 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_CanvasLinkSeveredAfterForceEnd_ReturnsNullCanvasId()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var (party, _) = await SeedPartyAsync(Context, leader.Id, "Shared Canvas");
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var member2 = await SeedUserAsync("member2");
+        var (party, _) = await SeedPartyAsync(leader.Id, "Shared Canvas");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, member.Id, true);
         // Third member so leadership transfers on leave and the party (with its
@@ -186,8 +186,8 @@ public sealed class PartyServiceGetByIdTests : PartyTestBase
     [TestMethod]
     public async Task GetPartyById_MembersHaveJoinedAtTimestamps()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;

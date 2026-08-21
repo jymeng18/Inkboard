@@ -11,9 +11,9 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_UserIsMemberOfAnotherParty_ReturnsConflict()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -21,7 +21,7 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, member.Id, true);
 
         // The member is not a leader, but is already in an active party.
-        var ownCanvas = await SeedCanvasAsync(Context, member.Id, "Member Canvas");
+        var ownCanvas = await SeedCanvasAsync(member.Id, "Member Canvas");
         var result = await Service.CreatePartyAsync(member.Id, ownCanvas.Id);
 
         Assert.IsFalse(result.IsSuccess);
@@ -32,8 +32,8 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_DoesNotCreateAnyInvite()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
 
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -45,8 +45,8 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_SetsCreatedAtToApproximatelyNow()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var before = DateTimeOffset.UtcNow.AddSeconds(-1);
 
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
@@ -60,10 +60,10 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_TwoDifferentUsers_CreateIndependentParties()
     {
-        var leaderA = await SeedUserAsync(Context, "leaderA");
-        var leaderB = await SeedUserAsync(Context, "leaderB");
-        var canvasA = await SeedCanvasAsync(Context, leaderA.Id, "A");
-        var canvasB = await SeedCanvasAsync(Context, leaderB.Id, "B");
+        var leaderA = await SeedUserAsync("leaderA");
+        var leaderB = await SeedUserAsync("leaderB");
+        var canvasA = await SeedCanvasAsync(leaderA.Id, "A");
+        var canvasB = await SeedCanvasAsync(leaderB.Id, "B");
 
         var resultA = await Service.CreatePartyAsync(leaderA.Id, canvasA.Id);
         var resultB = await Service.CreatePartyAsync(leaderB.Id, canvasB.Id);
@@ -77,7 +77,7 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     public async Task CreateParty_WithNonexistentCanvasId_Fails()
     {
         // The service does not validate that the canvas exists.
-        var leader = await SeedUserAsync(Context, "leader");
+        var leader = await SeedUserAsync("leader");
 
         var result = await Service.CreatePartyAsync(leader.Id, Guid.NewGuid());
 
@@ -87,8 +87,8 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_LeaderIsOnlyMemberInitially()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
 
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -100,13 +100,13 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_AfterLeavingSoleParty_CanCreateAgain()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var first = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(first.IsSuccess);
         await Service.LeavePartyAsync(first.Data!.Id, leader.Id);
 
-        var canvas2 = await SeedCanvasAsync(Context, leader.Id, "Second");
+        var canvas2 = await SeedCanvasAsync(leader.Id, "Second");
         var second = await Service.CreatePartyAsync(leader.Id, canvas2.Id);
 
         Assert.IsTrue(second.IsSuccess);
@@ -116,15 +116,13 @@ public sealed class PartyServiceCreateEdgeTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_NotifiesMemberJoinedForLeader()
     {
-        using var context = CreateDbContext();
-        var service = CreatePartyServiceWithNotifier(context, out var notifier);
-        var leader = await SeedUserAsync(context, "leader");
-        var canvas = await SeedCanvasAsync(context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
 
-        var result = await service.CreatePartyAsync(leader.Id, canvas.Id);
+        var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
 
-        notifier.Verify(
+        Notifier.Verify(
             n =>
                 n.NotifyMemberJoined(
                     result.Data!.Id,

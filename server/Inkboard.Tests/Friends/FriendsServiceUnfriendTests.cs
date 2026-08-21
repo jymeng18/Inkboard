@@ -8,9 +8,9 @@ public sealed class FriendsServiceUnfriendTests : FriendsTestBase
     [TestMethod]
     public async Task Unfriend_ValidFriendship_DeletesRow()
     {
-        var alpha = await SeedUserAsync(Context, "alpha");
-        var beta = await SeedUserAsync(Context, "beta");
-        await SeedFriendshipAsync(Context, alpha.Id, beta.Id);
+        var alpha = await SeedUserAsync("alpha");
+        var beta = await SeedUserAsync("beta");
+        await SeedFriendshipAsync(alpha.Id, beta.Id);
 
         var result = await Service.UnfriendAsync(alpha.Id, beta.Id);
 
@@ -21,7 +21,7 @@ public sealed class FriendsServiceUnfriendTests : FriendsTestBase
     [TestMethod]
     public async Task Unfriend_TargetUserDoesNotExist_ReturnsNotFound()
     {
-        var alpha = await SeedUserAsync(Context, "alpha");
+        var alpha = await SeedUserAsync("alpha");
 
         var result = await Service.UnfriendAsync(alpha.Id, Guid.NewGuid());
 
@@ -33,8 +33,8 @@ public sealed class FriendsServiceUnfriendTests : FriendsTestBase
     [TestMethod]
     public async Task Unfriend_NoExistingFriendship_ReturnsNotFound()
     {
-        var alpha = await SeedUserAsync(Context, "alpha");
-        var beta = await SeedUserAsync(Context, "beta");
+        var alpha = await SeedUserAsync("alpha");
+        var beta = await SeedUserAsync("beta");
 
         var result = await Service.UnfriendAsync(alpha.Id, beta.Id);
 
@@ -46,8 +46,8 @@ public sealed class FriendsServiceUnfriendTests : FriendsTestBase
     [TestMethod]
     public async Task Unfriend_CallerOnEitherSideOfStoredPair_StillDeletes()
     {
-        var alpha = await SeedUserAsync(Context, "alpha");
-        var beta = await SeedUserAsync(Context, "beta");
+        var alpha = await SeedUserAsync("alpha");
+        var beta = await SeedUserAsync("beta");
         // Friendship created with beta as the sender, so storage order does not
         // necessarily match (alpha, beta) argument order.
         var sent = await Service.SendFriendReqAsync(beta.Id, alpha.Id);
@@ -65,8 +65,8 @@ public sealed class FriendsServiceUnfriendTests : FriendsTestBase
     [TestMethod]
     public async Task Unfriend_AfterUnfriend_CanSendNewRequestAgain()
     {
-        var alpha = await SeedUserAsync(Context, "alpha");
-        var beta = await SeedUserAsync(Context, "beta");
+        var alpha = await SeedUserAsync("alpha");
+        var beta = await SeedUserAsync("beta");
         var sent = await Service.SendFriendReqAsync(alpha.Id, beta.Id);
         var accepted = await Service.AcceptFriendReqAsync(sent.Data!.Id, alpha.Id, beta.Id);
         Assert.IsTrue(accepted.IsSuccess);

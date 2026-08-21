@@ -9,8 +9,8 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
 {
     private async Task<(Party Party, User Leader)> SeedActiveParty(string leaderName = "leader")
     {
-        var leader = await SeedUserAsync(Context, leaderName);
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync(leaderName);
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         return (partyResult.Data!, leader);
@@ -42,7 +42,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     {
         // Expiry is checked before the accept/decline branch, so even a decline is rejected.
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var invite = await SeedRawInvite(
             party.Id,
             leader.Id,
@@ -62,7 +62,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_DeclineAlreadyDeclined_ReturnsConflict()
     {
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, false);
 
@@ -81,7 +81,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_AcceptAfterDecline_ReturnsConflict()
     {
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, false);
 
@@ -96,7 +96,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     {
         // Declining while blocked still succeeds (block re-check only guards acceptance).
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.BlockUserAsync(leader.Id, invited.Id);
 
@@ -115,11 +115,11 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     {
         // A full party does not stop the invitee from declining.
         var (party, leader) = await SeedActiveParty();
-        var delayed = await SeedUserAsync(Context, "delayed");
+        var delayed = await SeedUserAsync("delayed");
         var delayedInvite = await Service.InviteUserAsync(party.Id, leader.Id, delayed.Id);
         for (int i = 0; i < 4; i++)
         {
-            var m = await SeedUserAsync(Context, $"member{i}");
+            var m = await SeedUserAsync($"member{i}");
             var inv = await Service.InviteUserAsync(party.Id, leader.Id, m.Id);
             await Service.RespondToUserInviteAsync(inv.Data!.Id, m.Id, true);
         }
@@ -138,7 +138,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_AcceptAssignsMemberRole_NotLeader()
     {
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
 
         await Service.RespondToUserInviteAsync(inviteResult.Data!.Id, invited.Id, true);
@@ -155,7 +155,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
         // There is no cross-party guard on acceptance: a user can belong to multiple parties.
         var (partyA, leaderA) = await SeedActiveParty("leaderA");
         var (partyB, leaderB) = await SeedActiveParty("leaderB");
-        var joiner = await SeedUserAsync(Context, "joiner");
+        var joiner = await SeedUserAsync("joiner");
 
         var inviteA = await Service.InviteUserAsync(partyA.Id, leaderA.Id, joiner.Id);
         var acceptA = await Service.RespondToUserInviteAsync(inviteA.Data!.Id, joiner.Id, true);
@@ -172,7 +172,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_AcceptWhileBlocked_DoesNotAddMember()
     {
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.BlockUserAsync(leader.Id, invited.Id);
 
@@ -194,7 +194,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_AcceptWhileBlocked_LeavesInviteStillPending()
     {
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, invited.Id);
         await Service.BlockUserAsync(leader.Id, invited.Id);
 
@@ -208,11 +208,11 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_AcceptWhenPartyAlreadyAtFive_DoesNotAddMember()
     {
         var (party, leader) = await SeedActiveParty();
-        var delayed = await SeedUserAsync(Context, "delayed");
+        var delayed = await SeedUserAsync("delayed");
         var delayedInvite = await Service.InviteUserAsync(party.Id, leader.Id, delayed.Id);
         for (int i = 0; i < 4; i++)
         {
-            var m = await SeedUserAsync(Context, $"member{i}");
+            var m = await SeedUserAsync($"member{i}");
             var inv = await Service.InviteUserAsync(party.Id, leader.Id, m.Id);
             await Service.RespondToUserInviteAsync(inv.Data!.Id, m.Id, true);
         }
@@ -234,7 +234,7 @@ public sealed class PartyServiceRespondEdgeTests : PartyTestBase
     public async Task RespondToInvite_ExpiredInvite_AcceptDoesNotAddMember()
     {
         var (party, leader) = await SeedActiveParty();
-        var invited = await SeedUserAsync(Context, "invited");
+        var invited = await SeedUserAsync("invited");
         var invite = await SeedRawInvite(
             party.Id,
             leader.Id,

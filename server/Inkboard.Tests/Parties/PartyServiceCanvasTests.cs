@@ -9,18 +9,13 @@ namespace Inkboard.Tests.Parties;
 [TestClass]
 public sealed class PartyServiceCanvasTests : PartyTestBase
 {
-    private CanvasService CreateCanvasService()
-    {
-        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context), null, null, null);
-    }
-
     [TestMethod]
     public async Task LeaveParty_LeaderLeavesWithActiveCanvas_ForceEndsSession_CanvasNotDeleted_LinkSevered()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var (party, canvas) = await SeedPartyAsync(Context, leader.Id, "Shared Canvas");
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var member2 = await SeedUserAsync("member2");
+        var (party, canvas) = await SeedPartyAsync(leader.Id, "Shared Canvas");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         Assert.IsTrue(inviteResult.IsSuccess);
         var invite = inviteResult.Data!;
@@ -52,9 +47,9 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_LeaderLeavesWithActiveCanvas_CanvasOwnershipDoesNotChange()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var (party, canvas) = await SeedPartyAsync(Context, leader.Id, "Owned Canvas");
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var (party, canvas) = await SeedPartyAsync(leader.Id, "Owned Canvas");
         var inviteResult = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
         Assert.IsTrue(inviteResult.IsSuccess);
         var invite = inviteResult.Data!;
@@ -72,8 +67,8 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     [TestMethod]
     public async Task ForceEndSession_ClearsPartyCanvasLink_CanvasSurvives()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var (party, canvas) = await SeedPartyAsync(Context, leader.Id, "Test Canvas");
+        var leader = await SeedUserAsync("leader");
+        var (party, canvas) = await SeedPartyAsync(leader.Id, "Test Canvas");
         Assert.IsNotNull(party.CanvasId);
 
         var canvasService = CreateCanvasService();
@@ -90,11 +85,11 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     [TestMethod]
     public async Task ForceEndSession_PartyDoesNotOwnCanvas_ReturnsForbidden()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var (party, canvas) = await SeedPartyAsync(Context, leader.Id, "Owned Canvas");
+        var leader = await SeedUserAsync("leader");
+        var (party, canvas) = await SeedPartyAsync(leader.Id, "Owned Canvas");
 
-        var otherUser = await SeedUserAsync(Context, "other");
-        var otherCanvas = await SeedCanvasAsync(Context, otherUser.Id, "Other Canvas");
+        var otherUser = await SeedUserAsync("other");
+        var otherCanvas = await SeedCanvasAsync(otherUser.Id, "Other Canvas");
         var partyRepo = new PartyRepository(Context);
         var otherParty = new Party
         {
@@ -114,8 +109,8 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     [TestMethod]
     public async Task CreateParty_WithCanvasId_StoresCanvasLink()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
 
         var result = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -131,7 +126,7 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     [TestMethod]
     public async Task CreateCanvas_DoesNotCreateParty()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
 
         var canvasService = CreateCanvasService();
         var result = await canvasService.CreateCanvasAsync(user.Id, "My Canvas");
@@ -147,9 +142,9 @@ public sealed class PartyServiceCanvasTests : PartyTestBase
     [TestMethod]
     public async Task FullWorkflow_CreateCanvasThenCreatePartyThenInvite_LeadershipTransferForceEndsSession()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var member2 = await SeedUserAsync(Context, "member2");
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var member2 = await SeedUserAsync("member2");
 
         var canvasService = CreateCanvasService();
         var canvasResult = await canvasService.CreateCanvasAsync(leader.Id, "Workflow Canvas");

@@ -10,9 +10,9 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     public async Task BlockUser_IsDirectional_ReverseInviteStillAllowed()
     {
         // A blocks B. That must not stop B (as leader) from inviting A.
-        var a = await SeedUserAsync(Context, "a");
-        var b = await SeedUserAsync(Context, "b");
-        var canvas = await SeedCanvasAsync(Context, b.Id);
+        var a = await SeedUserAsync("a");
+        var b = await SeedUserAsync("b");
+        var canvas = await SeedCanvasAsync(b.Id);
         var partyResult = await Service.CreatePartyAsync(b.Id, canvas.Id);
         var party = partyResult.Data!;
 
@@ -25,9 +25,9 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_BlockingCurrentMember_DoesNotRemoveThemFromParty()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var inv = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);
@@ -45,8 +45,8 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_TwoUsersCanBlockEachOtherIndependently()
     {
-        var a = await SeedUserAsync(Context, "a");
-        var b = await SeedUserAsync(Context, "b");
+        var a = await SeedUserAsync("a");
+        var b = await SeedUserAsync("b");
 
         var first = await Service.BlockUserAsync(a.Id, b.Id);
         var second = await Service.BlockUserAsync(b.Id, a.Id);
@@ -60,9 +60,9 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_SameUserBlocksMultipleTargets_AllRecorded()
     {
-        var user = await SeedUserAsync(Context, "user");
-        var t1 = await SeedUserAsync(Context, "t1");
-        var t2 = await SeedUserAsync(Context, "t2");
+        var user = await SeedUserAsync("user");
+        var t1 = await SeedUserAsync("t1");
+        var t2 = await SeedUserAsync("t2");
 
         await Service.BlockUserAsync(user.Id, t1.Id);
         await Service.BlockUserAsync(user.Id, t2.Id);
@@ -74,8 +74,8 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_RecordsCreatedAtTimestamp()
     {
-        var user = await SeedUserAsync(Context, "user");
-        var target = await SeedUserAsync(Context, "target");
+        var user = await SeedUserAsync("user");
+        var target = await SeedUserAsync("target");
         var before = DateTimeOffset.UtcNow.AddSeconds(-1);
 
         await Service.BlockUserAsync(user.Id, target.Id);
@@ -90,9 +90,9 @@ public sealed class PartyServiceBlockEdgeTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_BlockedThenReInviteAttemptFails()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         var party = partyResult.Data!;
         var inv = await Service.InviteUserAsync(party.Id, leader.Id, member.Id);

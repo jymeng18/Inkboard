@@ -16,20 +16,6 @@ namespace Inkboard.Tests.Canvases;
 /// </summary>
 public abstract class CanvasTestBase : TestBase
 {
-    protected AppDbContext Context { get; private set; } = null!;
-
-    [TestInitialize]
-    public void BaseInitialize()
-    {
-        Context = CreateDbContext();
-    }
-
-    [TestCleanup]
-    public void BaseCleanup()
-    {
-        Context.Dispose();
-    }
-
     /// <summary>Service wired with real repos and no blob/image collaborators —
     /// enough for the operation, name, and force-end rules that never touch a blob.</summary>
     protected CanvasService CreateCanvasService()
@@ -56,37 +42,6 @@ public abstract class CanvasTestBase : TestBase
             imageValidator,
             new OperationRepository(Context)
         );
-    }
-
-    protected async Task<User> SeedUserAsync(string userName)
-    {
-        var user = new User
-        {
-            UserName = userName,
-            Email = $"{userName}-{Guid.NewGuid():N}@test.com",
-            PasswordHash = "hash",
-        };
-        Context.Users.Add(user);
-        await Context.SaveChangesAsync();
-        return user;
-    }
-
-    protected async Task<Domain.Models.Canvas> SeedCanvasAsync(
-        Guid ownerId,
-        string name = "Test Canvas",
-        string? snapshotUrl = null
-    )
-    {
-        var canvas = new Domain.Models.Canvas
-        {
-            OwnerId = ownerId,
-            Name = name,
-            SnapshotURL = snapshotUrl,
-            LastModifiedAt = DateTimeOffset.UtcNow,
-        };
-        Context.Canvas.Add(canvas);
-        await Context.SaveChangesAsync();
-        return canvas;
     }
 
     /// <summary>Seeds a party bound to <paramref name="canvasId"/> with the given

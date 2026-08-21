@@ -9,8 +9,8 @@ public sealed class FriendsServiceCancelTests : FriendsTestBase
     [TestMethod]
     public async Task Cancel_ValidPendingRequest_MarksRevoked()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         var result = await Service.CancelFriendReqAsync(sent.Data!.Id, sender.Id);
@@ -23,7 +23,7 @@ public sealed class FriendsServiceCancelTests : FriendsTestBase
     [TestMethod]
     public async Task Cancel_RequestNotFound_ReturnsNotFound()
     {
-        var sender = await SeedUserAsync(Context, "sender");
+        var sender = await SeedUserAsync("sender");
 
         var result = await Service.CancelFriendReqAsync(Guid.NewGuid(), sender.Id);
 
@@ -35,8 +35,8 @@ public sealed class FriendsServiceCancelTests : FriendsTestBase
     [TestMethod]
     public async Task Cancel_ReceiverAttemptsToCancel_ReturnsForbidden()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         // Cancelling is the sender's move. The receiver should reject, not cancel.
@@ -53,8 +53,8 @@ public sealed class FriendsServiceCancelTests : FriendsTestBase
     [TestMethod]
     public async Task Cancel_AlreadyAccepted_ReturnsConflictAndFriendshipUnaffected()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         var accepted = await Service.AcceptFriendReqAsync(
             sent.Data!.Id,
@@ -73,8 +73,8 @@ public sealed class FriendsServiceCancelTests : FriendsTestBase
     [TestMethod]
     public async Task Cancel_AlreadyRevoked_ReturnsConflict()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         var first = await Service.CancelFriendReqAsync(sent.Data!.Id, sender.Id);
         Assert.IsTrue(first.IsSuccess);

@@ -9,8 +9,8 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_ValidRequest_CreatesFriendshipMarksRequestAcceptedAndReturnsSenderDto()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         var result = await Service.AcceptFriendReqAsync(sent.Data!.Id, sender.Id, receiver.Id);
@@ -34,8 +34,8 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_RequestNotFound_ReturnsNotFound()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
 
         var result = await Service.AcceptFriendReqAsync(Guid.NewGuid(), sender.Id, receiver.Id);
 
@@ -47,8 +47,8 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_ReceiverDoesNotExist_ReturnsNotFound()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         var result = await Service.AcceptFriendReqAsync(sent.Data!.Id, sender.Id, Guid.NewGuid());
@@ -61,8 +61,8 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_SenderDoesNotExist_ReturnsNotFound()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         var result = await Service.AcceptFriendReqAsync(sent.Data!.Id, Guid.NewGuid(), receiver.Id);
@@ -75,9 +75,9 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_ReceiverMismatch_ReturnsForbidden()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
-        var stranger = await SeedUserAsync(Context, "stranger");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
+        var stranger = await SeedUserAsync("stranger");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         // Stranger tries to accept a request that was never addressed to them.
@@ -90,9 +90,9 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_ForgedSenderId_ReturnsForbidden()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
-        var attacker = await SeedUserAsync(Context, "attacker");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
+        var attacker = await SeedUserAsync("attacker");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
         // Correct requestId and correct receiverId (the real receiver acting on
@@ -112,12 +112,12 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_FriendshipAlreadyExistsForThatPair_ReturnsValidationError()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         // A friendship exists already (e.g. from a previous request cycle) while
         // a fresh Pending request for the same pair also exists.
-        await SeedFriendshipAsync(Context, sender.Id, receiver.Id);
-        var request = await SeedFriendRequestAsync(Context, sender.Id, receiver.Id);
+        await SeedFriendshipAsync(sender.Id, receiver.Id);
+        var request = await SeedFriendRequestAsync(sender.Id, receiver.Id);
 
         var result = await Service.AcceptFriendReqAsync(request.Id, sender.Id, receiver.Id);
 
@@ -129,8 +129,8 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_ReplayOfAlreadyAcceptedRequest_Fails()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         var firstAccept = await Service.AcceptFriendReqAsync(
             sent.Data!.Id,
@@ -151,8 +151,8 @@ public sealed class FriendsServiceAcceptTests : FriendsTestBase
     [TestMethod]
     public async Task Accept_AlreadyDeclinedRequest_ReturnsNotFound()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var sent = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         var rejected = await Service.RejectFriendReqAsync(
             sent.Data!.Id,

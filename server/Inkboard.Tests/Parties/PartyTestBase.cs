@@ -8,93 +8,48 @@ namespace Inkboard.Tests.Parties;
 
 public abstract class PartyTestBase : TestBase
 {
-    protected AppDbContext Context { get; private set; } = null!;
     protected PartyService Service { get; private set; } = null!;
 
+    /// <summary>The notifier <see cref="Service"/> is wired with; loose, so tests
+    /// that don't care about notifications ignore it and the rest verify against it.</summary>
+    protected Mock<IPartyNotifier> Notifier { get; private set; } = null!;
+
     [TestInitialize]
-    public void BaseInitialize()
+    public void InitPartyService()
     {
-        Context = CreateDbContext();
-        Service = CreatePartyService(Context);
-    }
-
-    [TestCleanup]
-    public void BaseCleanup()
-    {
-        Context.Dispose();
-    }
-
-    protected static PartyService CreatePartyService(AppDbContext context)
-    {
-        var notifierMock = new Mock<IPartyNotifier>(MockBehavior.Loose);
-        var canvasRepository = new CanvasRepository(context);
-        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context), null, null, null);
-        return new PartyService(
-            new PartyRepository(context),
-            new PartyInviteRepository(context),
-            new BlockListRepository(context),
-            notifierMock.Object,
+        Notifier = new Mock<IPartyNotifier>(MockBehavior.Loose);
+        var canvasRepository = new CanvasRepository(Context);
+        var canvasService = new CanvasService(canvasRepository, new PartyRepository(Context), null, null, null);
+        Service = new PartyService(
+            new PartyRepository(Context),
+            new PartyInviteRepository(Context),
+            new BlockListRepository(Context),
+            Notifier.Object,
             canvasService,
             canvasRepository
         );
     }
 
-    protected static PartyService CreatePartyServiceWithNotifier(
-        AppDbContext context,
-        out Mock<IPartyNotifier> notifierMock
-    )
+    /// <summary>A CanvasService wired with real repos and no blob/image/operation
+    /// collaborators, enough for the create/rename/delete/link rules these tests exercise.</summary>
+    protected CanvasService CreateCanvasService()
     {
-        notifierMock = new Mock<IPartyNotifier>(MockBehavior.Loose);
-        var canvasRepository = new CanvasRepository(context);
-        var canvasService = new CanvasService(canvasRepository, new PartyRepository(context), null, null, null);
-        return new PartyService(
-            new PartyRepository(context),
-            new PartyInviteRepository(context),
-            new BlockListRepository(context),
-            notifierMock.Object,
-            canvasService,
-            canvasRepository
+        return new CanvasService(
+            new CanvasRepository(Context),
+            new PartyRepository(Context),
+            null,
+            null,
+            null
         );
     }
 
-    protected static async Task<User> SeedUserAsync(AppDbContext context, string userName)
-    {
-        var user = new User
-        {
-            UserName = userName,
-            Email = $"{userName}@test.com",
-            PasswordHash = "hash",
-        };
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-        return user;
-    }
-
-    protected static async Task<Canvas> SeedCanvasAsync(
-        AppDbContext context,
-        Guid ownerId,
-        string name = "Test Canvas"
-    )
-    {
-        var canvas = new Canvas
-        {
-            OwnerId = ownerId,
-            Name = name,
-            LastModifiedAt = DateTimeOffset.UtcNow,
-        };
-        context.Canvas.Add(canvas);
-        await context.SaveChangesAsync();
-        return canvas;
-    }
-
-    protected static async Task<(Party Party, Canvas Canvas)> SeedPartyAsync(
-        AppDbContext context,
+    protected async Task<(Party Party, Canvas Canvas)> SeedPartyAsync(
         Guid leaderId,
         string canvasName = "Test Canvas"
     )
     {
-        var canvas = await SeedCanvasAsync(context, leaderId, canvasName);
-        var partyRepo = new PartyRepository(context);
+        var canvas = await SeedCanvasAsync(leaderId, canvasName);
+        var partyRepo = new PartyRepository(Context);
         var party = new Party
         {
             LeaderId = leaderId,

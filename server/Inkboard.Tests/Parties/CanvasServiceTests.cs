@@ -8,15 +8,10 @@ namespace Inkboard.Tests.Parties;
 [TestClass]
 public sealed class CanvasServiceTests : PartyTestBase
 {
-    private CanvasService CreateCanvasService()
-    {
-        return new CanvasService(new CanvasRepository(Context), new PartyRepository(Context), null, null, null);
-    }
-
     [TestMethod]
     public async Task CreateCanvasAsync_CreatesCanvas_WithCorrectOwnerAndName()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.CreateCanvasAsync(user.Id, "My Canvas");
@@ -36,8 +31,8 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task DeleteCanvasAsync_OwnerDeletes_CanvasRemoved()
     {
-        var user = await SeedUserAsync(Context, "user");
-        var canvas = await SeedCanvasAsync(Context, user.Id, "Delete Me");
+        var user = await SeedUserAsync("user");
+        var canvas = await SeedCanvasAsync(user.Id, "Delete Me");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.DeleteCanvasAsync(canvas.Id, user.Id);
@@ -50,9 +45,9 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task DeleteCanvasAsync_NonOwnerCannotDelete_ReturnsForbidden()
     {
-        var owner = await SeedUserAsync(Context, "owner");
-        var other = await SeedUserAsync(Context, "other");
-        var canvas = await SeedCanvasAsync(Context, owner.Id, "Owner Canvas");
+        var owner = await SeedUserAsync("owner");
+        var other = await SeedUserAsync("other");
+        var canvas = await SeedCanvasAsync(owner.Id, "Owner Canvas");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.DeleteCanvasAsync(canvas.Id, other.Id);
@@ -67,7 +62,7 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task DeleteCanvasAsync_CanvasNotFound_ReturnsNotFound()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.DeleteCanvasAsync(Guid.NewGuid(), user.Id);
@@ -79,8 +74,8 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task RenameCanvas_OwnerRenames_NameChanged()
     {
-        var user = await SeedUserAsync(Context, "user");
-        var canvas = await SeedCanvasAsync(Context, user.Id, "Old Name");
+        var user = await SeedUserAsync("user");
+        var canvas = await SeedCanvasAsync(user.Id, "Old Name");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.RenameCanvas("New Name", canvas.Id, user.Id);
@@ -94,9 +89,9 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task RenameCanvas_NonOwnerCannotRename_ReturnsForbidden()
     {
-        var owner = await SeedUserAsync(Context, "owner");
-        var other = await SeedUserAsync(Context, "other");
-        var canvas = await SeedCanvasAsync(Context, owner.Id, "Owner Canvas");
+        var owner = await SeedUserAsync("owner");
+        var other = await SeedUserAsync("other");
+        var canvas = await SeedCanvasAsync(owner.Id, "Owner Canvas");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.RenameCanvas("Hacked Name", canvas.Id, other.Id);
@@ -112,7 +107,7 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task RenameCanvas_CanvasNotFound_ReturnsNotFound()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.RenameCanvas("Any", Guid.NewGuid(), user.Id);
@@ -124,11 +119,11 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task GetAllCanvasesAsync_ReturnsOnlyUserCanvases()
     {
-        var userA = await SeedUserAsync(Context, "userA");
-        var userB = await SeedUserAsync(Context, "userB");
-        await SeedCanvasAsync(Context, userA.Id, "A1");
-        await SeedCanvasAsync(Context, userA.Id, "A2");
-        await SeedCanvasAsync(Context, userB.Id, "B1");
+        var userA = await SeedUserAsync("userA");
+        var userB = await SeedUserAsync("userB");
+        await SeedCanvasAsync(userA.Id, "A1");
+        await SeedCanvasAsync(userA.Id, "A2");
+        await SeedCanvasAsync(userB.Id, "B1");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.GetAllCanvasesAsync(userA.Id);
@@ -141,7 +136,7 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task GetAllCanvasesAsync_ReturnsEmptyForUserWithNoCanvases()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
         var canvasService = CreateCanvasService();
 
         var result = await canvasService.GetAllCanvasesAsync(user.Id);
@@ -153,7 +148,7 @@ public sealed class CanvasServiceTests : PartyTestBase
     [TestMethod]
     public async Task CreateCanvas_CreatesMultipleCanvases_SameOwner()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
         var canvasService = CreateCanvasService();
 
         var r1 = await canvasService.CreateCanvasAsync(user.Id, "Canvas 1");

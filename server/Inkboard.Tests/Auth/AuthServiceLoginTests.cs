@@ -1,37 +1,18 @@
 using Inkboard.Application.Auth.DTO;
-using Inkboard.Application.Services;
-using Inkboard.Infra.Db;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace Inkboard.Tests.Auth;
 
 [TestClass]
-public sealed class LoginTests : TestBase
+public sealed class LoginTests : AuthTestBase
 {
-    private async Task<AuthService> RegisterAndGetService(AppDbContext context)
-    {
-        var service = CreateAuthService(context);
-        await service.RegisterAsync(
-            new RegisterRequestModel
-            {
-                UserName = ValidUserName,
-                Email = ValidEmail,
-                Password = ValidPassword,
-            }
-        );
-        return service;
-    }
-
     [TestMethod]
     public async Task ValidCredentials_ReturnsSuccessWithTokens()
     {
-        var context = CreateDbContext();
-        var service = await RegisterAndGetService(context);
+        await RegisterDefaultAsync();
 
-        var result = await service.LoginAsync(
-            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
-        );
+        var result = await LoginDefaultAsync();
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(result.AccessToken);
@@ -41,21 +22,9 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task ValidCredentials_AccessTokenContainsUserId()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
+        var regResult = await RegisterDefaultAsync();
 
-        var regResult = await service.RegisterAsync(
-            new RegisterRequestModel
-            {
-                UserName = ValidUserName,
-                Email = ValidEmail,
-                Password = ValidPassword,
-            }
-        );
-
-        var result = await service.LoginAsync(
-            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
-        );
+        var result = await LoginDefaultAsync();
 
         Assert.IsTrue(result.Success);
         Assert.IsNotNull(regResult.UserId);
@@ -65,10 +34,9 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task WrongPassword_ReturnsError()
     {
-        var context = CreateDbContext();
-        var service = await RegisterAndGetService(context);
+        await RegisterDefaultAsync();
 
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = "wrongpassword" }
         );
 
@@ -80,10 +48,7 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task NonExistentEmail_ReturnsError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = "nonexistent@example.com", Password = ValidPassword }
         );
 
@@ -95,23 +60,13 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task ErrorMessage_DoesNotRevealWhichFieldIsWrong()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var wrongEmailResult = await service.LoginAsync(
+        var wrongEmailResult = await Service.LoginAsync(
             new LoginRequestModel { Email = "wrong@example.com", Password = ValidPassword }
         );
 
-        await service.RegisterAsync(
-            new RegisterRequestModel
-            {
-                UserName = ValidUserName,
-                Email = ValidEmail,
-                Password = ValidPassword,
-            }
-        );
+        await RegisterDefaultAsync();
 
-        var wrongPassResult = await service.LoginAsync(
+        var wrongPassResult = await Service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = "wrongpassword" }
         );
 
@@ -121,16 +76,13 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task ValidCredentials_PersistsRefreshToken()
     {
-        var context = CreateDbContext();
-        var service = await RegisterAndGetService(context);
+        await RegisterDefaultAsync();
 
-        var result = await service.LoginAsync(
-            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
-        );
+        var result = await LoginDefaultAsync();
 
         Assert.IsTrue(result.Success);
 
-        var tokens = await context.RefreshTokens.ToListAsync();
+        var tokens = await Context.RefreshTokens.ToListAsync();
         Assert.HasCount(1, tokens);
         Assert.IsFalse(tokens[0].IsRevoked);
         Assert.IsNotNull(tokens[0].TokenHash);
@@ -140,22 +92,14 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task ValidCredentials_CallsGenerateTokenWithCorrectParams()
     {
-        var context = CreateDbContext();
         var tokenGenMock = CreateTokenGeneratorMock();
         tokenGenMock
             .Setup(t => t.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns((Guid userId, string email, string _) => $"token-{userId}-{email}")
             .Verifiable();
-        var service = CreateAuthService(context, tokenGenMock);
+        var service = CreateAuthService(Context, tokenGenMock);
 
-        var regResult = await service.RegisterAsync(
-            new RegisterRequestModel
-            {
-                UserName = ValidUserName,
-                Email = ValidEmail,
-                Password = ValidPassword,
-            }
-        );
+        var regResult = await service.RegisterAsync(NewRegisterRequest());
 
         var result = await service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
@@ -173,18 +117,10 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task ValidCredentials_CallsGenerateRefreshToken()
     {
-        var context = CreateDbContext();
         var tokenGenMock = CreateTokenGeneratorMock();
-        var service = CreateAuthService(context, tokenGenMock);
+        var service = CreateAuthService(Context, tokenGenMock);
 
-        await service.RegisterAsync(
-            new RegisterRequestModel
-            {
-                UserName = ValidUserName,
-                Email = ValidEmail,
-                Password = ValidPassword,
-            }
-        );
+        await service.RegisterAsync(NewRegisterRequest());
 
         await service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
@@ -196,14 +132,11 @@ public sealed class LoginTests : TestBase
     [TestMethod]
     public async Task RefreshTokenExpiry_IsSevenDays()
     {
-        var context = CreateDbContext();
-        var service = await RegisterAndGetService(context);
+        await RegisterDefaultAsync();
 
-        await service.LoginAsync(
-            new LoginRequestModel { Email = ValidEmail, Password = ValidPassword }
-        );
+        await LoginDefaultAsync();
 
-        var tokens = await context.RefreshTokens.ToListAsync();
+        var tokens = await Context.RefreshTokens.ToListAsync();
         Assert.HasCount(1, tokens);
         var expectedExpiry = DateTimeOffset.UtcNow.AddDays(7);
         Assert.IsTrue(tokens[0].ExpiresAt <= expectedExpiry.AddMinutes(1));

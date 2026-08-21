@@ -8,14 +8,14 @@ public sealed class FriendsServiceGetListsTests : FriendsTestBase
     [TestMethod]
     public async Task GetFriendsList_UserOnLowerAndHigherSideOfDifferentPairs_ReturnsBoth()
     {
-        var subject = await SeedUserAsync(Context, "subject");
-        var lowerFriend = await SeedUserAsync(Context, "aaa_lower");
-        var higherFriend = await SeedUserAsync(Context, "zzz_higher");
+        var subject = await SeedUserAsync("subject");
+        var lowerFriend = await SeedUserAsync("aaa_lower");
+        var higherFriend = await SeedUserAsync("zzz_higher");
         // One pair lands subject on the low side, the other on the high side,
         // depending purely on random Guid comparison, so seed both directions
         // through CreateFriendshipAsync so it normalizes for us either way.
-        await SeedFriendshipAsync(Context, subject.Id, lowerFriend.Id);
-        await SeedFriendshipAsync(Context, higherFriend.Id, subject.Id);
+        await SeedFriendshipAsync(subject.Id, lowerFriend.Id);
+        await SeedFriendshipAsync(higherFriend.Id, subject.Id);
 
         var result = await Service.GetFriendsListByIdAsync(subject.Id);
 
@@ -30,10 +30,10 @@ public sealed class FriendsServiceGetListsTests : FriendsTestBase
     [TestMethod]
     public async Task GetPendingRequests_OnlyReturnsRequestsStillPending()
     {
-        var receiver = await SeedUserAsync(Context, "receiver");
-        var pendingSender = await SeedUserAsync(Context, "pendingSender");
-        var declinedSender = await SeedUserAsync(Context, "declinedSender");
-        var acceptedSender = await SeedUserAsync(Context, "acceptedSender");
+        var receiver = await SeedUserAsync("receiver");
+        var pendingSender = await SeedUserAsync("pendingSender");
+        var declinedSender = await SeedUserAsync("declinedSender");
+        var acceptedSender = await SeedUserAsync("acceptedSender");
 
         var pending = await Service.SendFriendReqAsync(pendingSender.Id, receiver.Id);
         Assert.IsTrue(pending.IsSuccess);
@@ -64,9 +64,9 @@ public sealed class FriendsServiceGetListsTests : FriendsTestBase
     [TestMethod]
     public async Task GetAllRequests_ReturnsEveryStatusForThatReceiver()
     {
-        var receiver = await SeedUserAsync(Context, "receiver");
-        var pendingSender = await SeedUserAsync(Context, "pendingSender");
-        var declinedSender = await SeedUserAsync(Context, "declinedSender");
+        var receiver = await SeedUserAsync("receiver");
+        var pendingSender = await SeedUserAsync("pendingSender");
+        var declinedSender = await SeedUserAsync("declinedSender");
 
         var pending = await Service.SendFriendReqAsync(pendingSender.Id, receiver.Id);
         Assert.IsTrue(pending.IsSuccess);

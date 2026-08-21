@@ -75,9 +75,9 @@ public sealed class FriendshipRepositoryTests : FriendsTestBase
     [TestMethod]
     public async Task GetPendingBetweenAsync_IsDirectional_DoesNotMatchReverseDirection()
     {
-        var alice = await SeedUserAsync(Context, "alice");
-        var bob = await SeedUserAsync(Context, "bob");
-        await SeedFriendRequestAsync(Context, alice.Id, bob.Id);
+        var alice = await SeedUserAsync("alice");
+        var bob = await SeedUserAsync("bob");
+        await SeedFriendRequestAsync(alice.Id, bob.Id);
         var repository = new FriendRequestRepository(Context);
 
         // Alice sent Bob a request. Looking it up as if Bob sent Alice one must
