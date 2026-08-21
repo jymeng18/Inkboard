@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import App from './App'
 import LandingPage from './pages/LandingPage'
 
@@ -11,6 +11,7 @@ const RequireAuth = lazy(() => import('@/components/RequireAuth'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const CanvasPage = lazy(() => import('./pages/CanvasPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 function RouteFallback() {
   return (
@@ -31,7 +32,7 @@ export default function AppRoutes() {
           <Route path="/canvas/:canvasId" element={<CanvasPage />} />
           <Route path="/app" element={<App />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   )

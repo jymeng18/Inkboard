@@ -30,4 +30,10 @@
 - [ ] http logging
 - [ ] User Account page / User preferences
 - [ ] DMs page
+- [ ] OAuth for Google / Github
+- [ ] Help Docs -> AI Chatbot
+- [ ] TOS
+- [ ] Dockerize and Deploy
+- [ ] Error page 404
+- [ ] Users not properly displayed as being offline / online
 - [ ] Optimize CanvasService.SaveOperationsAsync()
