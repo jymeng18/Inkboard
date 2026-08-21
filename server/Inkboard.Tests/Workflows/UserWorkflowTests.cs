@@ -1,5 +1,3 @@
-#pragma warning disable MSTEST0049
-
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -13,100 +11,63 @@ namespace Inkboard.Tests.Workflows;
 /// would actually observe, not internal state.
 /// </summary>
 [TestClass]
-public sealed class UserWorkflowTests
+public sealed class UserWorkflowTests : IntegrationTestBase
 {
-    private static IntegrationTestFactory _factory = null!;
-    private static HttpClient _client = null!;
+    // ─── workflow API helpers ───────────────────────────────────
 
-    [ClassInitialize]
-    public static void ClassInit(TestContext _)
+    private async Task<Guid> CreateCanvasAsync(string token, string name = "Canvas")
     {
-        _factory = new IntegrationTestFactory();
-        _client = _factory.CreateClient();
-    }
-
-    [ClassCleanup]
-    public static void ClassCleanup()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
-
-    // ─── HTTP helpers ───────────────────────────────────────────
-
-    private static HttpRequestMessage Req(HttpMethod method, string url, string token, object? body = null)
-    {
-        var msg = new HttpRequestMessage(method, url);
-        msg.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        if (body is not null)
-            msg.Content = JsonContent.Create(body);
-        return msg;
-    }
-
-    private static async Task<(Guid id, string token)> NewUserAsync(string name)
-    {
-        var email = $"{name}-{Guid.NewGuid():N}@wf.test";
-        var reg = await _client.PostAsJsonAsync("/api/auth/register", new { email, password = "TestPass123", userName = name });
-        reg.EnsureSuccessStatusCode();
-        var regBody = await reg.Content.ReadFromJsonAsync<JsonElement>();
-        var id = Guid.Parse(regBody.GetProperty("id").GetString()!);
-
-        var login = await _client.PostAsJsonAsync("/api/auth/login", new { email, password = "TestPass123" });
-        login.EnsureSuccessStatusCode();
-        var loginBody = await login.Content.ReadFromJsonAsync<JsonElement>();
-        var token = loginBody.GetProperty("access_token").GetString()!;
-
-        return (id, token);
-    }
-
-    private static async Task<Guid> CreateCanvasAsync(string token, string name = "Canvas")
-    {
-        var res = await _client.SendAsync(Req(HttpMethod.Post, "/api/canvas", token, new { name }));
+        var res = await SendAsync(HttpMethod.Post, "/api/canvas", token, new { name });
         res.EnsureSuccessStatusCode();
-        var body = await res.Content.ReadFromJsonAsync<JsonElement>();
-        return Guid.Parse(body.GetProperty("id").GetString()!);
+        return IdOf(await ReadJsonAsync(res));
     }
 
-    private static async Task<Guid> CreatePartyAsync(string token, Guid canvasId)
+    private async Task<Guid> CreatePartyAsync(string token, Guid canvasId)
     {
-        var res = await _client.SendAsync(Req(HttpMethod.Post, "/api/parties", token, new { canvasId }));
+        var res = await SendAsync(HttpMethod.Post, "/api/parties", token, new { canvasId });
         res.EnsureSuccessStatusCode();
-        var body = await res.Content.ReadFromJsonAsync<JsonElement>();
-        return Guid.Parse(body.GetProperty("id").GetString()!);
+        return IdOf(await ReadJsonAsync(res));
     }
 
-    private static async Task<Guid> InviteAsync(string leaderToken, Guid partyId, Guid invitedUserId)
+    private async Task<Guid> InviteAsync(string leaderToken, Guid partyId, Guid invitedUserId)
     {
-        var res = await _client.SendAsync(Req(HttpMethod.Post, $"/api/parties/{partyId}/invites", leaderToken,
-            new { invitedUserId = invitedUserId.ToString() }));
+        var res = await SendAsync(HttpMethod.Post, $"/api/parties/{partyId}/invites", leaderToken,
+            new { invitedUserId = invitedUserId.ToString() });
         res.EnsureSuccessStatusCode();
-        var body = await res.Content.ReadFromJsonAsync<JsonElement>();
-        return Guid.Parse(body.GetProperty("id").GetString()!);
+        return IdOf(await ReadJsonAsync(res));
     }
 
-    private static async Task RespondAsync(string memberToken, Guid inviteId, bool accepted)
+    private async Task RespondAsync(string memberToken, Guid inviteId, bool accepted)
     {
-        var res = await _client.SendAsync(Req(HttpMethod.Post, $"/api/invites/{inviteId}/respond", memberToken, new { accepted }));
+        var res = await SendAsync(HttpMethod.Post, $"/api/invites/{inviteId}/respond", memberToken, new { accepted });
         res.EnsureSuccessStatusCode();
     }
 
-    private static async Task JoinPartyAsync(string leaderToken, Guid partyId, Guid memberId, string memberToken)
+    private async Task JoinPartyAsync(string leaderToken, Guid partyId, Guid memberId, string memberToken)
     {
         var inviteId = await InviteAsync(leaderToken, partyId, memberId);
         await RespondAsync(memberToken, inviteId, true);
     }
 
-    private static async Task<JsonElement> GetPartyAsync(string token, Guid partyId)
+    private async Task<JsonElement> GetPartyAsync(string token, Guid partyId)
     {
-        var res = await _client.SendAsync(Req(HttpMethod.Get, $"/api/parties/{partyId}", token));
+        var res = await SendAsync(HttpMethod.Get, $"/api/parties/{partyId}", token);
         res.EnsureSuccessStatusCode();
-        return await res.Content.ReadFromJsonAsync<JsonElement>();
+        return await ReadJsonAsync(res);
     }
 
     private static List<(Guid userId, string role)> MembersOf(JsonElement party) =>
         party.GetProperty("members").EnumerateArray()
             .Select(m => (Guid.Parse(m.GetProperty("userId").GetString()!), m.GetProperty("role").GetString()!))
             .ToList();
+
+    private async Task<bool> FriendListContainsAsync(string token, Guid friendId)
+    {
+        var res = await SendAsync(HttpMethod.Get, "/api/friends", token);
+        res.EnsureSuccessStatusCode();
+        var list = await ReadJsonAsync(res);
+        return list.EnumerateArray().Any(f => Guid.Parse(f.GetProperty("userId").GetString()!) == friendId);
+    }
 
     // ─── Canvas lifecycle ───────────────────────────────────────
 
@@ -116,12 +77,11 @@ public sealed class UserWorkflowTests
         var (_, token) = await NewUserAsync("alice");
         var canvasId = await CreateCanvasAsync(token, "My First Board");
 
-        var renameRes = await _client.SendAsync(Req(HttpMethod.Put, $"/api/canvas/{canvasId}", token, new { name = "Renamed Board" }));
+        var renameRes = await SendAsync(HttpMethod.Put, $"/api/canvas/{canvasId}", token, new { name = "Renamed Board" });
         Assert.AreEqual(HttpStatusCode.NoContent, renameRes.StatusCode);
 
-        var listRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/canvas", token));
-        var list = await listRes.Content.ReadFromJsonAsync<JsonElement>();
-        var match = list.EnumerateArray().Single(c => Guid.Parse(c.GetProperty("id").GetString()!) == canvasId);
+        var list = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/canvas", token));
+        var match = list.EnumerateArray().Single(c => IdOf(c) == canvasId);
         Assert.AreEqual("Renamed Board", match.GetProperty("name").GetString());
     }
 
@@ -131,12 +91,11 @@ public sealed class UserWorkflowTests
         var (_, token) = await NewUserAsync("bob");
         var canvasId = await CreateCanvasAsync(token);
 
-        var delRes = await _client.SendAsync(Req(HttpMethod.Delete, $"/api/canvas/{canvasId}", token));
+        var delRes = await SendAsync(HttpMethod.Delete, $"/api/canvas/{canvasId}", token);
         Assert.AreEqual(HttpStatusCode.NoContent, delRes.StatusCode);
 
-        var listRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/canvas", token));
-        var list = await listRes.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.IsFalse(list.EnumerateArray().Any(c => Guid.Parse(c.GetProperty("id").GetString()!) == canvasId));
+        var list = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/canvas", token));
+        Assert.IsFalse(list.EnumerateArray().Any(c => IdOf(c) == canvasId));
     }
 
     // ─── Party formation ────────────────────────────────────────
@@ -188,8 +147,8 @@ public sealed class UserWorkflowTests
         }
 
         var (sixthId, _) = await NewUserAsync("sixth");
-        var res = await _client.SendAsync(Req(HttpMethod.Post, $"/api/parties/{partyId}/invites", leaderToken,
-            new { invitedUserId = sixthId.ToString() }));
+        var res = await SendAsync(HttpMethod.Post, $"/api/parties/{partyId}/invites", leaderToken,
+            new { invitedUserId = sixthId.ToString() });
 
         Assert.AreEqual(HttpStatusCode.BadRequest, res.StatusCode);
         Assert.HasCount(5, MembersOf(await GetPartyAsync(leaderToken, partyId)));
@@ -206,11 +165,11 @@ public sealed class UserWorkflowTests
         var partyId = await CreatePartyAsync(leaderToken, canvasId);
         await JoinPartyAsync(leaderToken, partyId, memberId, memberToken);
 
-        var saveRes = await _client.SendAsync(Req(HttpMethod.Post, $"/api/canvas/{canvasId}/operations", leaderToken,
-            new { type = 0, operationData = "{\"stroke\":\"abc\"}" }));
+        var saveRes = await SendAsync(HttpMethod.Post, $"/api/canvas/{canvasId}/operations", leaderToken,
+            new { type = 0, operationData = "{\"stroke\":\"abc\"}" });
         Assert.AreEqual(HttpStatusCode.NoContent, saveRes.StatusCode);
 
-        var opsRes = await _client.SendAsync(Req(HttpMethod.Get, $"/api/canvas/{canvasId}/operations", memberToken));
+        var opsRes = await SendAsync(HttpMethod.Get, $"/api/canvas/{canvasId}/operations", memberToken);
         Assert.AreEqual(HttpStatusCode.OK, opsRes.StatusCode);
         var ops = await opsRes.Content.ReadFromJsonAsync<List<string>>();
         CollectionAssert.Contains(ops, "{\"stroke\":\"abc\"}");
@@ -222,10 +181,10 @@ public sealed class UserWorkflowTests
         var (_, ownerToken) = await NewUserAsync("owner");
         var (_, strangerToken) = await NewUserAsync("stranger");
         var canvasId = await CreateCanvasAsync(ownerToken);
-        await _client.SendAsync(Req(HttpMethod.Post, $"/api/canvas/{canvasId}/operations", ownerToken,
-            new { type = 0, operationData = "{\"secret\":true}" }));
+        await SendAsync(HttpMethod.Post, $"/api/canvas/{canvasId}/operations", ownerToken,
+            new { type = 0, operationData = "{\"secret\":true}" });
 
-        var res = await _client.SendAsync(Req(HttpMethod.Get, $"/api/canvas/{canvasId}/operations", strangerToken));
+        var res = await SendAsync(HttpMethod.Get, $"/api/canvas/{canvasId}/operations", strangerToken);
 
         Assert.AreEqual(HttpStatusCode.Forbidden, res.StatusCode);
     }
@@ -245,7 +204,7 @@ public sealed class UserWorkflowTests
         await JoinPartyAsync(leaderToken, partyId, firstId, firstToken);
         await JoinPartyAsync(leaderToken, partyId, secondId, secondToken);
 
-        var leaveRes = await _client.SendAsync(Req(HttpMethod.Delete, $"/api/parties/{partyId}", leaderToken));
+        var leaveRes = await SendAsync(HttpMethod.Delete, $"/api/parties/{partyId}", leaderToken);
         Assert.AreEqual(HttpStatusCode.NoContent, leaveRes.StatusCode);
 
         var party = await GetPartyAsync(firstToken, partyId);
@@ -262,9 +221,9 @@ public sealed class UserWorkflowTests
         var partyId = await CreatePartyAsync(leaderToken, canvasId);
         await JoinPartyAsync(leaderToken, partyId, memberId, memberToken);
 
-        await _client.SendAsync(Req(HttpMethod.Delete, $"/api/parties/{partyId}", leaderToken));
+        await SendAsync(HttpMethod.Delete, $"/api/parties/{partyId}", leaderToken);
 
-        var res = await _client.SendAsync(Req(HttpMethod.Get, $"/api/parties/{partyId}", memberToken));
+        var res = await SendAsync(HttpMethod.Get, $"/api/parties/{partyId}", memberToken);
         Assert.AreEqual(HttpStatusCode.NotFound, res.StatusCode);
     }
 
@@ -277,12 +236,12 @@ public sealed class UserWorkflowTests
         var partyId = await CreatePartyAsync(leaderToken, canvasId);
         await JoinPartyAsync(leaderToken, partyId, memberId, memberToken);
 
-        var kickRes = await _client.SendAsync(Req(HttpMethod.Delete, $"/api/parties/{partyId}/members/{memberId}", leaderToken));
+        var kickRes = await SendAsync(HttpMethod.Delete, $"/api/parties/{partyId}/members/{memberId}", leaderToken);
         Assert.AreEqual(HttpStatusCode.NoContent, kickRes.StatusCode);
 
         Assert.IsFalse(MembersOf(await GetPartyAsync(leaderToken, partyId)).Any(m => m.userId == memberId));
         // Access to the canvas op-log rode on party membership, so it's gone too.
-        var opsRes = await _client.SendAsync(Req(HttpMethod.Get, $"/api/canvas/{canvasId}/operations", memberToken));
+        var opsRes = await SendAsync(HttpMethod.Get, $"/api/canvas/{canvasId}/operations", memberToken);
         Assert.AreEqual(HttpStatusCode.Forbidden, opsRes.StatusCode);
     }
 
@@ -296,11 +255,11 @@ public sealed class UserWorkflowTests
         var canvasId = await CreateCanvasAsync(leaderToken);
         var partyId = await CreatePartyAsync(leaderToken, canvasId);
 
-        var blockRes = await _client.SendAsync(Req(HttpMethod.Post, $"/api/users/{targetId}/block", leaderToken));
+        var blockRes = await SendAsync(HttpMethod.Post, $"/api/users/{targetId}/block", leaderToken);
         Assert.AreEqual(HttpStatusCode.NoContent, blockRes.StatusCode);
 
-        var inviteRes = await _client.SendAsync(Req(HttpMethod.Post, $"/api/parties/{partyId}/invites", leaderToken,
-            new { invitedUserId = targetId.ToString() }));
+        var inviteRes = await SendAsync(HttpMethod.Post, $"/api/parties/{partyId}/invites", leaderToken,
+            new { invitedUserId = targetId.ToString() });
         Assert.AreEqual(HttpStatusCode.BadRequest, inviteRes.StatusCode);
     }
 
@@ -314,9 +273,9 @@ public sealed class UserWorkflowTests
         var inviteId = await InviteAsync(leaderToken, partyId, targetId);
 
         // Leader blocks the invitee after the invite went out but before they answer.
-        await _client.SendAsync(Req(HttpMethod.Post, $"/api/users/{targetId}/block", leaderToken));
+        await SendAsync(HttpMethod.Post, $"/api/users/{targetId}/block", leaderToken);
 
-        var respondRes = await _client.SendAsync(Req(HttpMethod.Post, $"/api/invites/{inviteId}/respond", targetToken, new { accepted = true }));
+        var respondRes = await SendAsync(HttpMethod.Post, $"/api/invites/{inviteId}/respond", targetToken, new { accepted = true });
         Assert.AreEqual(HttpStatusCode.Forbidden, respondRes.StatusCode);
         Assert.IsFalse(MembersOf(await GetPartyAsync(leaderToken, partyId)).Any(m => m.userId == targetId));
     }
@@ -334,14 +293,14 @@ public sealed class UserWorkflowTests
         var secondCanvas = await CreateCanvasAsync(leaderToken, "Second");
 
         // Before the move, the member has no claim on the second canvas.
-        var before = await _client.SendAsync(Req(HttpMethod.Get, $"/api/canvas/{secondCanvas}/operations", memberToken));
+        var before = await SendAsync(HttpMethod.Get, $"/api/canvas/{secondCanvas}/operations", memberToken);
         Assert.AreEqual(HttpStatusCode.Forbidden, before.StatusCode);
 
-        var patchRes = await _client.SendAsync(Req(HttpMethod.Patch, $"/api/parties/{partyId}/canvas", leaderToken,
-            new { canvasId = secondCanvas.ToString() }));
+        var patchRes = await SendAsync(HttpMethod.Patch, $"/api/parties/{partyId}/canvas", leaderToken,
+            new { canvasId = secondCanvas.ToString() });
         Assert.AreEqual(HttpStatusCode.NoContent, patchRes.StatusCode);
 
-        var after = await _client.SendAsync(Req(HttpMethod.Get, $"/api/canvas/{secondCanvas}/operations", memberToken));
+        var after = await SendAsync(HttpMethod.Get, $"/api/canvas/{secondCanvas}/operations", memberToken);
         Assert.AreEqual(HttpStatusCode.OK, after.StatusCode);
     }
 
@@ -354,15 +313,14 @@ public sealed class UserWorkflowTests
         var partyId = await CreatePartyAsync(leaderToken, canvasId);
         await JoinPartyAsync(leaderToken, partyId, memberId, memberToken);
 
-        var endRes = await _client.SendAsync(Req(HttpMethod.Post, $"/api/parties/{partyId}/end", leaderToken));
+        var endRes = await SendAsync(HttpMethod.Post, $"/api/parties/{partyId}/end", leaderToken);
         Assert.AreEqual(HttpStatusCode.NoContent, endRes.StatusCode);
 
-        var partyRes = await _client.SendAsync(Req(HttpMethod.Get, $"/api/parties/{partyId}", leaderToken));
+        var partyRes = await SendAsync(HttpMethod.Get, $"/api/parties/{partyId}", leaderToken);
         Assert.AreEqual(HttpStatusCode.NotFound, partyRes.StatusCode);
 
-        var listRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/canvas", leaderToken));
-        var list = await listRes.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.IsTrue(list.EnumerateArray().Any(c => Guid.Parse(c.GetProperty("id").GetString()!) == canvasId));
+        var list = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/canvas", leaderToken));
+        Assert.IsTrue(list.EnumerateArray().Any(c => IdOf(c) == canvasId));
     }
 
     // ─── Friends lifecycle ──────────────────────────────────────
@@ -373,17 +331,16 @@ public sealed class UserWorkflowTests
         var (aId, aToken) = await NewUserAsync("aaa");
         var (bId, bToken) = await NewUserAsync("bbb");
 
-        var sendRes = await _client.SendAsync(Req(HttpMethod.Post, $"/api/friends/{bId}", aToken));
+        var sendRes = await SendAsync(HttpMethod.Post, $"/api/friends/{bId}", aToken);
         Assert.AreEqual(HttpStatusCode.Created, sendRes.StatusCode);
 
         // B finds the incoming request and accepts it.
-        var reqsRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/friend-requests", bToken));
-        var reqs = await reqsRes.Content.ReadFromJsonAsync<JsonElement>();
+        var reqs = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/friend-requests", bToken));
         var incoming = reqs.EnumerateArray().Single(r => Guid.Parse(r.GetProperty("userId").GetString()!) == aId);
-        var requestId = Guid.Parse(incoming.GetProperty("id").GetString()!);
+        var requestId = IdOf(incoming);
 
-        var acceptRes = await _client.SendAsync(Req(HttpMethod.Patch, $"/api/friend-requests/{requestId}", bToken,
-            new { requesterId = aId.ToString(), accepted = true }));
+        var acceptRes = await SendAsync(HttpMethod.Patch, $"/api/friend-requests/{requestId}", bToken,
+            new { requesterId = aId.ToString(), accepted = true });
         Assert.AreEqual(HttpStatusCode.OK, acceptRes.StatusCode);
 
         Assert.IsTrue(await FriendListContainsAsync(aToken, bId));
@@ -395,14 +352,13 @@ public sealed class UserWorkflowTests
     {
         var (aId, aToken) = await NewUserAsync("aaa");
         var (bId, bToken) = await NewUserAsync("bbb");
-        await _client.SendAsync(Req(HttpMethod.Post, $"/api/friends/{bId}", aToken));
+        await SendAsync(HttpMethod.Post, $"/api/friends/{bId}", aToken);
 
-        var reqsRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/friend-requests", bToken));
-        var reqs = await reqsRes.Content.ReadFromJsonAsync<JsonElement>();
-        var requestId = Guid.Parse(reqs.EnumerateArray().Single(r => Guid.Parse(r.GetProperty("userId").GetString()!) == aId).GetProperty("id").GetString()!);
+        var reqs = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/friend-requests", bToken));
+        var requestId = IdOf(reqs.EnumerateArray().Single(r => Guid.Parse(r.GetProperty("userId").GetString()!) == aId));
 
-        var rejectRes = await _client.SendAsync(Req(HttpMethod.Patch, $"/api/friend-requests/{requestId}", bToken,
-            new { requesterId = aId.ToString(), accepted = false }));
+        var rejectRes = await SendAsync(HttpMethod.Patch, $"/api/friend-requests/{requestId}", bToken,
+            new { requesterId = aId.ToString(), accepted = false });
         Assert.AreEqual(HttpStatusCode.OK, rejectRes.StatusCode);
 
         Assert.IsFalse(await FriendListContainsAsync(aToken, bId));
@@ -415,23 +371,20 @@ public sealed class UserWorkflowTests
         var (_, aToken) = await NewUserAsync("aaa");
         var (bId, bToken) = await NewUserAsync("bbb");
 
-        var send1 = await _client.SendAsync(Req(HttpMethod.Post, $"/api/friends/{bId}", aToken));
-        var send1Body = await send1.Content.ReadFromJsonAsync<JsonElement>();
-        var requestId = Guid.Parse(send1Body.GetProperty("id").GetString()!);
+        var send1Body = await ReadJsonAsync(await SendAsync(HttpMethod.Post, $"/api/friends/{bId}", aToken));
+        var requestId = IdOf(send1Body);
 
-        var cancelRes = await _client.SendAsync(Req(HttpMethod.Delete, $"/api/friend-requests/{requestId}", aToken));
+        var cancelRes = await SendAsync(HttpMethod.Delete, $"/api/friend-requests/{requestId}", aToken);
         Assert.AreEqual(HttpStatusCode.NoContent, cancelRes.StatusCode);
 
         // B's inbox no longer shows the cancelled request as pending (status enum
         // serializes as its numeric value; Pending == 0).
-        var reqsRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/friend-requests", bToken));
-        var reqs = await reqsRes.Content.ReadFromJsonAsync<JsonElement>();
+        var reqs = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/friend-requests", bToken));
         Assert.IsFalse(reqs.EnumerateArray().Any(r =>
-            Guid.Parse(r.GetProperty("id").GetString()!) == requestId
-            && r.GetProperty("status").GetInt32() == 0));
+            IdOf(r) == requestId && r.GetProperty("status").GetInt32() == 0));
 
         // And a brand-new request is allowed after the cancel.
-        var send2 = await _client.SendAsync(Req(HttpMethod.Post, $"/api/friends/{bId}", aToken));
+        var send2 = await SendAsync(HttpMethod.Post, $"/api/friends/{bId}", aToken);
         Assert.AreEqual(HttpStatusCode.Created, send2.StatusCode);
     }
 
@@ -440,19 +393,18 @@ public sealed class UserWorkflowTests
     {
         var (aId, aToken) = await NewUserAsync("aaa");
         var (bId, bToken) = await NewUserAsync("bbb");
-        await _client.SendAsync(Req(HttpMethod.Post, $"/api/friends/{bId}", aToken));
-        var reqsRes = await _client.SendAsync(Req(HttpMethod.Get, "/api/friend-requests", bToken));
-        var reqs = await reqsRes.Content.ReadFromJsonAsync<JsonElement>();
-        var requestId = Guid.Parse(reqs.EnumerateArray().Single(r => Guid.Parse(r.GetProperty("userId").GetString()!) == aId).GetProperty("id").GetString()!);
-        await _client.SendAsync(Req(HttpMethod.Patch, $"/api/friend-requests/{requestId}", bToken, new { requesterId = aId.ToString(), accepted = true }));
+        await SendAsync(HttpMethod.Post, $"/api/friends/{bId}", aToken);
+        var reqs = await ReadJsonAsync(await SendAsync(HttpMethod.Get, "/api/friend-requests", bToken));
+        var requestId = IdOf(reqs.EnumerateArray().Single(r => Guid.Parse(r.GetProperty("userId").GetString()!) == aId));
+        await SendAsync(HttpMethod.Patch, $"/api/friend-requests/{requestId}", bToken, new { requesterId = aId.ToString(), accepted = true });
 
-        var unfriendRes = await _client.SendAsync(Req(HttpMethod.Delete, $"/api/friends/{bId}", aToken));
+        var unfriendRes = await SendAsync(HttpMethod.Delete, $"/api/friends/{bId}", aToken);
         Assert.AreEqual(HttpStatusCode.NoContent, unfriendRes.StatusCode);
         Assert.IsFalse(await FriendListContainsAsync(aToken, bId));
         Assert.IsFalse(await FriendListContainsAsync(bToken, aId));
 
         // Nothing stops a fresh request after unfriending.
-        var reSend = await _client.SendAsync(Req(HttpMethod.Post, $"/api/friends/{bId}", aToken));
+        var reSend = await SendAsync(HttpMethod.Post, $"/api/friends/{bId}", aToken);
         Assert.AreEqual(HttpStatusCode.Created, reSend.StatusCode);
     }
 
@@ -461,17 +413,7 @@ public sealed class UserWorkflowTests
     [TestMethod]
     public async Task Workflow_ProtectedEndpointWithoutToken_Unauthorized()
     {
-        var res = await _client.GetAsync("/api/canvas");
+        var res = await SendAsync(HttpMethod.Get, "/api/canvas");
         Assert.AreEqual(HttpStatusCode.Unauthorized, res.StatusCode);
-    }
-
-    // ─── local helpers ──────────────────────────────────────────
-
-    private static async Task<bool> FriendListContainsAsync(string token, Guid friendId)
-    {
-        var res = await _client.SendAsync(Req(HttpMethod.Get, "/api/friends", token));
-        res.EnsureSuccessStatusCode();
-        var list = await res.Content.ReadFromJsonAsync<JsonElement>();
-        return list.EnumerateArray().Any(f => Guid.Parse(f.GetProperty("userId").GetString()!) == friendId);
     }
 }
