@@ -1,17 +1,29 @@
-import { Globe, Share2, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 
 const COLUMNS = [
   {
-    heading: "Product",
+    heading: "Documentation",
     accent: "text-primary",
     hover: "hover:text-primary",
-    links: ["Infinity Canvas", "AI Sketcher", "Sync Engine", "Pricing"],
+    links: ["Backend", "Frontend", "Services", "Architecture"],
+    urls: [
+      "https://github.com/jymeng18/Inkboard/tree/main/docs/Backend",
+      "https://github.com/jymeng18/Inkboard/tree/main/docs/Frontend",
+      "https://github.com/jymeng18/Inkboard/tree/main/docs/Services",
+      "https://github.com/jymeng18/Inkboard/blob/main/docs/ARCHITECTURE.md",
+    ],
   },
   {
-    heading: "Support",
+    heading: "About Creator",
     accent: "text-secondary",
     hover: "hover:text-secondary",
-    links: ["GitHub", "LinkedIn", "Creator", "Documentation"],
+    links: ["GitHub", "LinkedIn", "Portfolio", "Inkboard"],
+    urls: [
+      "https://github.com/jymeng18",
+      "https://ca.linkedin.com/in/jerry-meng18",
+      "https://portfolio-jerrymeng777.vercel.app/",
+      "https://github.com/jymeng18/Inkboard",
+    ],
   },
 ];
 
@@ -38,9 +50,9 @@ export default function Footer() {
               {column.heading}
             </h3>
             <ul className="space-y-3 font-body text-sm text-white/80">
-              {column.links.map((link) => (
+              {column.links.map((link, index) => (
                 <li key={link}>
-                  <a href="#" className={`transition-colors ${column.hover}`}>
+                  <a href={column.urls[index]} className={`transition-colors ${column.hover}`}>
                     {link}
                   </a>
                 </li>
@@ -54,22 +66,6 @@ export default function Footer() {
         <p className="font-body text-sm text-white/40">
           © {new Date().getFullYear()} Inkboard Inc. All rights reserved.
         </p>
-        <div className="flex gap-8">
-          <a
-            href="#"
-            aria-label="Share"
-            className="text-white/40 transition-colors hover:text-white"
-          >
-            <Share2 className="size-5" aria-hidden />
-          </a>
-          <a
-            href="#"
-            aria-label="Website"
-            className="text-white/40 transition-colors hover:text-white"
-          >
-            <Globe className="size-5" aria-hidden />
-          </a>
-        </div>
       </div>
     </footer>
   );

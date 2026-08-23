@@ -1,7 +1,12 @@
+using System.Net;
 using System.Text;
+using System.Threading.RateLimiting;
 using Azure.Identity;
 using Inkboard.Infra.Db;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
@@ -108,6 +113,70 @@ public static class DependencyInjection
             clientBuilder.AddBlobServiceClient(new Uri(blobUriString));
             DefaultAzureCredential credential = new();
             clientBuilder.UseCredential(credential);
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
+    {
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // Auth eps
+            options.AddPolicy(
+                policyName: "AuthPolicy",
+                httpContext =>
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 15,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0,
+                        }
+                    );
+                }
+            );
+
+            // Amount of canvas strokes inserted to db -  upper bounded
+            options.AddPolicy(
+                policyName: "CanvasOpsPolicy",
+                httpContext =>
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 60,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 15,
+                        }
+                    );
+                }
+            );
+
+            // General endpoints
+            options.AddPolicy(
+                policyName: "GeneralPolicy",
+                httpContext =>
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 5,
+                        }
+                    );
+                }
+            );
         });
 
         return services;

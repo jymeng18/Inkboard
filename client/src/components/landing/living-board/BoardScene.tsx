@@ -116,7 +116,7 @@ function Board() {
   });
 
   return (
-    <group ref={groupRef} rotation={[0, 0, -0.03]}>
+    <group ref={groupRef} rotation={[BASE_TILT_X, BASE_TILT_Y, -0.03]}>
       {/* Hard offset shadow, the sticker drop given real depth behind the slab */}
       <RoundedBox
         args={[PLANE_W + 0.16, PLANE_H + 0.16, DEPTH]}

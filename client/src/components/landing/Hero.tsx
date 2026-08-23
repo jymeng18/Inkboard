@@ -34,15 +34,11 @@ export default function Hero({ onStart }: HeroProps) {
               Peek at the mess ↓
             </Button>
           </div>
-
-          <p className="mt-6 font-label text-[11px] font-bold tracking-wider text-on-background/45 uppercase">
-            Free · no account · works in your browser
-          </p>
         </div>
 
         {/* Live board */}
         <div className="relative lg:col-span-7">
-          <LivingBoard className="relative aspect-video w-full lg:aspect-[3/2]" />
+          <LivingBoard className="relative aspect-video w-full lg:aspect-3/2" />
         </div>
       </div>
     </section>

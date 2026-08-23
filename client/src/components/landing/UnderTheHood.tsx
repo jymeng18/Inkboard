@@ -79,9 +79,9 @@ export default function UnderTheHood() {
                 <div className="mb-4 flex size-9 items-center justify-center rounded-lg border-2 border-outline bg-primary-container">
                   <LinkIcon className="size-4" aria-hidden />
                 </div>
-                <h3 className="mb-2 font-headline text-xl font-bold">Just share a link</h3>
+                <h3 className="mb-2 font-headline text-xl font-bold">Just send an invite</h3>
                 <p className="mb-4 text-sm leading-relaxed text-on-background/70">
-                  No accounts, no installs, no setup screen. Send a friend the room link and
+                  No setup, no installs. Invite a friend and
                   they&rsquo;re drawing next to you a few seconds later.
                 </p>
                 <p className="font-label text-[10px] font-black tracking-[0.2em] uppercase opacity-40">

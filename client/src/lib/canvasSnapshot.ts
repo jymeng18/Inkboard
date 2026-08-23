@@ -1,7 +1,13 @@
 import Konva from 'konva'
 
-import { strokeOutline } from '@/components/canvas/strokeGeometry'
-import type { SceneItem } from '@/stores/sceneStore'
+import {
+  boxMetrics,
+  diamondPoints,
+  starRadii,
+  trianglePoints,
+} from '@/components/canvas/scene/shapeGeometry'
+import { strokeOutline } from '@/components/canvas/scene/strokeGeometry'
+import type { LineItem, RectItem, SceneItem, ShapeItem } from '@/stores/sceneStore'
 
 /*
  * Snapshot rasterisation. The stage is an infinite pan/zoom surface, so instead
@@ -48,6 +54,10 @@ export function contentBounds(items: SceneItem[]): Bounds | null {
       for (let i = 0; i + 1 < outline.length; i += 2) {
         bounds = expand(bounds, outline[i], outline[i + 1])
       }
+    } else if (item.kind === 'line') {
+      const half = item.strokeWidth / 2
+      bounds = expand(bounds, Math.min(item.x1, item.x2) - half, Math.min(item.y1, item.y2) - half)
+      bounds = expand(bounds, Math.max(item.x1, item.x2) + half, Math.max(item.y1, item.y2) + half)
     } else {
       const half = item.strokeWidth / 2
       bounds = expand(bounds, item.x - half, item.y - half)
@@ -73,20 +83,83 @@ function addItem(layer: Konva.Layer, item: SceneItem, offsetX: number, offsetY: 
         perfectDrawEnabled: false,
       }),
     )
+  } else if (item.kind === 'line') {
+    addLine(layer, item, offsetX, offsetY)
   } else {
-    layer.add(
-      new Konva.Rect({
-        x: item.x + offsetX,
-        y: item.y + offsetY,
-        width: item.width,
-        height: item.height,
-        stroke: item.color,
-        strokeWidth: item.strokeWidth,
-        lineJoin: 'round',
-        listening: false,
-        perfectDrawEnabled: false,
-      }),
-    )
+    addShape(layer, item, offsetX, offsetY)
+  }
+}
+
+function addLine(layer: Konva.Layer, item: LineItem, offsetX: number, offsetY: number) {
+  layer.add(
+    new Konva.Line({
+      x: offsetX,
+      y: offsetY,
+      points: [item.x1, item.y1, item.x2, item.y2],
+      stroke: item.color,
+      strokeWidth: item.strokeWidth,
+      lineCap: 'round',
+      lineJoin: 'round',
+      listening: false,
+      perfectDrawEnabled: false,
+    }),
+  )
+}
+
+/* Mirrors ShapeNode's geometry (shared via shapeGeometry) for the detached export stage. */
+function addShape(
+  layer: Konva.Layer,
+  item: ShapeItem | RectItem,
+  offsetX: number,
+  offsetY: number,
+) {
+  const shape = item.kind === 'rect' ? 'rectangle' : item.shape
+  const style = {
+    x: offsetX,
+    y: offsetY,
+    stroke: item.color,
+    strokeWidth: item.strokeWidth,
+    lineJoin: 'round' as const,
+    listening: false,
+    perfectDrawEnabled: false,
+  }
+  const m = boxMetrics(item.x, item.y, item.x + item.width, item.y + item.height)
+
+  switch (shape) {
+    case 'rectangle':
+      layer.add(new Konva.Rect({ ...style, x: m.minX + offsetX, y: m.minY + offsetY, width: m.width, height: m.height }))
+      break
+    case 'ellipse':
+      layer.add(
+        new Konva.Ellipse({
+          ...style,
+          x: m.cx + offsetX,
+          y: m.cy + offsetY,
+          radiusX: m.width / 2,
+          radiusY: m.height / 2,
+        }),
+      )
+      break
+    case 'triangle':
+      layer.add(new Konva.Line({ ...style, points: trianglePoints(m), closed: true }))
+      break
+    case 'diamond':
+      layer.add(new Konva.Line({ ...style, points: diamondPoints(m), closed: true }))
+      break
+    case 'star': {
+      const { inner, outer } = starRadii(m)
+      layer.add(
+        new Konva.Star({
+          ...style,
+          x: m.cx + offsetX,
+          y: m.cy + offsetY,
+          numPoints: 5,
+          innerRadius: inner,
+          outerRadius: outer,
+        }),
+      )
+      break
+    }
   }
 }
 

@@ -17,8 +17,10 @@ public static class AuthEndpoint
             Expires = DateTimeOffset.UtcNow.AddDays(7),
         };
 
-    public static void MapAuthEndpoint(this IEndpointRouteBuilder endpoint)
+    public static void MapAuthEndpoint(this IEndpointRouteBuilder app)
     {
+        var endpoint = app.MapGroup("").RequireRateLimiting("AuthPolicy");
+
         endpoint.MapPost(
             "/api/auth/login",
             async (

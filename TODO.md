@@ -5,12 +5,12 @@
 - [x] JWT auth — register, login, refresh, logout
 - [x] Party system — create, invite, kick, block, leave
 - [x] SignalR party hub — real-time party notifications
-- [ ] SignalR canvas sync — real-time drawing broadcast
+- [x] SignalR canvas sync — real-time drawing broadcast
 
 - [x] Frontend canvas UI — Konva.js drawing layer
 - [x] Frontend auth UI — login/register pages
 - [x] Frontend party UI — party management
-- [ ] Persistence — canvas snapshots
+- [x] Persistence — canvas snapshots
 - [ ] Polish — reconnection, cursors, undo/redo, offline state
 
 # Codebase Fixes/Improvements
@@ -25,9 +25,15 @@
 - [x] Globalexceptionhandler
 - [ ] Unblock user endpoint + fix bad business logic with blocking users
 - [x] Currently when a party dissovles, clients webscokets are not removed from the group
-- [ ] PartyService and CanvasService are tightly coupled, some methods write into each others states
+- [x] PartyService and CanvasService are tightly coupled, some methods write into each others states
 - [ ] Rate limiting
 - [ ] http logging
 - [ ] User Account page / User preferences
 - [ ] DMs page
+- [ ] OAuth for Google / Github
+- [ ] Help Docs -> AI Chatbot
+- [ ] TOS
+- [ ] Dockerize and Deploy
+- [x] Error page 404
+- [ ] Users not properly displayed as being offline / online
 - [ ] Optimize CanvasService.SaveOperationsAsync()

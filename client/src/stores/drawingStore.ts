@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
-import { STROKE_SIZE, type Tool } from './canvasUiStore'
+import type { StrokeTool } from '@/components/canvas/scene/strokeGeometry'
+import { STROKE_SIZE, type ShapeKind } from './canvasUiStore'
 
 /*
  * The single in-progress stroke or shape. Only <CurrentStroke> subscribes here,
@@ -9,19 +10,24 @@ import { STROKE_SIZE, type Tool } from './canvasUiStore'
  */
 type Mode = 'stroke' | 'shape' | null
 
+/* The ruler draws a straight line, previewed with the same start/head drag as the
+ * shapes, so it rides the shape machinery under this extra kind. */
+export type DrawShape = ShapeKind | 'line'
+
 interface DrawingState {
   mode: Mode
   // Stable id assigned at stroke start, so live frames and the committed op share it.
   id: string | null
-  tool: Tool
+  tool: StrokeTool
+  shape: DrawShape | null
   color: string
   size: number
   points: number[][]
   start: [number, number] | null
   head: [number, number] | null
-  beginStroke: (id: string, tool: Tool, color: string, size: number, point: number[]) => void
+  beginStroke: (id: string, tool: StrokeTool, color: string, size: number, point: number[]) => void
   setPoints: (points: number[][]) => void
-  beginShape: (tool: Tool, color: string, point: [number, number]) => void
+  beginShape: (shape: DrawShape, color: string, point: [number, number]) => void
   setHead: (point: [number, number]) => void
   reset: () => void
 }
@@ -30,6 +36,7 @@ export const useDrawingStore = create<DrawingState>((set) => ({
   mode: null,
   id: null,
   tool: 'pencil',
+  shape: null,
   color: '#2d2926',
   size: STROKE_SIZE.default,
   points: [],
@@ -38,8 +45,8 @@ export const useDrawingStore = create<DrawingState>((set) => ({
   beginStroke: (id, tool, color, size, point) =>
     set({ mode: 'stroke', id, tool, color, size, points: [point], start: null, head: null }),
   setPoints: (points) => set({ points }),
-  beginShape: (tool, color, point) =>
-    set({ mode: 'shape', id: null, tool, color, points: [], start: point, head: point }),
+  beginShape: (shape, color, point) =>
+    set({ mode: 'shape', id: null, shape, color, points: [], start: point, head: point }),
   setHead: (head) => set({ head }),
-  reset: () => set({ mode: null, id: null, points: [], start: null, head: null }),
+  reset: () => set({ mode: null, id: null, shape: null, points: [], start: null, head: null }),
 }))

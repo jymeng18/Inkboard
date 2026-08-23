@@ -32,21 +32,21 @@ import {
   isMobileNoticePending,
 } from "@/lib/firstRun";
 
-import CanvasNameDialog from "@/components/dashboard/CanvasNameDialog";
-import CanvasesView from "@/components/dashboard/CanvasesView";
 import DashboardSidebar, {
   UnreadBadge,
-} from "@/components/dashboard/DashboardSidebar";
+} from "@/components/dashboard/shell/DashboardSidebar";
 import {
   NAV_ITEMS,
   type DashboardView,
-} from "@/components/dashboard/dashboardNav";
-import DashboardTopBar from "@/components/dashboard/DashboardTopBar";
-import FriendsPanel from "@/components/dashboard/FriendsPanel";
-import InboxView from "@/components/dashboard/InboxView";
-import MobileExperienceNotice from "@/components/dashboard/MobileExperienceNotice";
-import PartyView from "@/components/dashboard/PartyView";
-import SettingsView from "@/components/dashboard/SettingsView";
+} from "@/components/dashboard/shell/dashboardNav";
+import DashboardTopBar from "@/components/dashboard/shell/DashboardTopBar";
+import MobileExperienceNotice from "@/components/dashboard/shell/MobileExperienceNotice";
+import CanvasNameDialog from "@/components/dashboard/views/CanvasNameDialog";
+import CanvasesView from "@/components/dashboard/views/CanvasesView";
+import InboxView from "@/components/dashboard/views/InboxView";
+import PartyView from "@/components/dashboard/views/PartyView";
+import SettingsView from "@/components/dashboard/views/SettingsView";
+import FriendsPanel from "@/components/dashboard/social/FriendsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 import { useAuthStore } from "@/stores/authStore";
@@ -283,7 +283,7 @@ export default function DashboardPage() {
           unreadCount={unreadCount}
         />
 
-        <main className="flex-1 overflow-x-hidden p-5 sm:p-8">
+        <main className="flex-1 overflow-x-clip p-5 sm:p-8">
           <nav className="mb-6 flex gap-2 overflow-x-auto lg:hidden">
             {NAV_ITEMS.map(({ view: tab, label, icon: Icon }) => (
               <button

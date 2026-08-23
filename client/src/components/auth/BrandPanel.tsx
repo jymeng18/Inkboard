@@ -1,9 +1,4 @@
-import { Brush, Users } from 'lucide-react'
-
-const FEATURES = [
-  { icon: Brush, label: 'Real-time Art' },
-  { icon: Users, label: 'Global Parties' },
-]
+import BubbleKeywords from './BubbleKeywords'
 
 export default function BrandPanel() {
   return (
@@ -24,17 +19,7 @@ export default function BrandPanel() {
           your brush, and let your creativity run wild with friends.
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
-          {FEATURES.map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="rounded-2xl border-[3px] border-outline bg-surface p-5 sticker-shadow-sm"
-            >
-              <Icon className="mx-auto mb-2 size-6 text-primary" aria-hidden />
-              <p className="font-label text-sm font-bold">{label}</p>
-            </div>
-          ))}
-        </div>
+        <BubbleKeywords />
       </div>
     </div>
   )

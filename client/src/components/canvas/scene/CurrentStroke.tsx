@@ -1,10 +1,11 @@
 import { memo } from 'react'
-import { Line, Rect } from 'react-konva'
+import { Line } from 'react-konva'
 
 import { useDrawingStore } from '@/stores/drawingStore'
+import ShapeNode from './ShapeNode'
 import { strokeOutline, type StrokeTool } from './strokeGeometry'
 
-const STROKE_TOOLS: StrokeTool[] = ['pencil', 'brush', 'eraser']
+const STROKE_TOOLS: StrokeTool[] = ['pencil', 'brush', 'marker', 'calligraphy', 'eraser']
 
 /*
  * The in-progress stroke/shape. The only subscriber to drawingStore, so it's the
@@ -13,6 +14,7 @@ const STROKE_TOOLS: StrokeTool[] = ['pencil', 'brush', 'eraser']
 function CurrentStroke() {
   const mode = useDrawingStore((s) => s.mode)
   const tool = useDrawingStore((s) => s.tool)
+  const shape = useDrawingStore((s) => s.shape)
   const color = useDrawingStore((s) => s.color)
   const size = useDrawingStore((s) => s.size)
   const points = useDrawingStore((s) => s.points)
@@ -35,18 +37,17 @@ function CurrentStroke() {
     )
   }
 
-  if (mode === 'shape' && start && head) {
+  if (mode === 'shape' && shape && start && head) {
     return (
-      <Rect
-        x={Math.min(start[0], head[0])}
-        y={Math.min(start[1], head[1])}
-        width={Math.abs(head[0] - start[0])}
-        height={Math.abs(head[1] - start[1])}
-        stroke={color}
+      <ShapeNode
+        shape={shape}
+        ax={start[0]}
+        ay={start[1]}
+        bx={head[0]}
+        by={head[1]}
+        color={color}
         strokeWidth={2}
         dash={[8, 5]}
-        listening={false}
-        perfectDrawEnabled={false}
       />
     )
   }

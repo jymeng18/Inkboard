@@ -15,7 +15,7 @@ export default function SizeSlider() {
       <span className="font-display text-sm tabular-nums" aria-hidden>
         {size}
       </span>
-      <div className="relative h-56 w-8">
+      <div className="relative h-[min(14rem,45vh)] w-8">
         <input
           type="range"
           min={STROKE_SIZE.min}
@@ -24,7 +24,7 @@ export default function SizeSlider() {
           value={size}
           onChange={(e) => setSize(Number(e.target.value))}
           aria-label="Stroke thickness"
-          className="size-slider absolute top-1/2 left-1/2 h-8 w-56 -translate-x-1/2 -translate-y-1/2 -rotate-90"
+          className="size-slider absolute top-1/2 left-1/2 h-8 w-[min(14rem,45vh)] -translate-x-1/2 -translate-y-1/2 -rotate-90"
         />
       </div>
     </div>

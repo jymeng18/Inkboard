@@ -143,7 +143,16 @@
   background-size: 24px 24px;
 }
 
+/* Smooth in-page anchor navigation (landing nav jumps to its sections). */
+html {
+  scroll-behavior: smooth;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .animate-float,
   .animate-drift {
     animation: none;

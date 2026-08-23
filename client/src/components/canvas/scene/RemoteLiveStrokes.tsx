@@ -6,12 +6,18 @@ import { useLiveStrokeStore } from '@/stores/liveStrokeStore'
 import { strokeOutline } from './strokeGeometry'
 
 /*
- * Other users' strokes as they're being drawn. Lives on the isolated overlay
- * layer (never the committed one), so these frequent updates only repaint here.
- * Eraser can't composite off-layer, so it shows a translucent ghost of the swept
- * path; the real cut lands when the finished op commits into the scene.
+ * Other users' strokes as they're being drawn, split by how they composite:
+ *
+ *  - `ink`: normal strokes on the isolated overlay layer, so these frequent
+ *    updates only repaint there and never disturb the committed scene.
+ *  - `eraser`: rendered on the committed layer (via `variant="eraser"`) with the
+ *    same destination-out cut a local eraser uses, so a peer's erase actually
+ *    removes ink live instead of only painting a grey ghost until they commit.
+ *
+ * Each variant renders only its matching strokes, so the two instances (one per
+ * layer) never draw the same stroke twice.
  */
-function RemoteLiveStrokes() {
+function RemoteLiveStrokes({ variant }: { variant: 'ink' | 'eraser' }) {
   const strokes = useLiveStrokeStore((s) => s.strokes)
   const currentUserId = useAuthStore((s) => s.userId)
 
@@ -19,15 +25,17 @@ function RemoteLiveStrokes() {
     <>
       {Object.entries(strokes).map(([userId, stroke]) => {
         if (userId === currentUserId || stroke.points.length === 0) return null
+
         const erase = stroke.tool === 'eraser'
+        if (erase !== (variant === 'eraser')) return null
 
         return (
           <Line
             key={userId}
             points={strokeOutline(stroke.points, stroke.tool, stroke.size, false)}
             closed
-            fill={erase ? '#2d2926' : stroke.color}
-            opacity={erase ? 0.25 : 1}
+            fill={erase ? '#000' : stroke.color}
+            globalCompositeOperation={erase ? 'destination-out' : undefined}
             lineJoin="round"
             listening={false}
             perfectDrawEnabled={false}

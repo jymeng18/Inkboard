@@ -6,6 +6,7 @@ import { subscribeLocalOps } from '@/lib/opChannel'
 import { useAuthStore } from '@/stores/authStore'
 import { useCursorStore } from '@/stores/cursorStore'
 import { useDrawingStore } from '@/stores/drawingStore'
+import { useLiveShapeStore, type LiveShapeFrame } from '@/stores/liveShapeStore'
 import { useLiveStrokeStore, type LiveStrokeFrame } from '@/stores/liveStrokeStore'
 import { usePartyStore } from '@/stores/partyStore'
 import { useSceneStore, type SceneItem } from '@/stores/sceneStore'
@@ -94,17 +95,28 @@ export function useCanvasHub(canvasId: string | undefined) {
     conn.on('NotifyOnOperation', (op: OperationPacket) => {
       try {
         useSceneStore.getState().addRemote(JSON.parse(op.operationData) as SceneItem)
-        if (op.userId) useLiveStrokeStore.getState().remove(op.userId)
+        // The commit supersedes whatever live preview that user had going.
+        if (op.userId) {
+          useLiveStrokeStore.getState().remove(op.userId)
+          useLiveShapeStore.getState().remove(op.userId)
+        }
       } catch {
         // Ignore a malformed op payload rather than tearing anything down.
       }
     })
 
-    // A peer's in-progress stroke frame: begin a new one or append to theirs.
+    // A peer's in-progress mark. Strokes and shapes share this relay channel (the
+    // server never parses the payload), so a `kind: 'shape'` frame routes to the
+    // live-shape store and anything else is treated as a stroke frame.
     conn.on('NotifyOnLiveStroke', (msg: LiveStrokePacket) => {
       if (!msg.userId) return
       try {
-        useLiveStrokeStore.getState().apply(msg.userId, JSON.parse(msg.data) as LiveStrokeFrame)
+        const frame = JSON.parse(msg.data) as { kind?: 'shape' }
+        if (frame.kind === 'shape') {
+          useLiveShapeStore.getState().upsert(msg.userId, frame as unknown as LiveShapeFrame)
+        } else {
+          useLiveStrokeStore.getState().apply(msg.userId, frame as unknown as LiveStrokeFrame)
+        }
       } catch {
         // Ignore a malformed live frame.
       }
@@ -149,6 +161,7 @@ export function useCanvasHub(canvasId: string | undefined) {
       unsubscribeOps()
       useCursorStore.getState().clear()
       useLiveStrokeStore.getState().clear()
+      useLiveShapeStore.getState().clear()
       void conn.stop()
       connectionRef.current = null
     }
@@ -223,11 +236,46 @@ export function useCanvasHub(canvasId: string | undefined) {
     })
   }, [canvasId])
 
+  // Stream the local in-progress shape / ruler line over the same relay. A shape
+  // frame is the whole thing (its two corners), so we just resend it throttled as
+  // the head is dragged; the committed op is authoritative on release.
+  useEffect(() => {
+    if (!canvasId) return
+    let streaming = false
+    let lastSent = 0
+
+    return useDrawingStore.subscribe((ds) => {
+      if (ds.mode !== 'shape' || !ds.shape || !ds.start || !ds.head) {
+        streaming = false
+        return
+      }
+      const conn = connectionRef.current
+      if (!joinedRef.current || conn?.state !== signalR.HubConnectionState.Connected) return
+
+      // Send the opening frame at once so the shape shows up, then throttle.
+      const now = performance.now()
+      if (streaming && now - lastSent < LIVE_STROKE_SEND_MS) return
+      streaming = true
+      lastSent = now
+
+      void conn.send('SendLiveStroke', {
+        data: JSON.stringify({
+          kind: 'shape',
+          shape: ds.shape,
+          color: ds.color,
+          start: ds.start,
+          head: ds.head,
+        }),
+      })
+    })
+  }, [canvasId])
+
   // Age out cursors and live strokes that stopped reporting.
   useEffect(() => {
     const id = window.setInterval(() => {
       useCursorStore.getState().pruneOlderThan(CURSOR_TTL_MS)
       useLiveStrokeStore.getState().pruneOlderThan(LIVE_STROKE_TTL_MS)
+      useLiveShapeStore.getState().pruneOlderThan(LIVE_STROKE_TTL_MS)
     }, PRUNE_INTERVAL_MS)
     return () => window.clearInterval(id)
   }, [])
