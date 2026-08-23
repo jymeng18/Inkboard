@@ -4,7 +4,7 @@
 
 ```bash
 cd server/Inkboard.Infra/
-dotnet ef migrations add <MigrationName> -s ../Inkboard.API --environment Production
+ASPNETCORE_ENVIRONMENT=Production dotnet ef migrations add <MigrationName> -s ../Inkboard.API
 ```
 
 `-s` points EF to the startup project (Inkboard.API) so it can resolve the connection string and compile.
@@ -13,7 +13,10 @@ dotnet ef migrations add <MigrationName> -s ../Inkboard.API --environment Produc
 
 ```bash
 cd server/Inkboard.Infra/
-dotnet ef database update -s ../Inkboard.API
+
+ASPNETCORE_ENVIRONMENT=Production dotnet ef database drop -s ../Inkboard.API
+
+ASPNETCORE_ENVIRONMENT=Production dotnet ef database update -s ../Inkboard.API
 ```
 
 ## Connection string
