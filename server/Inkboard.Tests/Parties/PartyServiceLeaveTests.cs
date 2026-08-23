@@ -10,10 +10,10 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_NonLeaderLeaves_RemovedFromParty_PartyRemains()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var member2 = await SeedUserAsync("member2");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -43,7 +43,7 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_PartyNotFound_ReturnsNotFound()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
 
         var result = await Service.LeavePartyAsync(Guid.NewGuid(), user.Id);
 
@@ -55,9 +55,9 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_NotAMember_ReturnsValidationError()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var nonMember = await SeedUserAsync(Context, "nonMember");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var nonMember = await SeedUserAsync("nonMember");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -72,8 +72,8 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_SoleMemberLeaves_PartyDissolved()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -91,10 +91,10 @@ public sealed class PartyServiceLeaveTests : PartyTestBase
     [TestMethod]
     public async Task LeaveParty_LeaderLeavesWithMembers_TransfersLeadershipToOldestMember()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member1 = await SeedUserAsync(Context, "member1");
-        var member2 = await SeedUserAsync(Context, "member2");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member1 = await SeedUserAsync("member1");
+        var member2 = await SeedUserAsync("member2");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;

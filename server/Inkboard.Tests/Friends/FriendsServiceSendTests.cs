@@ -9,8 +9,8 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_ValidRequest_CreatesPendingRequestAndReturnsReceiverDto()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
 
         var result = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
 
@@ -29,7 +29,7 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_ToSelf_ReturnsValidationError()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
 
         var result = await Service.SendFriendReqAsync(user.Id, user.Id);
 
@@ -41,7 +41,7 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_ToNonexistentUser_ReturnsNotFound()
     {
-        var sender = await SeedUserAsync(Context, "sender");
+        var sender = await SeedUserAsync("sender");
 
         var result = await Service.SendFriendReqAsync(sender.Id, Guid.NewGuid());
 
@@ -53,9 +53,9 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_AlreadyFriends_ReturnsValidationError()
     {
-        var alpha = await SeedUserAsync(Context, "alpha");
-        var beta = await SeedUserAsync(Context, "beta");
-        await SeedFriendshipAsync(Context, alpha.Id, beta.Id);
+        var alpha = await SeedUserAsync("alpha");
+        var beta = await SeedUserAsync("beta");
+        await SeedFriendshipAsync(alpha.Id, beta.Id);
 
         var result = await Service.SendFriendReqAsync(alpha.Id, beta.Id);
 
@@ -67,8 +67,8 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_DuplicatePendingFromSameSender_ReturnsConflict()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var first = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         Assert.IsTrue(first.IsSuccess);
 
@@ -82,8 +82,8 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_ReceiverAlreadySentPendingRequest_ReturnsConflict()
     {
-        var alice = await SeedUserAsync(Context, "alice");
-        var bob = await SeedUserAsync(Context, "bob");
+        var alice = await SeedUserAsync("alice");
+        var bob = await SeedUserAsync("bob");
         // Bob already sent Alice a request. Alice tries to send one to Bob instead
         // of just answering the one waiting in her inbox.
         var bobToAlice = await Service.SendFriendReqAsync(bob.Id, alice.Id);
@@ -102,8 +102,8 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_AfterPreviousRequestWasDeclined_CreatesNewPendingRequest()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var first = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         var rejected = await Service.RejectFriendReqAsync(first.Data!.Id, sender.Id, receiver.Id);
         Assert.IsTrue(rejected.IsSuccess);
@@ -117,8 +117,8 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_AfterPreviousRequestWasRevoked_CreatesNewPendingRequest()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
         var first = await Service.SendFriendReqAsync(sender.Id, receiver.Id);
         var cancelled = await Service.CancelFriendReqAsync(first.Data!.Id, sender.Id);
         Assert.IsTrue(cancelled.IsSuccess);
@@ -132,10 +132,10 @@ public sealed class FriendsServiceSendTests : FriendsTestBase
     [TestMethod]
     public async Task Send_UnrelatedPendingRequestBetweenOtherUsers_DoesNotBlock()
     {
-        var sender = await SeedUserAsync(Context, "sender");
-        var receiver = await SeedUserAsync(Context, "receiver");
-        var carol = await SeedUserAsync(Context, "carol");
-        var dave = await SeedUserAsync(Context, "dave");
+        var sender = await SeedUserAsync("sender");
+        var receiver = await SeedUserAsync("receiver");
+        var carol = await SeedUserAsync("carol");
+        var dave = await SeedUserAsync("dave");
         // An unrelated pending request exists elsewhere in the table. It must not
         // leak into an unrelated pair's check.
         var unrelated = await Service.SendFriendReqAsync(carol.Id, dave.Id);

@@ -9,7 +9,7 @@ namespace Inkboard.Tests.Auth;
  * than a single "too long" value, and that rejection happens early.
  */
 [TestClass]
-public sealed class AuthLimitTests : TestBase
+public sealed class AuthLimitTests : AuthTestBase
 {
     private const int UserNameMin = 3;
     private const int UserNameMax = 30;
@@ -21,27 +21,12 @@ public sealed class AuthLimitTests : TestBase
     private static string EmailOfLength(int length) =>
         new string('a', length - "@example.com".Length) + "@example.com";
 
-    private static RegisterRequestModel Register(
-        string? userName = null,
-        string? email = null,
-        string? password = null
-    ) =>
-        new()
-        {
-            UserName = userName ?? ValidUserName,
-            Email = email ?? ValidEmail,
-            Password = password ?? ValidPassword,
-        };
-
     // ---------- Register: user name ----------
 
     [TestMethod]
     public async Task Register_UserNameAtMinLength_Succeeds()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(userName: new string('a', UserNameMin)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(userName: new string('a', UserNameMin)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -50,10 +35,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_UserNameAtMaxLength_Succeeds()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(userName: new string('a', UserNameMax)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(userName: new string('a', UserNameMax)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -62,11 +44,8 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_UserNameOneOverMax_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
-            Register(userName: new string('a', UserNameMax + 1))
+        var result = await Service.RegisterAsync(
+            NewRegisterRequest(userName: new string('a', UserNameMax + 1))
         );
 
         Assert.IsFalse(result.Success);
@@ -80,10 +59,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_PasswordAtMinLength_Succeeds()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(password: new string('p', PasswordMin)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(password: new string('p', PasswordMin)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -92,10 +68,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_PasswordAtMaxLength_Succeeds()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(password: new string('p', PasswordMax)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(password: new string('p', PasswordMax)));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -104,11 +77,8 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_PasswordOneOverMax_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(
-            Register(password: new string('p', PasswordMax + 1))
+        var result = await Service.RegisterAsync(
+            NewRegisterRequest(password: new string('p', PasswordMax + 1))
         );
 
         Assert.IsFalse(result.Success);
@@ -124,16 +94,13 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_HugePassword_IsRejectedAndPersistsNothing()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(password: new string('p', 100_000)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(password: new string('p', 100_000)));
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
         Assert.IsTrue(result.ValidationErrors.ContainsKey("Password"));
         Assert.IsNull(result.UserId);
-        Assert.AreEqual(0, context.Users.Count());
+        Assert.AreEqual(0, Context.Users.Count());
     }
 
     // ---------- Register: email ----------
@@ -141,13 +108,10 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_EmailAtMaxLength_Succeeds()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
         var email = EmailOfLength(EmailMax);
         Assert.AreEqual(EmailMax, email.Length);
 
-        var result = await service.RegisterAsync(Register(email: email));
+        var result = await Service.RegisterAsync(NewRegisterRequest(email: email));
 
         Assert.IsTrue(result.Success);
         Assert.IsNull(result.ValidationErrors);
@@ -156,10 +120,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_EmailOneOverMax_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(email: EmailOfLength(EmailMax + 1)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(email: EmailOfLength(EmailMax + 1)));
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
@@ -170,15 +131,12 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Register_HugeEmail_IsRejectedAndPersistsNothing()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.RegisterAsync(Register(email: EmailOfLength(100_000)));
+        var result = await Service.RegisterAsync(NewRegisterRequest(email: EmailOfLength(100_000)));
 
         Assert.IsFalse(result.Success);
         Assert.IsNotNull(result.ValidationErrors);
         Assert.IsTrue(result.ValidationErrors.ContainsKey("Email"));
-        Assert.AreEqual(0, context.Users.Count());
+        Assert.AreEqual(0, Context.Users.Count());
     }
 
     // ---------- Login ----------
@@ -192,10 +150,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_PasswordOneOverMax_IsRejectedBeforeLookup()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel
             {
                 Email = "nobody@example.com",
@@ -212,12 +167,9 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_HugePassword_IsRejectedBeforeHashing()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
+        await Service.RegisterAsync(NewRegisterRequest());
 
-        await service.RegisterAsync(Register());
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = new string('p', 100_000) }
         );
 
@@ -235,12 +187,9 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_PasswordAtMaxLength_ReachesCredentialCheck()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
+        await Service.RegisterAsync(NewRegisterRequest());
 
-        await service.RegisterAsync(Register());
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = new string('p', PasswordMax) }
         );
 
@@ -252,13 +201,10 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_PasswordAtMaxLength_SucceedsForMatchingAccount()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
         var password = new string('p', PasswordMax);
-        await service.RegisterAsync(Register(password: password));
+        await Service.RegisterAsync(NewRegisterRequest(password: password));
 
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = password }
         );
 
@@ -269,10 +215,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_EmailOneOverMax_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = EmailOfLength(EmailMax + 1), Password = ValidPassword }
         );
 
@@ -284,10 +227,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_EmptyPassword_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = ValidEmail, Password = "" }
         );
 
@@ -299,10 +239,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_EmptyEmail_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = "", Password = ValidPassword }
         );
 
@@ -314,10 +251,7 @@ public sealed class AuthLimitTests : TestBase
     [TestMethod]
     public async Task Login_MalformedEmail_ReturnsValidationError()
     {
-        var context = CreateDbContext();
-        var service = CreateAuthService(context);
-
-        var result = await service.LoginAsync(
+        var result = await Service.LoginAsync(
             new LoginRequestModel { Email = "not-an-email", Password = ValidPassword }
         );
 

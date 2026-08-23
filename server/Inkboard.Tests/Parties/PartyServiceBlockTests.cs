@@ -9,8 +9,8 @@ public sealed class PartyServiceBlockTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_BlocksAnotherUser_AddsToBlockList()
     {
-        var user = await SeedUserAsync(Context, "user");
-        var target = await SeedUserAsync(Context, "target");
+        var user = await SeedUserAsync("user");
+        var target = await SeedUserAsync("target");
 
         var result = await Service.BlockUserAsync(user.Id, target.Id);
         Assert.IsTrue(result.IsSuccess);
@@ -24,7 +24,7 @@ public sealed class PartyServiceBlockTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_CannotBlockSelf_ReturnsValidationError()
     {
-        var user = await SeedUserAsync(Context, "user");
+        var user = await SeedUserAsync("user");
 
         var result = await Service.BlockUserAsync(user.Id, user.Id);
 
@@ -36,8 +36,8 @@ public sealed class PartyServiceBlockTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_CannotBlockAlreadyBlockedUser_ReturnsConflict()
     {
-        var user = await SeedUserAsync(Context, "user");
-        var target = await SeedUserAsync(Context, "target");
+        var user = await SeedUserAsync("user");
+        var target = await SeedUserAsync("target");
 
         var firstResult = await Service.BlockUserAsync(user.Id, target.Id);
         Assert.IsTrue(firstResult.IsSuccess);
@@ -52,9 +52,9 @@ public sealed class PartyServiceBlockTests : PartyTestBase
     [TestMethod]
     public async Task BlockUser_BlockedUserCanUnblockThenBeInvited()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;

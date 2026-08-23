@@ -9,9 +9,9 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_LeaderInvitesUser_CreatesPendingInvite()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -29,9 +29,9 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_InviteHasFiveMinuteExpiryWindow()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -48,8 +48,8 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_PartyNotFound_ReturnsNotFound()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
 
         var result = await Service.InviteUserAsync(Guid.NewGuid(), leader.Id, invited.Id);
 
@@ -61,10 +61,10 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_NonLeaderCannotInviteAnotherUser_ReturnsForbidden()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var nonLeader = await SeedUserAsync(Context, "nonLeader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var nonLeader = await SeedUserAsync("nonLeader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -79,9 +79,9 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_NonLeaderAttemptsToInviteLeader_ReturnsForbidden()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var nonLeader = await SeedUserAsync(Context, "nonLeader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var nonLeader = await SeedUserAsync("nonLeader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -96,8 +96,8 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_CannotInviteSelf_ReturnsValidationError()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -112,9 +112,9 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_CannotInviteExistingMember_ReturnsConflict()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -134,9 +134,9 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_BlockedUserCannotBeInvited_ReturnsValidationError()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -154,15 +154,15 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_PartyFullAtFiveMembers_ReturnsValidationError()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
 
         for (int i = 0; i < 4; i++)
         {
-            var m = await SeedUserAsync(Context, $"member{i}");
+            var m = await SeedUserAsync($"member{i}");
             var invResult = await Service.InviteUserAsync(party.Id, leader.Id, m.Id);
             Assert.IsTrue(invResult.IsSuccess);
             var inv = invResult.Data!;
@@ -170,7 +170,7 @@ public sealed class PartyServiceInviteTests : PartyTestBase
             Assert.IsTrue(respondResult.IsSuccess);
         }
 
-        var extra = await SeedUserAsync(Context, "extra");
+        var extra = await SeedUserAsync("extra");
         var result = await Service.InviteUserAsync(party.Id, leader.Id, extra.Id);
 
         Assert.IsFalse(result.IsSuccess);
@@ -181,9 +181,9 @@ public sealed class PartyServiceInviteTests : PartyTestBase
     [TestMethod]
     public async Task InviteUser_PendingInviteAlreadyExists_ReturnsConflict()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var invited = await SeedUserAsync(Context, "invited");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var invited = await SeedUserAsync("invited");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;

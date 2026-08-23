@@ -9,9 +9,9 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     [TestMethod]
     public async Task RemoveMember_LeaderKicksMember_MemberRemoved()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var member = await SeedUserAsync(Context, "member");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var member = await SeedUserAsync("member");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -33,8 +33,8 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     [TestMethod]
     public async Task RemoveMember_PartyNotFound_ReturnsNotFound()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var target = await SeedUserAsync(Context, "target");
+        var leader = await SeedUserAsync("leader");
+        var target = await SeedUserAsync("target");
 
         var result = await Service.RemoveMemberAsync(Guid.NewGuid(), leader.Id, target.Id);
 
@@ -46,10 +46,10 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     [TestMethod]
     public async Task RemoveMember_NonLeaderCannotKick_ReturnsForbidden()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var nonLeader = await SeedUserAsync(Context, "nonLeader");
-        var target = await SeedUserAsync(Context, "target");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var nonLeader = await SeedUserAsync("nonLeader");
+        var target = await SeedUserAsync("target");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -74,8 +74,8 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     [TestMethod]
     public async Task RemoveMember_LeaderCannotKickSelf_ReturnsValidationError()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
@@ -90,9 +90,9 @@ public sealed class PartyServiceRemoveMemberTests : PartyTestBase
     [TestMethod]
     public async Task RemoveMember_TargetNotInParty_ReturnsNotFound()
     {
-        var leader = await SeedUserAsync(Context, "leader");
-        var nonMember = await SeedUserAsync(Context, "nonMember");
-        var canvas = await SeedCanvasAsync(Context, leader.Id);
+        var leader = await SeedUserAsync("leader");
+        var nonMember = await SeedUserAsync("nonMember");
+        var canvas = await SeedCanvasAsync(leader.Id);
         var partyResult = await Service.CreatePartyAsync(leader.Id, canvas.Id);
         Assert.IsTrue(partyResult.IsSuccess);
         var party = partyResult.Data!;
