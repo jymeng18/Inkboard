@@ -32,6 +32,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRateLimiting();
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = 47_185_920; // Lmit body payload to 45 MB
@@ -94,7 +96,12 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.UseExceptionHandler();
 app.UseCors("CorsPolicy");
 app.UseAuthentication();
+
+if (!app.Environment.IsEnvironment("Testing"))
+    app.UseRateLimiter();
+
 app.UseAuthorization();
+
 
 // Routers
 app.MapAuthEndpoint();

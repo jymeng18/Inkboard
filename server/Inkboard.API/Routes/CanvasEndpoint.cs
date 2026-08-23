@@ -25,8 +25,10 @@ public static class CanvasEndpoint
             _ => Results.Problem(error),
         };
 
-    public static void MapCanvasEndpoint(this IEndpointRouteBuilder endpoint)
+    public static void MapCanvasEndpoint(this IEndpointRouteBuilder app)
     {
+        var endpoint = app.MapGroup("").RequireRateLimiting("GeneralPolicy");
+
         endpoint
             .MapPost(
                 "/api/canvas",
@@ -212,7 +214,8 @@ public static class CanvasEndpoint
                     return Results.NoContent();
                 }
             )
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting("CanvasOpsPolicy");
 
         endpoint
             .MapGet(
@@ -230,6 +233,7 @@ public static class CanvasEndpoint
                     return Results.Ok(result.Data);
                 }
             )
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting("CanvasOpsPolicy");
     }
 }

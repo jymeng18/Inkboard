@@ -25,8 +25,10 @@ public static class FriendEndpoint
             _ => Results.Problem(error),
         };
 
-    public static void MapFriendEndpoint(this IEndpointRouteBuilder endpoint)
+    public static void MapFriendEndpoint(this IEndpointRouteBuilder app)
     {
+        var endpoint = app.MapGroup("").RequireRateLimiting("GeneralPolicy");
+
         // Sending a friend request to another user
         endpoint
             .MapPost(

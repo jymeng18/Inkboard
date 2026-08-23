@@ -25,8 +25,10 @@ namespace Inkboard.API.Routes
                 _ => Results.Problem(error),
             };
 
-        public static void MapPartyEndpoint(this IEndpointRouteBuilder endpoint)
+        public static void MapPartyEndpoint(this IEndpointRouteBuilder app)
         {
+            var endpoint = app.MapGroup("").RequireRateLimiting("GeneralPolicy");
+
             endpoint
                 .MapGet(
                     "/api/parties/{partyId}",
