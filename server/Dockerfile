@@ -1,0 +1,26 @@
+# build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+WORKDIR /app
+
+COPY Inkboard.API/*.csproj  Inkboard.API/
+COPY Inkboard.Application/*.csproj  Inkboard.Application/
+COPY Inkboard.Domain/*.csproj  Inkboard.Domain/
+COPY Inkboard.Infra/*.csproj  Inkboard.Infra/
+
+RUN dotnet restore Inkboard.API/*.csproj
+
+COPY . .
+
+# Publish stage
+FROM build AS publish
+RUN dotnet publish Inkboard.API/*.csproj -c Release -o /app/publish --no-restore
+
+# Run stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=publish /app/publish .
+
+EXPOSE 8000
+
+CMD [ "dotnet", "Inkboard.API.dll" ]
