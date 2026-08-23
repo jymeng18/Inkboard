@@ -33,7 +33,9 @@ export default function CanvasPage() {
   // Live cursor + operation sync for this canvas.
   useCanvasHub(canvasId)
 
-  // Rebuild the scene from the persisted op-log on open (owner reopen / mid-session join).
+  // Rebuild the scene from the persisted op-log on open (owner reopen / mid-session
+  // join). It also backfills after a group join, so a member pulled in mid-session
+  // catches up on anything drawn during the follow countdown.
   const { isHydrating } = useCanvasOperations(canvasId)
 
   // The scene and viewport stores are app-wide singletons, so without this a

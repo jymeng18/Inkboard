@@ -4,6 +4,7 @@ import * as signalR from '@microsoft/signalr'
 import { saveCanvasOperation } from '@/api/canvas'
 import { subscribeLocalOps } from '@/lib/opChannel'
 import { useAuthStore } from '@/stores/authStore'
+import { useConnectionStore } from '@/stores/connectionStore'
 import { useCursorStore } from '@/stores/cursorStore'
 import { useDrawingStore } from '@/stores/drawingStore'
 import { useLiveShapeStore, type LiveShapeFrame } from '@/stores/liveShapeStore'
@@ -55,6 +56,7 @@ export function useCanvasHub(canvasId: string | undefined) {
   const connectionRef = useRef<signalR.HubConnection | null>(null)
   const joinedRef = useRef(false)
   const [connected, setConnected] = useState(false)
+  const markCanvasJoined = useConnectionStore((s) => s.markCanvasJoined)
 
   // JoinCanvas is the hub's authorization gate, so a failure (e.g. no party bound
   // to this canvas yet, as when you're solo) is expected and just means no group.
@@ -66,10 +68,13 @@ export function useCanvasHub(canvasId: string | undefined) {
     try {
       await conn.invoke('JoinCanvas', canvasId)
       joinedRef.current = true
+      // Announce the join so the op-log hydration can backfill anything the leader
+      // drew during the follow countdown, before this client was in the group.
+      markCanvasJoined(canvasId)
     } catch {
       joinedRef.current = false
     }
-  }, [canvasId])
+  }, [canvasId, markCanvasJoined])
 
   // One connection per canvas.
   useEffect(() => {

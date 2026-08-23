@@ -44,6 +44,11 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 52_428_800; // Limit form files to 50 MB
 });
 
+if (builder.Environment.IsDevelopment() || builder.Environment.IsProduction())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
+
 builder.Services.AddInfraServices(builder.Configuration, builder.Environment);
 builder.Services.AddAuthenticationServices(builder.Configuration);
 builder.Services.AddAzureServices(builder.Configuration);
