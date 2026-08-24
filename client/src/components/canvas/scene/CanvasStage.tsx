@@ -15,6 +15,7 @@ import SceneShapes from './SceneShapes'
 import { cursorForTool } from './cursors'
 import type { StrokeTool } from './strokeGeometry'
 
+const MIN_POINT_DISTANCE = 2
 const SHAPE_STROKE_WIDTH = 3
 const GRID = 24
 
@@ -139,7 +140,20 @@ export default function CanvasStage() {
             ? snapToAngle(shapeStart.current, [wx, wy])
             : [wx, wy]
       } else {
-        pointsRef.current.push([wx, wy, e.evt.pressure || 0.5])
+          const pressure = e.evt.pressure || 0.5;
+          const points = pointsRef.current;
+          const last = points[points.length - 1];
+
+          const dx = wx - last[0];
+          const dy = wy - last[1];
+
+          if (dx * dx + dy * dy >= MIN_POINT_DISTANCE * MIN_POINT_DISTANCE) {
+            points.push([
+              Math.round(wx * 100) / 100, 
+              Math.round(wy * 100) / 100, 
+              Math.round(pressure * 1000) / 1000
+            ]);
+          }
       }
       scheduleFlush()
     },
