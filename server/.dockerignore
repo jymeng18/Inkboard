@@ -3,6 +3,8 @@
 **/obj/
 **/out/
 
+
 # files
 Dockerfile*
 **/*.md
+**/.env

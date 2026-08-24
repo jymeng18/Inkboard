@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://inkboard-backend-hxjq6.ondigitalocean.app/api/:path*"
+    },
+    {
+      "source": "/hubs/:path*",
+      "destination": "https://inkboard-backend-hxjq6.ondigitalocean.app/hubs/:path*"
+    }
+  ]
+}

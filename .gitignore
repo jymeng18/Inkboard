@@ -119,3 +119,4 @@ src/.vs/config/applicationhost.config
 .idea/
 .opencode/
 designs/
+.env
