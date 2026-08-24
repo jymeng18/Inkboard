@@ -25,6 +25,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD [ "dotnet", "Inkboard.API.dll" ]
