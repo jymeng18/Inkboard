@@ -23,6 +23,9 @@ RUN dotnet publish Inkboard.API/Inkboard.API.csproj \
 # Run stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y libgssapi-krb5-2
+
 COPY --from=publish /app/publish .
 
 EXPOSE 8080
