@@ -15,7 +15,7 @@ import SceneShapes from './SceneShapes'
 import { cursorForTool } from './cursors'
 import type { StrokeTool } from './strokeGeometry'
 
-const MIN_POINT_DISTANCE = 2.35
+const MIN_POINT_DISTANCE = 2.15
 const SHAPE_STROKE_WIDTH = 3
 const GRID = 24
 
