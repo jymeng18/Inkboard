@@ -46,7 +46,7 @@ https://github.com/user-attachments/assets/9f100f4d-8ae1-4a37-ac01-8cd2d7037b84
 This diagram shows the database schema used by the app.
 
 <p align="center">
-  <img src="./assets/er_diagram.png" alt="Inkboard database schema" width="100%">
+  <img src="./assets/er_diagram.svg" alt="Inkboard database schema" width="100%">
 </p>
 
 ## Setup
