@@ -43,7 +43,8 @@ https://github.com/user-attachments/assets/9f100f4d-8ae1-4a37-ac01-8cd2d7037b84
 
 ## Schema
 
-This diagram shows the database schema used by the app.
+This diagram shows the database schema used by the app, if you prefer to inspect it closer, you can download
+the *pg_dump* at [schema.sql](/docs/Database/schema.sql) and import it into [dbdiagram.io](https://dbdiagram.io) for PostgreSQL. Another alternative is using running the database migration on a local db and dumping it yourself.
 
 <p align="center">
   <img src="./assets/er_diagram.svg" alt="Inkboard database schema" width="100%">
