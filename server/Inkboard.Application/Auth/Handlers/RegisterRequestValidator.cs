@@ -13,7 +13,11 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestModel>
             .MinimumLength(3)
             .WithMessage("Username must be at least 3 characters.")
             .MaximumLength(30)
-            .WithMessage("Username must not exceed 30 characters.");
+            .WithMessage("Username must not exceed 30 characters.")
+            .Matches("^[a-zA-Z0-9_-]+$")
+            .WithMessage("Username can only contain letters, numbers, underscores, and hyphens.")
+            .Must(x => x.Trim() == x)
+            .WithMessage("Username cannot have leading or trailing whitespace.");
 
         RuleFor(x => x.Email)
             .NotEmpty()
@@ -21,7 +25,9 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestModel>
             .EmailAddress()
             .WithMessage("Invalid email format.")
             .MaximumLength(256)
-            .WithMessage("Email must not exceed 256 characters.");
+            .WithMessage("Email must not exceed 256 characters.")
+            .Must(x => x.Trim() == x)
+            .WithMessage("Email cannot have leading or trailing whitespace.");
 
         RuleFor(x => x.Password)
             .NotEmpty()
@@ -30,6 +36,5 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestModel>
             .WithMessage("Password must be at least 6 characters.")
             .MaximumLength(128)
             .WithMessage("Password must not exceed 128 characters.");
-
     }
 }

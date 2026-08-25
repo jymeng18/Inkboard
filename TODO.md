@@ -26,14 +26,14 @@
 - [ ] Unblock user endpoint + fix bad business logic with blocking users
 - [x] Currently when a party dissovles, clients webscokets are not removed from the group
 - [x] PartyService and CanvasService are tightly coupled, some methods write into each others states
-- [ ] Rate limiting
+- [x] Rate limiting
 - [ ] http logging
 - [ ] User Account page / User preferences
 - [ ] DMs page
 - [ ] OAuth for Google / Github
 - [ ] Help Docs -> AI Chatbot
 - [ ] TOS
-- [ ] Dockerize and Deploy
+- [x] Dockerize and Deploy
 - [x] Error page 404
 - [ ] Users not properly displayed as being offline / online
 - [ ] Optimize CanvasService.SaveOperationsAsync()

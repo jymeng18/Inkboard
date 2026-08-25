@@ -15,7 +15,7 @@ import SceneShapes from './SceneShapes'
 import { cursorForTool } from './cursors'
 import type { StrokeTool } from './strokeGeometry'
 
-const MIN_POINT_DISTANCE = 2
+const MIN_POINT_DISTANCE = 2.35
 const SHAPE_STROKE_WIDTH = 3
 const GRID = 24
 
@@ -112,10 +112,17 @@ export default function CanvasStage() {
       // on the stroke so it replays identically everywhere.
       const geom: StrokeTool = ui.tool === 'brush' ? ui.brushVariant : (ui.tool as StrokeTool)
       const pressure = e.evt.pressure || 0.5
-      pointsRef.current = [[wx, wy, pressure]]
+
+      const point: [number, number, number] = [
+        Math.round(wx * 100) / 100,
+        Math.round(wy * 100) / 100,
+        Math.round(pressure * 1000) / 1000,
+      ];
+
+      pointsRef.current = [point]
       // Id assigned here so the live-stream frames and the final committed op
       // carry the same id.
-      useDrawingStore.getState().beginStroke(crypto.randomUUID(), geom, ui.color, ui.size, [wx, wy, pressure])
+      useDrawingStore.getState().beginStroke(crypto.randomUUID(), geom, ui.color, ui.size, point)
     }
   }, [])
 
@@ -187,14 +194,14 @@ export default function CanvasStage() {
         if (Math.hypot(hx - sx, hy - sy) > 2) {
           const item: SceneItem = {
             id: crypto.randomUUID(),
-            kind: 'line',
+            kind: "line",
             color: ds.color,
-            x1: sx,
-            y1: sy,
-            x2: hx,
-            y2: hy,
+            x1: Math.round(sx * 100) / 100,
+            y1: Math.round(sy * 100) / 100,
+            x2: Math.round(hx * 100) / 100,
+            y2: Math.round(hy * 100) / 100,
             strokeWidth: SHAPE_STROKE_WIDTH,
-          }
+          };
           scene.add(item)
           publishLocalOp(item)
         }
@@ -204,13 +211,13 @@ export default function CanvasStage() {
         if (width > 2 && height > 2) {
           const item: SceneItem = {
             id: crypto.randomUUID(),
-            kind: 'shape',
             shape,
+            kind: 'shape',
             color: ds.color,
-            x: Math.min(sx, hx),
-            y: Math.min(sy, hy),
-            width,
-            height,
+            x: Math.round(Math.min(sx, hx) * 100) / 100,
+            y: Math.round(Math.min(sy, hy) * 100) / 100,
+            width: Math.round(width * 100) / 100,
+            height: Math.round(height * 100) / 100,
             strokeWidth: SHAPE_STROKE_WIDTH,
           }
           scene.add(item)
