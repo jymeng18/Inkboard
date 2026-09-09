@@ -38,7 +38,7 @@ Inkboard is a shared drawing app made for quick live collaboration. It is inspir
 
 ### Demo Video
 
-https://github.com/user-attachments/assets/9f100f4d-8ae1-4a37-ac01-8cd2d7037b84
+[https://github.com/user-attachments/assets/9f100f4d-8ae1-4a37-ac01-8cd2d7037b84](https://github.com/user-attachments/assets/c943291f-4309-4a5a-a475-093448e06746)
 
 
 ## Schema
