@@ -2,10 +2,9 @@ import { useState } from 'react'
 
 import { loginUser, logoutUser, registerUser } from '@/api/auth'
 import { markMobileNoticePending } from '@/lib/firstRun'
-import { queryClient } from '@/lib/queryClient'
+import { clearLocalSession } from '@/lib/clearSession'
 import { sessionFromToken } from '@/lib/session'
 import { useAuthStore } from '@/stores/authStore'
-import { usePartyStore } from '@/stores/partyStore'
 
 /** Pulls a human-readable message out of the various server error shapes. */
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -22,7 +21,6 @@ function getErrorMessage(err: unknown, fallback: string): string {
 
 export function useAuth() {
   const setSession = useAuthStore((s) => s.login)
-  const clearSessionState = useAuthStore((s) => s.logout)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,15 +75,7 @@ export function useAuth() {
     } catch {
       //
     }
-    // Drop the persisted party too, so the next account on this device doesn't
-    // inherit a stale activePartyId.
-    usePartyStore.getState().clearParty()
-    clearSessionState()
-
-    // Wipe every cached server read (canvases, invites, friends, inbox, previews).
-    // Logout is a client-side navigation, so without this the next account that
-    // signs in on this tab would see the previous user's cached data.
-    queryClient.clear()
+    clearLocalSession()
   }
 
   return { login, register, logout, loading, error }

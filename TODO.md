@@ -28,7 +28,7 @@
 - [x] PartyService and CanvasService are tightly coupled, some methods write into each others states
 - [x] Rate limiting
 - [ ] http logging
-- [ ] User Account page / User preferences
+- [x] User Account page / User preferences
 - [ ] DMs page
 - [ ] OAuth for Google / Github
 - [ ] Help Docs -> AI Chatbot

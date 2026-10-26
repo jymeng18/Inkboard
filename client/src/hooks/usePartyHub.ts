@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { PendingPartyInvite } from "@/api/party";
 import { showPartyInviteToast } from "@/lib/partyInviteToast";
 import { statusToast } from "@/lib/notify";
+import { clearLocalSession } from "@/lib/clearSession";
 import { inviteKeys } from "@/hooks/usePartyInvites";
 import { useAuthStore } from "@/stores/authStore";
 import { useConnectionStore } from "@/stores/connectionStore";
@@ -54,6 +55,11 @@ export function usePartyHub() {
     conn.on("NotifyOnConnection", (uid: string) => {
       setPresence(uid, true);
       setLastEvent({ event: "connected", userId: uid });
+    });
+
+    conn.on("AccountDeleted", () => {
+      clearLocalSession();
+      void conn.stop();
     });
 
     conn.on("NotifyOnDisconnect", (uid: string) => {
