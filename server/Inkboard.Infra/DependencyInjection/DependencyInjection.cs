@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Threading.RateLimiting;
 using Azure.Identity;
+using Inkboard.Application.Interfaces;
 using Inkboard.Infra.Db;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Inkboard.Infra.DependencyInjection;
 
@@ -79,6 +81,20 @@ public static class DependencyInjection
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = async context =>
+                    {
+                        var value = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                        if (!Guid.TryParse(value, out var userId))
+                        {
+                            context.Fail("Invalid account identifier.");
+                            return;
+                        }
+
+                        var authService = context.HttpContext.RequestServices.GetRequiredService<IAuthService>();
+                        var account = await authService.GetAccountAsync(userId);
+                        if (!account.IsSuccess)
+                            context.Fail("Account no longer exists.");
+                    },
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];

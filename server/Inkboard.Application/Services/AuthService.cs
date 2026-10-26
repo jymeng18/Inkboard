@@ -5,16 +5,24 @@ using Inkboard.Application.Auth.DTO;
 using Inkboard.Application.Interfaces;
 using Inkboard.Domain.Models;
 using Inkboard.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Inkboard.Application.Services;
 
-public class AuthService : IAuthService
+public partial class AuthService : IAuthService
 {
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IUserRepository _repository;
     private readonly IValidator<RegisterRequestModel> _registerValidator;
     private readonly IValidator<LoginRequestModel> _loginValidator;
     private readonly ITokenRepository _tokenRepository;
+    // private readonly IPartyRepository _partyRepository;
+    // private readonly IPartyService _partyService;
+    // private readonly ICanvasRepository _canvasRepository;
+    // private readonly IBlobStorageService _blobStorageService;
+    // private readonly IConnectionStore _connectionStore;
+    // private readonly ILogger<AuthService> _logger;
+
 
     public AuthService(
         ITokenGenerator tokenGenerator,
@@ -22,6 +30,12 @@ public class AuthService : IAuthService
         IValidator<RegisterRequestModel> registerRequestValidator,
         IValidator<LoginRequestModel> loginRequestValidator,
         ITokenRepository tokenRepository
+        // IPartyRepository partyRepository,
+        // IPartyService partyService,
+        // ICanvasRepository canvasRepository,
+        // IBlobStorageService blobStorageService,
+        // IConnectionStore connectionStore,
+        // ILogger<AuthService> logger
     )
     {
         _tokenGenerator = tokenGenerator;
@@ -29,6 +43,12 @@ public class AuthService : IAuthService
         _registerValidator = registerRequestValidator;
         _loginValidator = loginRequestValidator;
         _tokenRepository = tokenRepository;
+        // _partyRepository = partyRepository;
+        // _partyService = partyService;
+        // _canvasRepository = canvasRepository;
+        // _blobStorageService = blobStorageService;
+        // _connectionStore = connectionStore;
+        // _logger = logger;
     }
 
     public async Task<LoginResult> LoginAsync(LoginRequestModel request)

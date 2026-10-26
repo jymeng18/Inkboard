@@ -8,4 +8,5 @@ public interface IBlobStorageService
     Task<Stream?> DownloadSnapshotAsync(Guid canvasId);
     Task<string> UploadPreviewAsync(Guid canvasId, Stream imageData, string contentType);
     Task<Stream?> DownloadPreviewAsync(Guid canvasId);
+    Task DeleteCanvasBlobsAsync(Guid canvasId);
 }

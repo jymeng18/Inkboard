@@ -42,6 +42,13 @@ public class BlobStorageService : IBlobStorageService
     public Task<Stream?> DownloadPreviewAsync(Guid canvasId) =>
         DownloadAsync(PreviewName(canvasId));
 
+    public async Task DeleteCanvasBlobsAsync(Guid canvasId)
+    {
+        var container = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        await container.GetBlobClient(SnapshotName(canvasId)).DeleteIfExistsAsync();
+        await container.GetBlobClient(PreviewName(canvasId)).DeleteIfExistsAsync();
+    }
+
     private async Task<string> UploadAsync(string filename, Stream imageData, string contentType)
     {
         BlobClient blobClient = _blobServiceClient

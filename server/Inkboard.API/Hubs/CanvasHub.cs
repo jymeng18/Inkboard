@@ -39,6 +39,7 @@ public class CanvasHub : Hub<ICanvasHubClient>
         }
 
         _connectionStore.Add(Context.ConnectionId, userId, HubName);
+        _connectionStore.RegisterAbort(Context.ConnectionId, userId, Context.Abort);
         await base.OnConnectedAsync();
     }
 
@@ -52,6 +53,7 @@ public class CanvasHub : Hub<ICanvasHubClient>
         }
 
         _connectionStore.Remove(userId, HubName);
+        _connectionStore.UnregisterAbort(Context.ConnectionId);
 
         await base.OnDisconnectedAsync(exception);
     }
