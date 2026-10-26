@@ -15,7 +15,40 @@ public class OperationRepository : IOperationRepository
 
     public async Task AddRangeAsync(IReadOnlyCollection<CanvasOperation> operations)
     {
-        _context.CanvasOperations.AddRange(operations);
+        var canvasIds = operations.Select(operation => operation.CanvasId).Distinct().ToList();
+        var existingCanvasIds = (
+            await _context
+                .Canvas.Where(canvas => canvasIds.Contains(canvas.Id))
+                .Select(canvas => canvas.Id)
+                .ToListAsync()
+        ).ToHashSet();
+
+        var userIds = operations
+            .Where(operation => operation.UserId.HasValue)
+            .Select(operation => operation.UserId!.Value)
+            .Distinct()
+            .ToList();
+
+        var existingUserIds = (
+            await _context
+                .Users.Where(user => userIds.Contains(user.Id))
+                .Select(user => user.Id)
+                .ToListAsync()
+        ).ToHashSet();
+
+        // An account may be deleted while its final strokes are still queued.
+        // Keep contributions to surviving canvases anonymously; discard work for
+        // canvases that were deleted, instead of failing the whole write batch.
+        foreach (var operation in operations)
+        {
+            if (!existingCanvasIds.Contains(operation.CanvasId))
+                continue;
+
+            if (operation.UserId.HasValue && !existingUserIds.Contains(operation.UserId.Value))
+                operation.UserId = null;
+
+            _context.CanvasOperations.Add(operation);
+        }
         await _context.SaveChangesAsync();
     }
 

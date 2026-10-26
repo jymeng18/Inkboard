@@ -7,14 +7,13 @@ import { BookUser, ChevronRight, UserPlus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   extractErrorMessage,
-  INVITED_USER_ID_MAX_LENGTH,
-  isGuid,
+  INVITED_USER_EMAIL_MAX_LENGTH,
 } from '@/api/party'
 
 /*
- * Invite-by-user-ID dialog. Invites are the one place a party is born (it's
+ * Invite-by-email dialog. Invites are the one place a party is born (it's
  * created on the first invite from inside a canvas), so this is the real entry
- * point. `onInvite` runs createParty-if-needed + inviteUser under the hood.
+ * point. `onInvite` runs createParty-if-needed + inviteUserByEmail under the hood.
  */
 export default function InviteDialog({
   open,
@@ -24,10 +23,10 @@ export default function InviteDialog({
 }: {
   open: boolean
   onClose: () => void
-  onInvite: (userId: string) => Promise<void>
+  onInvite: (email: string) => Promise<void>
   onPickFromFriends: () => void
 }) {
-  const [userId, setUserId] = useState('')
+  const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
 
   useEffect(() => {
@@ -40,21 +39,14 @@ export default function InviteDialog({
   if (!open) return null
 
   async function handleSend() {
-    const id = userId.trim()
-    if (!id || sending) return
-
-    // The server rejects anything that isn't a parseable GUID, so don't spend a
-    // round trip on a typo (or on a paste the length cap just truncated).
-    if (!isGuid(id)) {
-      toast.error("That doesn't look like a user ID.")
-      return
-    }
+    const address = email.trim()
+    if (!address || sending) return
 
     setSending(true)
     try {
-      await onInvite(id)
+      await onInvite(address)
       statusToast.success('Invite sent')
-      setUserId('')
+      setEmail('')
     } catch (err) {
       toast.error(extractErrorMessage(err))
     } finally {
@@ -83,27 +75,36 @@ export default function InviteDialog({
 
         <h2 className="font-display text-3xl leading-none">Invite to party</h2>
         <p className="mt-2 font-body text-sm text-on-background/70">
-          Paste a friend's user ID to pull them into this canvas. Up to 5 artists per party.
+          Enter a friend's Inkboard email to pull them into this canvas. Up to 5 artists per party.
         </p>
 
-        <label htmlFor="invite-user-id" className="mt-5 mb-1.5 ml-4 block font-label text-xs font-bold">
-          User ID
+        <label htmlFor="invite-email" className="mt-5 mb-1.5 ml-4 block font-label text-xs font-bold">
+          Email address
         </label>
-        <div className="flex gap-2">
+        <form
+          className="flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handleSend()
+          }}
+        >
           <input
-            id="invite-user-id"
-            value={userId}
-            onChange={(event) => setUserId(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && handleSend()}
-            maxLength={INVITED_USER_ID_MAX_LENGTH}
-            placeholder="e.g. 3f9a1c2e-…"
+            id="invite-email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            maxLength={INVITED_USER_EMAIL_MAX_LENGTH}
+            placeholder="friend@example.com"
+            disabled={sending}
             className="min-w-0 flex-1 rounded-full border-[3px] border-outline bg-background px-4 py-2.5 font-body text-sm outline-none placeholder:text-on-background/35 focus:border-primary"
           />
-          <Button size="sm" onClick={handleSend} disabled={sending}>
+          <Button type="submit" size="sm" disabled={sending || !email.trim()}>
             <UserPlus />
             {sending ? 'Sending…' : 'Invite'}
           </Button>
-        </div>
+        </form>
 
         <p className="mt-4 font-body text-xs text-on-background/50">
           Invites expire after 5 minutes. Only the party leader can invite.

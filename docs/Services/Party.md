@@ -46,6 +46,8 @@ A user can block another user. Blocked users cannot be invited to the leader's p
 - Only the leader can invite new users.
 
 ### Invite Flow
+- The canvas invite dialog accepts an exact account email address. The server trims surrounding whitespace, resolves the account, then applies the same invitation rules used by user-ID invitations from the friends list. Email matching follows the existing account lookup; it is case-sensitive.
+- `POST /api/parties/{partyId}/invites/by-email` accepts `{ "email": "friend@example.com" }`. Only the leader can use it. Invalid email addresses return 400, unknown accounts return 404, and successful requests return 201 with the usual party invite. Delivery is through the app's existing notifications and inbox, not an email message.
 - A leader invite creates a Pending invite with a 5-minute expiry.
 - The invited user accepts (→ a Member record is created) or declines (→ status Declined).
 - A second attempt on a non-pending invite is rejected, and expired invites cannot be accepted — an invite is answered exactly once.

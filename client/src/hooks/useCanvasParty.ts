@@ -3,6 +3,7 @@ import {
   createParty,
   endSession as endSessionApi,
   inviteUser,
+  inviteUserByEmail,
   isGuid,
   leaveParty,
   removeMember as removeMemberApi,
@@ -43,6 +44,11 @@ export function useCanvasParty(canvasId: string | undefined) {
     await inviteUser(id, userId)
   }
 
+  async function inviteByEmail(email: string) {
+    const id = await ensurePartyId()
+    await inviteUserByEmail(id, email)
+  }
+
   async function kick(userId: string) {
     if (!partyId) return
     await removeMemberApi(partyId, userId)
@@ -78,6 +84,7 @@ export function useCanvasParty(canvasId: string | undefined) {
     currentUserId,
     isLeader,
     invite,
+    inviteByEmail,
     kick,
     block,
     leave,

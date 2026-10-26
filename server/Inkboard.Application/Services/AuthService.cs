@@ -5,10 +5,11 @@ using Inkboard.Application.Auth.DTO;
 using Inkboard.Application.Interfaces;
 using Inkboard.Domain.Models;
 using Inkboard.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Inkboard.Application.Services;
 
-public class AuthService : IAuthService
+public partial class AuthService : IAuthService
 {
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IUserRepository _repository;
@@ -21,8 +22,22 @@ public class AuthService : IAuthService
         IUserRepository repository,
         IValidator<RegisterRequestModel> registerRequestValidator,
         IValidator<LoginRequestModel> loginRequestValidator,
-        ITokenRepository tokenRepository
+        ITokenRepository tokenRepository,
+        IPartyRepository partyRepository,
+        IPartyService partyService,
+        ICanvasRepository canvasRepository,
+        IBlobStorageService blobStorageService,
+        IConnectionStore connectionStore,
+        ILogger<AuthService> logger
     )
+        : this(
+            partyRepository,
+            partyService,
+            canvasRepository,
+            blobStorageService,
+            connectionStore,
+            logger
+        )
     {
         _tokenGenerator = tokenGenerator;
         _repository = repository;
@@ -139,7 +154,11 @@ public class AuthService : IAuthService
         );
 
         var storedToken = await _tokenRepository.FindByTokenHashAsync(tokenHash);
-        if (storedToken is null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTimeOffset.UtcNow)
+        if (
+            storedToken is null
+            || storedToken.IsRevoked
+            || storedToken.ExpiresAt < DateTimeOffset.UtcNow
+        )
         {
             return new LoginResult { ErrorMessage = "Invalid or expired refresh token." };
         }

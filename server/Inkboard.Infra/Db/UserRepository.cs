@@ -38,4 +38,52 @@ public class UserRepository : IUserRepository
         return _context.Users.FirstOrDefaultAsync(user => user.Id == id);
     }
 
+    public async Task DeleteUserAsync(User user)
+    {
+        /*
+        Honeslty not ideal, we load all related entities into memory
+        and then delete the user, which cascade deletes related rows
+        Note: we need to do this when using in-memory provider, since
+        it does not know about fk restirctions
+        */
+
+        var canvasIds = await _context
+            .Canvas.Where(canvas => canvas.OwnerId == user.Id)
+            .Select(canvas => canvas.Id)
+            .ToListAsync();
+        await _context.RefreshTokens.Where(token => token.UserId == user.Id).LoadAsync();
+        await _context.PartyMembers.Where(member => member.UserId == user.Id).LoadAsync();
+        await _context
+            .PartyInvites.Where(invite =>
+                invite.InvitedByUserId == user.Id || invite.InvitedUserId == user.Id
+            )
+            .LoadAsync();
+        await _context
+            .BlockLists.Where(block => block.UserId == user.Id || block.BlockedUserId == user.Id)
+            .LoadAsync();
+        await _context
+            .FriendRequests.Where(request =>
+                request.RequesterId == user.Id || request.RequesteeId == user.Id
+            )
+            .LoadAsync();
+        await _context
+            .Friendships.Where(friendship =>
+                friendship.UserId1 == user.Id || friendship.UserId2 == user.Id
+            )
+            .LoadAsync();
+        await _context
+            .Parties.Where(party =>
+                party.CanvasId.HasValue && canvasIds.Contains(party.CanvasId.Value)
+            )
+            .LoadAsync();
+        await _context.Canvas.Where(canvas => canvas.OwnerId == user.Id).LoadAsync();
+        await _context
+            .CanvasOperations.Where(operation =>
+                operation.UserId == user.Id || canvasIds.Contains(operation.CanvasId)
+            )
+            .LoadAsync();
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+    }
 }

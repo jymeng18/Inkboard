@@ -4,6 +4,8 @@ using Inkboard.Application.Interfaces;
 using Inkboard.Application.Services;
 using Inkboard.Infra.Db;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Inkboard.Domain.Repositories;
 
 namespace Inkboard.Tests.Auth;
 
@@ -48,7 +50,13 @@ public abstract class AuthTestBase : TestBase
             new UserRepository(context),
             new RegisterRequestValidator(),
             new LoginRequestValidator(),
-            new TokenRepository(context)
+            new TokenRepository(context),
+            new Mock<IPartyRepository>().Object,
+            new Mock<IPartyService>().Object,
+            new Mock<ICanvasRepository>().Object,
+            new Mock<IBlobStorageService>().Object,
+            new Mock<IConnectionStore>().Object,
+            NullLogger<AuthService>.Instance
         );
     }
 

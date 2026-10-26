@@ -192,6 +192,36 @@ namespace Inkboard.API.Routes
 
             endpoint
                 .MapPost(
+                    "/api/parties/{partyId}/invites/by-email",
+                    async (
+                        IPartyService partyService,
+                        Guid partyId,
+                        ClaimsPrincipal user,
+                        InviteUserByEmailRequest request
+                    ) =>
+                    {
+                        var leaderId = user.GetUserId();
+                        if (leaderId == Guid.Empty)
+                            return Results.Unauthorized();
+
+                        var result = await partyService.InviteUserByEmailAsync(
+                            partyId,
+                            leaderId,
+                            request.Email
+                        );
+                        if (!result.IsSuccess)
+                            return ToErrorResult(result.Error, result.ErrorType);
+
+                        return Results.Created(
+                            $"/api/parties/{partyId}/invites/{result.Data!.Id}",
+                            result.Data
+                        );
+                    }
+                )
+                .RequireAuthorization();
+
+            endpoint
+                .MapPost(
                     "/api/invites/{inviteId}/respond",
                     async (
                         IPartyService partyService,

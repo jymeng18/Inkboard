@@ -30,6 +30,7 @@ public sealed class PartyHub : Hub<IPartyHubClient>
         }
 
         _connectionStore.Add(Context.ConnectionId, userId, HubName);
+        _connectionStore.RegisterAbort(Context.ConnectionId, userId, Context.Abort);
 
         /// <summary>
         // Re-join a (re)connecting member to their party's group, so group
@@ -57,6 +58,7 @@ public sealed class PartyHub : Hub<IPartyHubClient>
             return;
         }
         _connectionStore.Remove(userId, HubName);
+        _connectionStore.UnregisterAbort(Context.ConnectionId);
 
         var party = await _partyRepository.GetActivePartyForUserAsync(userId);
         if (party is null)

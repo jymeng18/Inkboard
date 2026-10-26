@@ -201,7 +201,7 @@ export default function PartyPanel({
       <InviteDialog
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        onInvite={party.invite}
+        onInvite={party.inviteByEmail}
         onPickFromFriends={() => {
           setInviteOpen(false)
           openFriends()
