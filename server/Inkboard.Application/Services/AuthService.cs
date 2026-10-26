@@ -16,39 +16,34 @@ public partial class AuthService : IAuthService
     private readonly IValidator<RegisterRequestModel> _registerValidator;
     private readonly IValidator<LoginRequestModel> _loginValidator;
     private readonly ITokenRepository _tokenRepository;
-    // private readonly IPartyRepository _partyRepository;
-    // private readonly IPartyService _partyService;
-    // private readonly ICanvasRepository _canvasRepository;
-    // private readonly IBlobStorageService _blobStorageService;
-    // private readonly IConnectionStore _connectionStore;
-    // private readonly ILogger<AuthService> _logger;
-
 
     public AuthService(
         ITokenGenerator tokenGenerator,
         IUserRepository repository,
         IValidator<RegisterRequestModel> registerRequestValidator,
         IValidator<LoginRequestModel> loginRequestValidator,
-        ITokenRepository tokenRepository
-        // IPartyRepository partyRepository,
-        // IPartyService partyService,
-        // ICanvasRepository canvasRepository,
-        // IBlobStorageService blobStorageService,
-        // IConnectionStore connectionStore,
-        // ILogger<AuthService> logger
+        ITokenRepository tokenRepository,
+        IPartyRepository partyRepository,
+        IPartyService partyService,
+        ICanvasRepository canvasRepository,
+        IBlobStorageService blobStorageService,
+        IConnectionStore connectionStore,
+        ILogger<AuthService> logger
     )
+        : this(
+            partyRepository,
+            partyService,
+            canvasRepository,
+            blobStorageService,
+            connectionStore,
+            logger
+        )
     {
         _tokenGenerator = tokenGenerator;
         _repository = repository;
         _registerValidator = registerRequestValidator;
         _loginValidator = loginRequestValidator;
         _tokenRepository = tokenRepository;
-        // _partyRepository = partyRepository;
-        // _partyService = partyService;
-        // _canvasRepository = canvasRepository;
-        // _blobStorageService = blobStorageService;
-        // _connectionStore = connectionStore;
-        // _logger = logger;
     }
 
     public async Task<LoginResult> LoginAsync(LoginRequestModel request)
@@ -159,7 +154,11 @@ public partial class AuthService : IAuthService
         );
 
         var storedToken = await _tokenRepository.FindByTokenHashAsync(tokenHash);
-        if (storedToken is null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTimeOffset.UtcNow)
+        if (
+            storedToken is null
+            || storedToken.IsRevoked
+            || storedToken.ExpiresAt < DateTimeOffset.UtcNow
+        )
         {
             return new LoginResult { ErrorMessage = "Invalid or expired refresh token." };
         }

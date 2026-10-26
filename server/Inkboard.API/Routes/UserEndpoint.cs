@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Inkboard.Application.Common;
 using Inkboard.Application.Interfaces;
 using Inkboard.Application.Users.DTO;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Inkboard.API.Routes;
@@ -51,7 +52,7 @@ public static class UserEndpoint
                 ClaimsPrincipal user,
                 IAuthService authService,
                 HttpResponse response,
-                DeleteAccountRequest request
+                [FromBody] DeleteAccountRequest request
             ) =>
             {
                 var userId = user.GetUserId();

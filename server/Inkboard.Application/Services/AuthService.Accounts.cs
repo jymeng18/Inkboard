@@ -8,12 +8,29 @@ namespace Inkboard.Application.Services;
 
 public partial class AuthService
 {
-    private readonly IPartyRepository partyRepository;
-    private readonly IPartyService partyService;
-    private readonly ICanvasRepository canvasRepository;
-    private readonly IBlobStorageService blobStorageService;
-    private readonly IConnectionStore connectionStore;
-    private readonly ILogger<AuthService> logger;
+    private readonly IPartyRepository _partyRepository;
+    private readonly IPartyService _partyService;
+    private readonly ICanvasRepository _canvasRepository;
+    private readonly IBlobStorageService _blobStorageService;
+    private readonly IConnectionStore _connectionStore;
+    private readonly ILogger<AuthService> _logger;
+
+    private AuthService(
+        IPartyRepository partyRepository,
+        IPartyService partyService,
+        ICanvasRepository canvasRepository,
+        IBlobStorageService blobStorageService,
+        IConnectionStore connectionStore,
+        ILogger<AuthService> logger
+    )
+    {
+        _partyRepository = partyRepository;
+        _partyService = partyService;
+        _canvasRepository = canvasRepository;
+        _blobStorageService = blobStorageService;
+        _connectionStore = connectionStore;
+        _logger = logger;
+    }
 
     public async Task<Result<AccountDto>> GetAccountAsync(Guid userId)
     {
@@ -31,10 +48,7 @@ public partial class AuthService
         const int pwMaxLength = 128;
         if (string.IsNullOrEmpty(password) || password.Length > pwMaxLength)
         {
-            return Result.Fail(
-                ErrorType.Validation,
-                "Enter your current password."
-            );
+            return Result.Fail(ErrorType.Validation, "Enter your current password.");
         }
 
         var user = await _repository.GetByIdAsync(userId);
@@ -43,32 +57,29 @@ public partial class AuthService
 
         if (!BCrypt.Net.BCrypt.EnhancedVerify(password, user.PasswordHash))
         {
-            return Result.Fail(
-                ErrorType.Forbidden,
-                "That password is incorrect."
-            );
+            return Result.Fail(ErrorType.Forbidden, "That password is incorrect.");
         }
 
-        var party = await partyRepository.GetActivePartyForUserAsync(userId);
+        var party = await _partyRepository.GetActivePartyForUserAsync(userId);
         if (party is not null)
         {
-            var leaveResult = await partyService.LeavePartyAsync(party.Id, userId);
+            var leaveResult = await _partyService.LeavePartyAsync(party.Id, userId);
             if (!leaveResult.IsSuccess)
                 return Result.Fail(leaveResult.ErrorType, leaveResult.Error);
         }
 
-        var canvases = await canvasRepository.GetCanvasesByUserIdAsync(userId);
+        var canvases = await _canvasRepository.GetCanvasesByUserIdAsync(userId);
         await _repository.DeleteUserAsync(user);
 
         // The database commit removes refresh tokens and owned canvases together.
         // Disconnect every live tab only after that commit has succeeded.
         try
         {
-            await connectionStore.DisconnectUserAsync(userId);
+            await _connectionStore.DisconnectUserAsync(userId);
         }
         catch (Exception exception)
         {
-            logger.LogError(
+            _logger.LogError(
                 exception,
                 "Failed to notify disconnected sessions for deleted account {UserId}.",
                 userId
@@ -82,14 +93,14 @@ public partial class AuthService
 
             try
             {
-                await blobStorageService.DeleteCanvasBlobsAsync(canvas.Id);
+                await _blobStorageService.DeleteCanvasBlobsAsync(canvas.Id);
             }
             catch (Exception exception)
             {
                 // The account is already deleted. Do not report a failed deletion
                 // and encourage a retry with credentials that no longer exist.
                 // TODO: persist failed blob cleanup jobs for automatic retries.
-                logger.LogError(
+                _logger.LogError(
                     exception,
                     "Failed to clean up blobs for deleted canvas {CanvasId}.",
                     canvas.Id
