@@ -26,7 +26,8 @@ public abstract class PartyTestBase : TestBase
             new BlockListRepository(Context),
             Notifier.Object,
             canvasService,
-            canvasRepository
+            canvasRepository,
+            new UserRepository(Context)
         );
     }
 

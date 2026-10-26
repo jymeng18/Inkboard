@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Inkboard.Application.Common;
 using Inkboard.Application.Interfaces;
 using Inkboard.Application.Parties.DTO;
@@ -14,6 +15,7 @@ namespace Inkboard.Application.Services
         private readonly IPartyNotifier _partyNotifier;
         private readonly ICanvasService _canvasService;
         private readonly ICanvasRepository _canvasRepository;
+        private readonly IUserRepository userRepository;
 
         public PartyService(
             IPartyRepository partyRepository,
@@ -21,7 +23,8 @@ namespace Inkboard.Application.Services
             IBlockListRepository blockListRepository,
             IPartyNotifier partyNotifier,
             ICanvasService canvasService,
-            ICanvasRepository canvasRepository
+            ICanvasRepository canvasRepository,
+            IUserRepository userRepository
         )
         {
             _partyRepository = partyRepository;
@@ -30,6 +33,7 @@ namespace Inkboard.Application.Services
             _partyNotifier = partyNotifier;
             _canvasService = canvasService;
             _canvasRepository = canvasRepository;
+            this.userRepository = userRepository;
         }
 
         public async Task<Result> BlockUserAsync(Guid leaderId, Guid targetUserId)
@@ -185,6 +189,30 @@ namespace Inkboard.Application.Services
             await _partyNotifier.NotifyInvite(invitedUserId, partyInvite);
 
             return Result<PartyInvite>.Ok(partyInvite);
+        }
+
+        public async Task<Result<PartyInvite>> InviteUserByEmailAsync(
+            Guid partyId,
+            Guid leaderId,
+            string email
+        )
+        {
+            var party = await _partyRepository.GetByIdAsync(partyId);
+            if (party is null)
+                return Result<PartyInvite>.Fail(ErrorType.NotFound, "Party not found.");
+
+            if (party.LeaderId != leaderId)
+                return Result<PartyInvite>.Fail(ErrorType.Forbidden, "Only the leader can invite people.");
+
+            email = email?.Trim();
+            if (string.IsNullOrEmpty(email) || email.Length > 256 || !new EmailAddressAttribute().IsValid(email))
+                return Result<PartyInvite>.Fail(ErrorType.Validation, "Enter a valid email address (up to 256 characters).");
+
+            var invitedUser = await userRepository.FindByEmailAsync(email);
+            if (invitedUser is null)
+                return Result<PartyInvite>.Fail(ErrorType.NotFound, "No user found with this email address.");
+
+            return await InviteUserAsync(partyId, leaderId, invitedUser.Id);
         }
 
         public async Task<Result> LeavePartyAsync(Guid partyId, Guid userId)

@@ -1,10 +1,11 @@
-import api from './client'
+import api from '@/api/client'
 
 /*
  * The invite endpoint rejects an id of 50 characters or more before it even
  * tries to parse it, so a well-formed 36-char GUID always clears the bar.
  */
 export const INVITED_USER_ID_MAX_LENGTH = 49
+export const INVITED_USER_EMAIL_MAX_LENGTH = 256
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -64,6 +65,11 @@ export async function createParty(canvasId: string) {
 
 export async function inviteUser(partyId: string, invitedUserId: string) {
   const { data } = await api.post(`/parties/${partyId}/invites`, { invitedUserId })
+  return data as PartyInviteDto
+}
+
+export async function inviteUserByEmail(partyId: string, email: string) {
+  const { data } = await api.post(`/parties/${partyId}/invites/by-email`, { email })
   return data as PartyInviteDto
 }
 

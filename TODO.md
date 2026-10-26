@@ -21,7 +21,7 @@
 - [x] Delete canvas needs ownership check
 - [x] Improve/refactor test suite for future use
 - [x] Canvas should display on dashboard for other canvas collaborators too, they can access it again too
-- [ ] Search bar for inviting by email
+- [x] Search bar for inviting by email
 - [x] Globalexceptionhandler
 - [ ] Unblock user endpoint + fix bad business logic with blocking users
 - [x] Currently when a party dissovles, clients webscokets are not removed from the group
